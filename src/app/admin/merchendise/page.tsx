@@ -66,7 +66,9 @@ const ToastNotification = ({
   };
 
   return (
-    <div className={`flex gap-3 p-4 rounded-lg border shadow-sm ${colors[toast.type]}`}>
+    <div
+      className={`flex gap-3 p-4 rounded-lg border shadow-sm ${colors[toast.type]}`}
+    >
       {icons[toast.type]}
       <p className="flex-1 text-sm font-medium">{toast.message}</p>
       <button onClick={onClose}>
@@ -101,7 +103,9 @@ export default function AdminMerch() {
   const [categories, setCategories] = useState<MerchCategory[]>([]);
   const [newCategory, setNewCategory] = useState("");
 
-  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
+    null,
+  );
   const [editingCategoryName, setEditingCategoryName] = useState("");
 
   const [form, setForm] = useState<MerchForm>({
@@ -127,7 +131,7 @@ export default function AdminMerch() {
   const fetchCategories = async () => {
     try {
       const r = await fetch(
-        "http://localhost/petite-backend/merch/categories/get_categories.php"
+        "http://localhost/petite-backend/merch/categories/get_categories.php",
       );
       setCategories(await r.json());
     } catch {
@@ -139,7 +143,7 @@ export default function AdminMerch() {
     setIsLoading(true);
     try {
       const r = await fetch(
-        "http://localhost/petite-backend/merch/get_merch_items.php"
+        "http://localhost/petite-backend/merch/get_merch_items.php",
       );
       setItems(await r.json());
     } catch {
@@ -164,7 +168,7 @@ export default function AdminMerch() {
 
     await fetch(
       "http://localhost/petite-backend/merch/categories/add_category.php",
-      { method: "POST", body: fd }
+      { method: "POST", body: fd },
     );
 
     setNewCategory("");
@@ -179,7 +183,7 @@ export default function AdminMerch() {
 
     await fetch(
       "http://localhost/petite-backend/merch/categories/update_category.php",
-      { method: "POST", body: fd }
+      { method: "POST", body: fd },
     );
 
     setEditingCategoryId(null);
@@ -192,7 +196,7 @@ export default function AdminMerch() {
 
     await fetch(
       `http://localhost/petite-backend/merch/categories/delete_category.php?id=${id}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
 
     fetchCategories();
@@ -214,7 +218,13 @@ export default function AdminMerch() {
 
     await fetch(url, { method: "POST", body: fd });
 
-    setForm({ name: "", price: "", description: "", image: null, category: "" });
+    setForm({
+      name: "",
+      price: "",
+      description: "",
+      image: null,
+      category: "",
+    });
     setEditId(null);
     fetchItems();
     addToast(editId ? "Item updated" : "Item added", "success");
@@ -237,7 +247,7 @@ export default function AdminMerch() {
 
     await fetch(
       `http://localhost/petite-backend/merch/delete_item.php?id=${id}`,
-      { method: "DELETE" }
+      { method: "DELETE" },
     );
 
     fetchItems();
@@ -246,82 +256,96 @@ export default function AdminMerch() {
 
   /* ---------------- JSX ---------------- */
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 ">
       {/* Toasts */}
       <div className="fixed top-6 right-6 z-50 w-96 space-y-3">
         {toasts.map((t) => (
-          <ToastNotification key={t.id} toast={t} onClose={() => removeToast(t.id)} />
+          <ToastNotification
+            key={t.id}
+            toast={t}
+            onClose={() => removeToast(t.id)}
+          />
         ))}
-      </div>
-
-      {/* HEADER */}
-      <div className="mb-8 flex items-center gap-3">
-        <div className="p-2 bg-indigo-100 rounded-lg">
-          <Shirt className="w-6 h-6 text-indigo-700" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">Merch Management</h1>
       </div>
 
       {/* CATEGORY MANAGER */}
-      <div className="bg-white rounded-xl border p-6 mb-8 ">
-        <h2 className=" mb-4 text-black">Manage Merch Categories</h2>
-
-        <div className="flex gap-3 mb-6 max-w-md">
-          <input
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
-            placeholder="New category name"
-          />
-          <button onClick={addCategory} className="bg-indigo-600 text-white px-4 rounded-lg">
-            Add
-          </button>
+      <div className="bg-white border p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-lg font-semibold text-black">Merch Categories</h2>
+          {/* Compact Add Input */}
+          <div className="flex gap-2 w-full max-w-xs">
+            <input
+              value={newCategory}
+              onChange={(e) => setNewCategory(e.target.value)}
+              className="flex-1 border border-gray-300 text-sm text-gray-900 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
+              placeholder="New category..."
+            />
+            <button
+              onClick={addCategory}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm transition-colors"
+            >
+              Add
+            </button>
+          </div>
         </div>
 
-        {categories.map((c) => (
-          <div
-            key={c.id}
-            className="flex justify-between items-center border border-gray-300 rounded-lg px-4 py-2 mb-2"
-          >
-            {editingCategoryId === c.id ? (
-              <input
-                value={editingCategoryName}
-                onChange={(e) => setEditingCategoryName(e.target.value)}
-                className="flex-1 border border-gray-300 text-gray-900 rounded-lg px-3 py-2"
-              />
-            ) : (
-              <span className="font-medium text-gray-900">{c.name}</span>
-            )}
+        <hr className="mb-4 border-gray-100" />
 
-            <div className="flex gap-3">
+        {/* Scrollable Grid Container */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-2 gap-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+          {categories.map((c) => (
+            <div
+              key={c.id}
+              className="flex justify-between items-center bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-md px-3 py-1.5 transition-colors group"
+            >
               {editingCategoryId === c.id ? (
-                <button onClick={() => updateCategory(c.id)} className="text-green-600 flex gap-1">
-                  <Save className="w-4 h-4" /> Save
-                </button>
+                <input
+                  autoFocus
+                  value={editingCategoryName}
+                  onChange={(e) => setEditingCategoryName(e.target.value)}
+                  className="flex-1 border border-indigo-300 text-sm text-gray-900 rounded px-2 py-0.5 outline-none"
+                />
               ) : (
-                <button
-                  onClick={() => {
-                    setEditingCategoryId(c.id);
-                    setEditingCategoryName(c.name);
-                  }}
-                  className="text-blue-600 flex gap-1"
-                >
-                  <Pencil className="w-4 h-4" /> Edit
-                </button>
+                <span className="text-sm font-medium text-gray-700 truncate">
+                  {c.name}
+                </span>
               )}
-              <button
-                onClick={() => deleteCategory(c.id, c.name)}
-                className="text-red-600 flex gap-1"
-              >
-                <Trash2 className="w-4 h-4" /> Delete
-              </button>
+
+              <div className="flex gap-3 ml-4">
+                {editingCategoryId === c.id ? (
+                  <button
+                    onClick={() => updateCategory(c.id)}
+                    className="text-green-600 hover:text-green-700"
+                  >
+                    <Save className="w-4 h-4" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditingCategoryId(c.id);
+                      setEditingCategoryName(c.name);
+                    }}
+                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                    title="Edit"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  onClick={() => deleteCategory(c.id, c.name)}
+                  className="text-gray-400 hover:text-red-600 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
 
-         {/* Add/Edit Form */}
-      <div className="bg-white  text-gray-600 rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
+      {/* Add/Edit Form */}
+      <div className="bg-white  text-gray-600 shadow-sm p-6 mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-6">
           {editId ? "Edit Merch Item" : "Add New Merch Item"}
         </h2>
@@ -354,6 +378,9 @@ export default function AdminMerch() {
               onChange={(e) => setForm({ ...form, category: e.target.value })}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
             >
+              <option value="" disabled>
+                Select category
+              </option>
               {categories.map((c) => (
                 <option key={c.id} value={c.name}>
                   {c.name}
@@ -366,7 +393,9 @@ export default function AdminMerch() {
             <input
               type="file"
               accept="image/*"
-              onChange={(e) => setForm({ ...form, image: e.target.files?.[0] || null })}
+              onChange={(e) =>
+                setForm({ ...form, image: e.target.files?.[0] || null })
+              }
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 file:mr-4 file:py-1 file:px-4 file:rounded file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
             />
           </InputField>
@@ -397,18 +426,30 @@ export default function AdminMerch() {
       {/* Merch Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">Merchandise Items</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            Merchandise Items
+          </h2>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Item</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Category</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Price</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Description</th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                  Item
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                  Category
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                  Price
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                  Description
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -425,15 +466,27 @@ export default function AdminMerch() {
                           />
                         )}
                         <div>
-                          <div className="font-medium text-gray-900">{item.name}</div>
-                          <div className="text-sm text-gray-500">ID: {item.id}</div>
+                          <div className="font-medium text-gray-900">
+                            {item.name}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            ID: {item.id}
+                          </div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 capitalize text-gray-700">{item.category}</td>
-                    <td className="px-6 py-4 font-medium text-gray-900">${item.price}</td>
+                    <td className="px-6 py-4 capitalize text-gray-700">
+                      {item.category}
+                    </td>
+                    <td className="px-6 py-4 font-medium text-gray-900">
+                      ${item.price}
+                    </td>
                     <td className="px-6 py-4 text-gray-600 max-w-xs">
-                      {item.description || <span className="text-gray-400 italic">No description</span>}
+                      {item.description || (
+                        <span className="text-gray-400 italic">
+                          No description
+                        </span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex gap-3">
@@ -457,7 +510,10 @@ export default function AdminMerch() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                  <td
+                    colSpan={5}
+                    className="px-6 py-8 text-center text-gray-500"
+                  >
                     {isLoading ? "Loading..." : "No merch items found"}
                   </td>
                 </tr>

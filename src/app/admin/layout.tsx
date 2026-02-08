@@ -88,7 +88,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       children: [
         {
           href: "/admin/menu-admin",
-          label: "Menu Management",
+          label: "Menu",
           shortLabel: "Menu",
           icon: (
             <svg
@@ -108,7 +108,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         },
         {
           href: "/admin/gallery",
-          label: "Gallery Management",
+          label: "Gallery",
           shortLabel: "Gallery",
           icon: (
             <svg
@@ -128,7 +128,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         },
         {
           href: "/admin/adminAbout",
-          label: "About Management",
+          label: "About",
           shortLabel: "About",
           icon: (
             <svg
@@ -148,7 +148,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         },
         {
           href: "/admin/merchendise",
-          label: "Merchendise Management",
+          label: "Merchendise",
           shortLabel: "Merch",
           icon: (
             <svg
@@ -722,7 +722,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       >
         {/* Top Bar */}
         <header className="border-b border-slate-200 sticky top-0 z-30 backdrop-blur-sm bg-white/95 shadow-sm">
-          <div className="flex items-center justify-between p-6">
+          <div className="flex items-center justify-between p-2">
             <div className="flex items-center space-x-4">
               <button
                 onClick={toggleSidebar}
@@ -797,7 +797,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </header>
 
         {/* Page Content */}
-        <div className="p-6">
+        <div>
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm min-h-[calc(100vh-180px)] transition-all duration-300 hover:shadow-md">
             {children}
           </div>
