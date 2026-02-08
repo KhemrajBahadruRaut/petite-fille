@@ -1,8 +1,17 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { X, CheckCircle, AlertCircle, Trash2, Plus, Shirt, Pencil } from "lucide-react";
+import {
+  X,
+  CheckCircle,
+  AlertCircle,
+  Trash2,
+  Plus,
+  Shirt,
+  Pencil,
+  Save,
+} from "lucide-react";
 
-// ---------------- Types ----------------
+/* ---------------- Types ---------------- */
 interface MerchItem {
   id: number;
   name: string;
@@ -26,20 +35,21 @@ interface MerchForm {
   category: string;
 }
 
-const categories = [
-  { value: "mug", label: "Mug" },
-  { value: "candle", label: "Candle" },
-  { value: "tote", label: "Tote Bag" },
-  { value: "tshirt", label: "T-Shirt" },
-  { value: "cap", label: "Cap" },
-  { value: "hoodie", label: "Hoodie" },
-  { value: "other", label: "Other" },
-];
+interface MerchCategory {
+  id: number;
+  name: string;
+}
 
-// ---------------- Toast Component ----------------
-const ToastNotification = ({ toast, onClose }: { toast: Toast; onClose: () => void }) => {
+/* ---------------- Toast ---------------- */
+const ToastNotification = ({
+  toast,
+  onClose,
+}: {
+  toast: Toast;
+  onClose: () => void;
+}) => {
   useEffect(() => {
-    const timer = setTimeout(() => onClose(), 4000);
+    const timer = setTimeout(onClose, 4000);
     return () => clearTimeout(timer);
   }, [onClose]);
 
@@ -56,19 +66,17 @@ const ToastNotification = ({ toast, onClose }: { toast: Toast; onClose: () => vo
   };
 
   return (
-    <div
-      className={`flex items-center gap-3 p-4 rounded-lg border ${colors[toast.type]} shadow-sm mb-3`}
-    >
+    <div className={`flex gap-3 p-4 rounded-lg border shadow-sm ${colors[toast.type]}`}>
       {icons[toast.type]}
       <p className="flex-1 text-sm font-medium">{toast.message}</p>
-      <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-        <X className="w-4 h-4" />
+      <button onClick={onClose}>
+        <X className="w-4 h-4 text-gray-400" />
       </button>
     </div>
   );
 };
 
-// ---------------- Input Wrapper ----------------
+/* ---------------- Input Wrapper ---------------- */
 const InputField = ({
   label,
   required,
@@ -87,39 +95,54 @@ const InputField = ({
   </div>
 );
 
-// ---------------- Main Component ----------------
+/* ---------------- MAIN ---------------- */
 export default function AdminMerch() {
   const [items, setItems] = useState<MerchItem[]>([]);
+  const [categories, setCategories] = useState<MerchCategory[]>([]);
+  const [newCategory, setNewCategory] = useState("");
+
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  const [editingCategoryName, setEditingCategoryName] = useState("");
+
   const [form, setForm] = useState<MerchForm>({
     name: "",
     price: "",
     description: "",
     image: null,
-    category: "mug",
+    category: "",
   });
+
   const [editId, setEditId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  // ---------- Toasts ----------
-  const addToast = (message: string, type: "success" | "error" | "warning") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-  };
-  const removeToast = (id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
+  /* ---------- Toast helpers ---------- */
+  const addToast = (message: string, type: Toast["type"]) =>
+    setToasts((p) => [...p, { id: Date.now(), message, type }]);
+
+  const removeToast = (id: number) =>
+    setToasts((p) => p.filter((t) => t.id !== id));
+
+  /* ---------- Fetch ---------- */
+  const fetchCategories = async () => {
+    try {
+      const r = await fetch(
+        "http://localhost/petite-backend/merch/categories/get_categories.php"
+      );
+      setCategories(await r.json());
+    } catch {
+      addToast("Failed to load categories", "error");
+    }
   };
 
-  // ---------- Fetch ----------
   const fetchItems = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost/petite-backend/merch/get_merch_items.php");
-      if (!res.ok) throw new Error("Failed to fetch merch items");
-      const data = await res.json();
-      setItems(data);
-    } catch (err) {
-      console.error(err);
+      const r = await fetch(
+        "http://localhost/petite-backend/merch/get_merch_items.php"
+      );
+      setItems(await r.json());
+    } catch {
       addToast("Failed to load merch items", "error");
     } finally {
       setIsLoading(false);
@@ -127,72 +150,76 @@ export default function AdminMerch() {
   };
 
   useEffect(() => {
+    fetchCategories();
     fetchItems();
   }, []);
 
-  // ---------- Validate ----------
-  const validateForm = (): boolean => {
-    if (!form.name.trim()) {
-      addToast("Product name is required", "warning");
-      return false;
-    }
-    if (!form.price || isNaN(parseFloat(form.price)) || parseFloat(form.price) <= 0) {
-      addToast("Valid price is required", "warning");
-      return false;
-    }
-    return true;
+  /* ---------- Category CRUD ---------- */
+  const addCategory = async () => {
+    if (!newCategory.trim())
+      return addToast("Category name required", "warning");
+
+    const fd = new FormData();
+    fd.append("name", newCategory);
+
+    await fetch(
+      "http://localhost/petite-backend/merch/categories/add_category.php",
+      { method: "POST", body: fd }
+    );
+
+    setNewCategory("");
+    fetchCategories();
+    addToast("Category added", "success");
   };
 
-  // ---------- Add or Update ----------
+  const updateCategory = async (id: number) => {
+    const fd = new FormData();
+    fd.append("id", id.toString());
+    fd.append("name", editingCategoryName);
+
+    await fetch(
+      "http://localhost/petite-backend/merch/categories/update_category.php",
+      { method: "POST", body: fd }
+    );
+
+    setEditingCategoryId(null);
+    fetchCategories();
+    addToast("Category updated", "success");
+  };
+
+  const deleteCategory = async (id: number, name: string) => {
+    if (!confirm(`Delete category "${name}"?`)) return;
+
+    await fetch(
+      `http://localhost/petite-backend/merch/categories/delete_category.php?id=${id}`,
+      { method: "DELETE" }
+    );
+
+    fetchCategories();
+    addToast("Category deleted", "success");
+  };
+
+  /* ---------- Item CRUD ---------- */
   const handleSubmit = async () => {
-    if (!validateForm()) return;
-    const formData = new FormData();
-    formData.append("name", form.name);
-    formData.append("price", form.price);
-    formData.append("description", form.description);
-    formData.append("category", form.category);
-    if (form.image) formData.append("image", form.image);
-    if (editId) formData.append("id", editId.toString());
+    if (!form.name || !form.price)
+      return addToast("Name & price required", "warning");
 
-    setIsLoading(true);
-    try {
-      const url = editId
-        ? "http://localhost/petite-backend/merch/update_item.php"
-        : "http://localhost/petite-backend/merch/add_item.php";
+    const fd = new FormData();
+    Object.entries(form).forEach(([k, v]) => v && fd.append(k, v as any));
+    if (editId) fd.append("id", editId.toString());
 
-      const res = await fetch(url, { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Failed to save item");
+    const url = editId
+      ? "http://localhost/petite-backend/merch/update_item.php"
+      : "http://localhost/petite-backend/merch/add_item.php";
 
-      addToast(editId ? "Item updated successfully" : "Item added successfully", "success");
-      setForm({ name: "", price: "", description: "", image: null, category: "mug" });
-      setEditId(null);
-      fetchItems();
-    } catch (err) {
-      console.error(err);
-      addToast("Error saving item", "error");
-    } finally {
-      setIsLoading(false);
-    }
+    await fetch(url, { method: "POST", body: fd });
+
+    setForm({ name: "", price: "", description: "", image: null, category: "" });
+    setEditId(null);
+    fetchItems();
+    addToast(editId ? "Item updated" : "Item added", "success");
   };
 
-  // ---------- Delete ----------
-  const deleteItem = async (id: number, name: string) => {
-    if (!confirm(`Delete "${name}"?`)) return;
-    try {
-      const res = await fetch(
-        `http://localhost/petite-backend/merch/delete_item.php?id=${id}`,
-        { method: "DELETE" }
-      );
-      if (!res.ok) throw new Error("Failed to delete");
-      addToast(`${name} deleted`, "success");
-      fetchItems();
-    } catch (err) {
-      console.error(err);
-      addToast("Error deleting item", "error");
-    }
-  };
-
-  // ---------- Edit ----------
   const handleEdit = (item: MerchItem) => {
     setEditId(item.id);
     setForm({
@@ -205,28 +232,95 @@ export default function AdminMerch() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  // ---------------- JSX ----------------
+  const deleteItem = async (id: number, name: string) => {
+    if (!confirm(`Delete "${name}"?`)) return;
+
+    await fetch(
+      `http://localhost/petite-backend/merch/delete_item.php?id=${id}`,
+      { method: "DELETE" }
+    );
+
+    fetchItems();
+    addToast("Item deleted", "success");
+  };
+
+  /* ---------------- JSX ---------------- */
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       {/* Toasts */}
-      <div className="fixed top-6 right-6 z-50 w-96 max-w-full">
+      <div className="fixed top-6 right-6 z-50 w-96 space-y-3">
         {toasts.map((t) => (
           <ToastNotification key={t.id} toast={t} onClose={() => removeToast(t.id)} />
         ))}
       </div>
 
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-indigo-100 rounded-lg">
-            <Shirt className="w-6 h-6 text-indigo-700" />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900">Merch Management</h1>
+      {/* HEADER */}
+      <div className="mb-8 flex items-center gap-3">
+        <div className="p-2 bg-indigo-100 rounded-lg">
+          <Shirt className="w-6 h-6 text-indigo-700" />
         </div>
-        <p className="text-gray-600">Add, edit, and delete your merchandise products</p>
+        <h1 className="text-2xl font-bold text-gray-900">Merch Management</h1>
       </div>
 
-      {/* Add/Edit Form */}
+      {/* CATEGORY MANAGER */}
+      <div className="bg-white rounded-xl border p-6 mb-8 ">
+        <h2 className=" mb-4 text-black">Manage Merch Categories</h2>
+
+        <div className="flex gap-3 mb-6 max-w-md">
+          <input
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            className="flex-1 border border-gray-300 rounded-lg px-3 py-2"
+            placeholder="New category name"
+          />
+          <button onClick={addCategory} className="bg-indigo-600 text-white px-4 rounded-lg">
+            Add
+          </button>
+        </div>
+
+        {categories.map((c) => (
+          <div
+            key={c.id}
+            className="flex justify-between items-center border border-gray-300 rounded-lg px-4 py-2 mb-2"
+          >
+            {editingCategoryId === c.id ? (
+              <input
+                value={editingCategoryName}
+                onChange={(e) => setEditingCategoryName(e.target.value)}
+                className="flex-1 border border-gray-300 text-gray-900 rounded-lg px-3 py-2"
+              />
+            ) : (
+              <span className="font-medium text-gray-900">{c.name}</span>
+            )}
+
+            <div className="flex gap-3">
+              {editingCategoryId === c.id ? (
+                <button onClick={() => updateCategory(c.id)} className="text-green-600 flex gap-1">
+                  <Save className="w-4 h-4" /> Save
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    setEditingCategoryId(c.id);
+                    setEditingCategoryName(c.name);
+                  }}
+                  className="text-blue-600 flex gap-1"
+                >
+                  <Pencil className="w-4 h-4" /> Edit
+                </button>
+              )}
+              <button
+                onClick={() => deleteCategory(c.id, c.name)}
+                className="text-red-600 flex gap-1"
+              >
+                <Trash2 className="w-4 h-4" /> Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+         {/* Add/Edit Form */}
       <div className="bg-white  text-gray-600 rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
         <h2 className="text-lg font-semibold text-gray-900 mb-6">
           {editId ? "Edit Merch Item" : "Add New Merch Item"}
@@ -261,8 +355,8 @@ export default function AdminMerch() {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
             >
               {categories.map((c) => (
-                <option key={c.value} value={c.value}>
-                  {c.label}
+                <option key={c.id} value={c.name}>
+                  {c.name}
                 </option>
               ))}
             </select>
