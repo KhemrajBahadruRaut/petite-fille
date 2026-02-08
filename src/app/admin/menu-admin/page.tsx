@@ -8,6 +8,8 @@ import {
   Plus,
   Edit2,
   Utensils,
+  Pencil,
+  Save,
 } from "lucide-react";
 
 interface MenuItem {
@@ -105,6 +107,10 @@ export default function AdminMenu() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
+    null,
+  );
+  const [editingCategoryName, setEditingCategoryName] = useState("");
 
   const [form, setForm] = useState<MenuForm>({
     name: "",
@@ -123,24 +129,26 @@ export default function AdminMenu() {
     setToasts((prev) => prev.filter((t) => t.id !== id));
 
   /** Fetch items */
- const fetchItems = async () => {
-  setIsLoading(true);
-  try {
-    const res = await fetch("http://localhost/petite-backend/menu/get_menu_item.php");
-    const data = await res.json(); // data is categories array
-    const allItems = data.flatMap((cat: { items: any; name: any; }) =>
-      (cat.items || []).map((item: any) => ({
-        ...item,
-        category: cat.name, // add category name for display
-      }))
-    );
-    setItems(allItems);
-  } catch {
-    addToast("Failed to fetch menu items", "error");
-  } finally {
-    setIsLoading(false);
-  }
-};
+  const fetchItems = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch(
+        "http://localhost/petite-backend/menu/get_menu_item.php",
+      );
+      const data = await res.json(); // data is categories array
+      const allItems = data.flatMap((cat: { items: any; name: any }) =>
+        (cat.items || []).map((item: any) => ({
+          ...item,
+          category: cat.name, // add category name for display
+        })),
+      );
+      setItems(allItems);
+    } catch {
+      addToast("Failed to fetch menu items", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   /** Fetch categories */
   const fetchCategories = async () => {
@@ -196,7 +204,7 @@ export default function AdminMenu() {
 
     try {
       const url = editingItemId
-        ? `http://localhost/petite-backend/menu/update_item.php?id=${editingItemId}`
+        ? `http://localhost/petite-backend/menu/update_menu_item.php?id=${editingItemId}`
         : "http://localhost/petite-backend/menu/add_menu_item.php";
 
       const method = editingItemId ? "POST" : "POST"; // or PATCH if backend supports
@@ -291,6 +299,70 @@ export default function AdminMenu() {
     }
   };
 
+  /** Update category */
+  const updateCategory = async (id: number) => {
+    if (!editingCategoryName.trim()) {
+      addToast("Category name required", "warning");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("id", id.toString());
+    formData.append("name", editingCategoryName.trim());
+
+    try {
+      const res = await fetch(
+        "http://localhost/petite-backend/menu/update_category.php",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      if (res.ok) {
+        addToast("Category updated", "success");
+        setEditingCategoryId(null);
+        setEditingCategoryName("");
+        fetchCategories();
+      } else {
+        addToast("Failed to update category", "error");
+      }
+    } catch (error) {
+      console.error(error);
+      addToast("Error updating category", "error");
+    }
+  };
+
+  /** Delete category */
+  const deleteCategory = async (id: number, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+
+    try {
+      const res = await fetch(
+        `http://localhost/petite-backend/menu/delete_category.php?id=${id}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        addToast("Category deleted", "success");
+        fetchCategories();
+      } else {
+        // Show the backend error message (e.g., "This category contains X menu items...")
+        addToast(
+          data.message || data.error || "Failed to delete category",
+          "error",
+        );
+      }
+    } catch (error) {
+      console.error(error);
+      addToast("Error deleting category", "error");
+    }
+  };
+
   /** Split items */
   const mainItems = items.filter(
     (i) => (i.category || "").toLowerCase() !== "sides",
@@ -347,12 +419,54 @@ export default function AdminMenu() {
         </div>
         <div className="flex flex-wrap gap-2">
           {categories.map((cat) => (
-            <span
+            <div
               key={cat.id}
-              className="px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-sm"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-100 text-amber-800 text-sm group"
             >
-              {cat.name}
-            </span>
+              {editingCategoryId === cat.id ? (
+                <input
+                  autoFocus
+                  value={editingCategoryName}
+                  onChange={(e) => setEditingCategoryName(e.target.value)}
+                  className="bg-white border border-amber-300 rounded px-2 py-0.5 text-sm text-gray-900 outline-none w-24"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") updateCategory(cat.id);
+                    if (e.key === "Escape") setEditingCategoryId(null);
+                  }}
+                />
+              ) : (
+                <span>{cat.name}</span>
+              )}
+              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                {editingCategoryId === cat.id ? (
+                  <button
+                    onClick={() => updateCategory(cat.id)}
+                    className="text-green-600 hover:text-green-800 p-0.5"
+                    title="Save"
+                  >
+                    <Save className="w-3.5 h-3.5" />
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => {
+                      setEditingCategoryId(cat.id);
+                      setEditingCategoryName(cat.name);
+                    }}
+                    className="text-amber-600 hover:text-amber-800 p-0.5"
+                    title="Edit"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                <button
+                  onClick={() => deleteCategory(cat.id, cat.name)}
+                  className="text-red-500 hover:text-red-700 p-0.5"
+                  title="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       </div>
