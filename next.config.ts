@@ -5,6 +5,17 @@ const nextConfig: NextConfig = {
 
     output: 'export', // ✅ Enable static export mode
     outputFileTracingRoot: __dirname, // ensures Next.js uses this folder as root
+    images: {
+      unoptimized: true, // Required for static export
+      remotePatterns: [
+        {
+          protocol: 'http',
+          hostname: 'localhost',
+          port: '',
+          pathname: '/petite-backend/**',
+        },
+      ],
+    },
 
 };
 

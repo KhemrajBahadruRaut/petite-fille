@@ -1,6 +1,7 @@
-"use client";
+"use client"
 import { motion } from "framer-motion";
 import Link from "next/link";
+import Image from "next/image";
 import React, { useState, useEffect } from "react";
 
 interface MenuItem {
@@ -141,13 +142,13 @@ const WhatWeOffer = () => {
                 style={{ fontFamily: "arial" }}
               >
                 {/* Image Wrapper with Hover */}
-                <div className="overflow-hidden">
-                  <img
-                    width={400}
-                    height={400}
+                <div className="overflow-hidden relative w-full h-60">
+                  <Image
                     src={item.image}
                     alt={item.name}
-                    className="w-full h-60 object-cover transform transition-transform duration-500 group-hover:scale-110"
+                    fill
+                    className="object-cover transform transition-transform duration-500 group-hover:scale-110"
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   />
                 </div>
                 <div className="flex justify-between mt-4 font-medium text-gray-700">

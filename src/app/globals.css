@@ -5,7 +5,6 @@
   --foreground: #171717;
 }
 
-
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
@@ -19,19 +18,21 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-
 /* for instagram marqueee */
 @keyframes marquee-rtl {
   /* Start with the second half visible */
-  0%   { transform: translateX(0); }
+  0% {
+    transform: translateX(0);
+  }
   /* Slide to show the first half: content appears moving rightwards */
-  100% { transform: translateX(-50%); }
+  100% {
+    transform: translateX(-50%);
+  }
 }
 
 .animate-marquee-rtl {
   animation: marquee-rtl 30s linear infinite;
 }
-
 
 /* for gallery arquee */
 @keyframes marquee {
@@ -60,36 +61,38 @@ body {
   animation: marquee-reverse linear infinite;
 }
 
-
 /* fonts */
 /* playfair-regular */
 @font-face {
-  font-family: 'playfair';
-  src: url('/fonts/playfair/PlayfairDisplay-Regular.ttf') format('truetype');
+  font-family: "playfair";
+  src: url("/fonts/playfair/PlayfairDisplay-Regular.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 body {
-  font-family: 'playfair', serif;
+  font-family: "playfair", serif;
 }
 
 /* playfair-Bold */
 @font-face {
-  font-family: 'playfairbold';
-  src: url('/fonts/playfair/PlayfairDisplay-Bold.ttf') format('truetype');
+  font-family: "playfairbold";
+  src: url("/fonts/playfair/PlayfairDisplay-Bold.ttf") format("truetype");
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 body {
-  font-family: 'playfairbold', serif;
+  font-family: "playfairbold", serif;
 }
 
 @font-face {
-  font-family: 'arial';
-  src: url('/fonts/arial/ARIAL.TTF') format('truetype');
+  font-family: "arial";
+  src: url("/fonts/arial/ARIAL.TTF") format("truetype");
   font-weight: normal;
   font-style: normal;
+  font-display: swap;
 }
 body {
-  font-family: 'arial', serif;
+  font-family: "arial", serif;
 }
