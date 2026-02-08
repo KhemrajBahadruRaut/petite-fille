@@ -336,7 +336,7 @@ export default function AdminMenu() {
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
             placeholder="Category name"
-            className="flex-1 border rounded-lg px-3 py-2"
+            className="flex-1 border rounded-lg px-3 py-2 "
           />
           <button
             onClick={addCategory}
