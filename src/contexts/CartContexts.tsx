@@ -154,8 +154,6 @@ const calculateTotalsAndCategories = (items: CartItem[]) => {
 
 // Reducer
 const cartReducer = (state: CartState, action: CartAction): CartState => {
-  console.log("🔄 Cart Action:", action.type, action);
-
   switch (action.type) {
     case "HYDRATE": {
       // console.log('💧 Hydrating cart state:', action.payload.state);
@@ -338,20 +336,6 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({
     dispatch({ type: "HYDRATE", payload: { state: hydratedState } });
     setIsHydrated(true);
   }, []);
-
-  // Debug effect to log state changes
-  useEffect(() => {
-    console.log("🔍 Cart State Updated:", {
-      items: state.items,
-      totalItems: state.totalItems,
-      totalPrice: state.totalPrice,
-      foodItems: state.foodItems.length,
-      merchItems: state.merchItems.length,
-      foodTotal: state.foodTotal,
-      merchTotal: state.merchTotal,
-      isHydrated,
-    });
-  }, [state, isHydrated]);
 
   // Context methods
   // Context methods wrapped in useCallback

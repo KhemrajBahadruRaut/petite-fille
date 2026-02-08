@@ -538,7 +538,7 @@ export default function Merchendise() {
           <motion.section
             key={section.categoryName}
             data-category-section
-            className="w-full bg-white py-12 px-6 md:px-12 lg:px-20"
+            className="w-full bg-white py-4 px-6 md:px-12 lg:px-20"
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             transition={{ duration: 0.7 }}
