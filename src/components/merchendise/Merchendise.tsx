@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { ShoppingCart, Heart } from 'lucide-react';
-import { useCart } from '@/contexts/CartContexts';
+import { ShoppingCart, Heart } from "lucide-react";
+import { useCart } from "@/contexts/CartContexts";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Product {
@@ -11,30 +11,41 @@ interface Product {
   price: number;
   priceDisplay: string;
   image: string;
-  category: 'merchandise';
+  category: string;
 }
 
 interface BackendProduct {
   id: number;
   name: string;
-  price: number;
+  price: string | number; // Backend returns string from MySQL
   description: string;
   image: string;
-  image_url: string;
+  image_url?: string;
   category: string;
+}
+
+interface MerchCategory {
+  id: number;
+  name: string;
+}
+
+interface CategorySection {
+  categoryName: string;
+  displayName: string;
+  products: Product[];
 }
 
 // Fixed Animation variants with proper TypeScript types
 const fadeInUp = {
   hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     transition: {
       duration: 0.6,
-      ease: "easeOut"
-    }
-  }
+      ease: "easeOut",
+    },
+  },
 } as const;
 
 const staggerContainer = {
@@ -42,9 +53,9 @@ const staggerContainer = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 } as const;
 
 // Enhanced Product Card with Cart Integration
@@ -53,22 +64,26 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
   const [quantity, setQuantity] = useState(1);
   const [showAddedMessage, setShowAddedMessage] = useState(false);
 
-  const { addToCart, addToFavorites, removeFromFavorites, isFavorite } = useCart();
+  const { addToCart, addToFavorites, removeFromFavorites, isFavorite } =
+    useCart();
   const isItemFavorite = isFavorite(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
 
     try {
-      addToCart({
-        id: product.id,
-        name: product.title,
-        price: product.price,
-        description: product.description,
-        image: product.image,
-        alt: product.title,
-        category: product.category
-      }, quantity);
+      addToCart(
+        {
+          id: product.id,
+          name: product.title,
+          price: product.price,
+          description: product.description,
+          image: product.image,
+          alt: product.title,
+          category: product.category as "food" | "merchandise",
+        },
+        quantity,
+      );
 
       setShowAddedMessage(true);
       setTimeout(() => setShowAddedMessage(false), 2000);
@@ -76,8 +91,10 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
       console.log(`Added ${quantity} x ${product.title} to cart`);
       setQuantity(1);
     } catch (error) {
-      console.error('Error adding to cart:', error);
-      alert('Error adding to cart. Make sure CartProvider is set up correctly.');
+      console.error("Error adding to cart:", error);
+      alert(
+        "Error adding to cart. Make sure CartProvider is set up correctly.",
+      );
     }
   };
 
@@ -93,13 +110,13 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
         description: product.description,
         image: product.image,
         alt: product.title,
-        category: product.category
+        category: product.category as "food" | "merchandise",
       });
     }
   };
 
   return (
-    <motion.div 
+    <motion.div
       className="flex flex-col items-center text-center group cursor-pointer"
       initial="hidden"
       whileInView="visible"
@@ -111,7 +128,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
       <div className="relative w-full max-w-sm aspect-square overflow-hidden shadow-md">
         {/* Image or placeholder */}
         {!imageError ? (
-          <motion.div 
+          <motion.div
             className="relative w-full h-full"
             whileHover={{ scale: 1.05 }}
             transition={{ duration: 0.4 }}
@@ -125,7 +142,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
             />
           </motion.div>
         ) : (
-          <motion.div 
+          <motion.div
             className="w-full h-full border border-blue-500 flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -133,11 +150,23 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           >
             <div className="text-center p-4">
               <div className="w-16 h-16 mx-auto mb-3 bg-gray-300 rounded-full flex items-center justify-center">
-                <svg className="w-8 h-8 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                <svg
+                  className="w-8 h-8 text-gray-500"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  />
                 </svg>
               </div>
-              <p className="text-xs text-gray-500 font-medium">{product.title}</p>
+              <p className="text-xs text-gray-500 font-medium">
+                {product.title}
+              </p>
             </div>
           </motion.div>
         )}
@@ -148,25 +177,28 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 
                    flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 
                    hover:bg-white shadow-md z-10"
-          aria-label={isItemFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={
+            isItemFavorite ? "Remove from favorites" : "Add to favorites"
+          }
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
         >
           <Heart
-            className={`w-4 h-4 transition-all duration-300 ${isItemFavorite
-                ? 'text-red-500 fill-red-500'
-                : 'text-gray-600 hover:text-red-500'
-              }`}
+            className={`w-4 h-4 transition-all duration-300 ${
+              isItemFavorite
+                ? "text-red-500 fill-red-500"
+                : "text-gray-600 hover:text-red-500"
+            }`}
           />
         </motion.button>
 
         {/* Hover overlay with actions */}
-        <motion.div 
+        <motion.div
           className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
           initial={{ opacity: 0 }}
           whileHover={{ opacity: 1 }}
         >
-          <motion.div 
+          <motion.div
             className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 flex flex-col items-center gap-3"
             initial={{ y: 2 }}
             whileHover={{ y: 0 }}
@@ -187,24 +219,32 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
       </div>
 
       {/* Product details */}
-      <motion.div 
+      <motion.div
         className="mt-4 space-y-2"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.2 }}
       >
-        <h3 className="text-lg font-medium text-gray-800 group-hover:text-amber-600 transition-colors duration-200" style={{ fontFamily: 'fairplay' }}>
+        <h3
+          className="text-lg font-medium text-gray-800 group-hover:text-amber-600 transition-colors duration-200"
+          style={{ fontFamily: "fairplay" }}
+        >
           {product.title}
         </h3>
-        <p className="text-sm text-gray-700" style={{ fontFamily: 'arial' }}>{product.description}</p>
-        <span className="text-base font-medium text-gray-500" style={{ fontFamily: 'arial' }}>
+        <p className="text-sm text-gray-700" style={{ fontFamily: "arial" }}>
+          {product.description}
+        </p>
+        <span
+          className="text-base font-medium text-gray-500"
+          style={{ fontFamily: "arial" }}
+        >
           {product.priceDisplay}
         </span>
 
         {/* Added to cart message */}
         <AnimatePresence>
           {showAddedMessage && (
-            <motion.div 
+            <motion.div
               className="text-center mt-2"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -225,7 +265,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
 // Reusable grid component
 function ProductGrid({ items }: { items: Product[] }) {
   return (
-    <motion.div 
+    <motion.div
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
       variants={staggerContainer}
       initial="hidden"
@@ -242,76 +282,89 @@ function ProductGrid({ items }: { items: Product[] }) {
 }
 
 export default function Merchendise() {
-  const [mugs, setMugs] = useState<Product[]>([]);
-  const [candles, setCandles] = useState<Product[]>([]);
-  const [totes, setTotes] = useState<Product[]>([]);
-  const [tshirt, setTshirts] = useState<Product[]>([]);
-  const [caps, setCaps] = useState<Product[]>([]);
-  const [hoodies, setHoodies] = useState<Product[]>([]);
+  const [categorySections, setCategorySections] = useState<CategorySection[]>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch products from backend
+  // Fetch categories and products from backend
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('http://localhost/petite-backend/merch/get_merch_items.php');
-        if (!response.ok) throw new Error('Failed to fetch products');
-        
-        const data: BackendProduct[] = await response.json();
-        
+        // Fetch categories
+        const categoriesResponse = await fetch(
+          "http://localhost/petite-backend/merch/categories/get_categories.php",
+        );
+        if (!categoriesResponse.ok)
+          throw new Error("Failed to fetch categories");
+        const categories: MerchCategory[] = await categoriesResponse.json();
+
+        // Fetch products
+        const productsResponse = await fetch(
+          "http://localhost/petite-backend/merch/get_merch_items.php",
+        );
+        if (!productsResponse.ok) throw new Error("Failed to fetch products");
+        const products: BackendProduct[] = await productsResponse.json();
+
         // Transform backend data to frontend format
-        const transformProduct = (item: BackendProduct): Product => ({
-          id: `${item.category}-${item.id}`,
-          title: item.name,
-          description: item.description || '',
-          price: item.price,
-          priceDisplay: `$${item.price.toFixed(2)} AUD`,
-          image: item.image_url || item.image,
-          category: 'merchandise'
-        });
+        const transformProduct = (item: BackendProduct): Product => {
+          const numericPrice =
+            typeof item.price === "string"
+              ? parseFloat(item.price)
+              : item.price;
+          return {
+            id: `${item.category}-${item.id}`,
+            title: item.name,
+            description: item.description || "",
+            price: numericPrice,
+            priceDisplay: `$${numericPrice.toFixed(2)} AUD`,
+            image:
+              item.image_url ||
+              `http://localhost/petite-backend/merch/uploads/${item.image}`,
+            category: item.category,
+          };
+        };
 
-        // Filter and categorize products
-        const mugProducts = data
-          .filter(item => item.category === 'mug')
-          .map(transformProduct);
-        
-        const candleProducts = data
-          .filter(item => item.category === 'candle')
-          .map(transformProduct);
-        
-        const toteProducts = data
-          .filter(item => item.category === 'tote')
-          .map(transformProduct);
+        // Group products by category and create sections only for categories with products
+        const sections: CategorySection[] = categories
+          .map((category) => {
+            const categoryProducts = products
+              .filter(
+                (item) =>
+                  item.category.toLowerCase() === category.name.toLowerCase(),
+              )
+              .map(transformProduct);
 
-        const tshirtProducts = data
-          .filter(item => item.category === 'tshirt')
-          .map(transformProduct);
+            return {
+              categoryName: category.name,
+              displayName: formatCategoryName(category.name),
+              products: categoryProducts,
+            };
+          })
+          .filter((section) => section.products.length > 0); // Only include sections with products
 
-        const capProducts = data
-          .filter(item => item.category === 'cap')
-          .map(transformProduct);
-
-        const hoodieProducts = data
-          .filter(item => item.category === 'hoodie')
-          .map(transformProduct);
-
-        setMugs(mugProducts);
-        setCandles(candleProducts);
-        setTotes(toteProducts);
-        setTshirts(tshirtProducts);
-        setCaps(capProducts);
-        setHoodies(hoodieProducts);
-        
+        setCategorySections(sections);
       } catch (error) {
-        console.error('Error fetching products:', error);
+        console.error("Error fetching data:", error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchProducts();
+    fetchData();
   }, []);
+
+  // Helper function to format category names for display
+  const formatCategoryName = (categoryName: string): string => {
+    // Handle common cases
+    const formatted = categoryName
+      .split(/[-_\s]/)
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+
+    return formatted;
+  };
 
   return (
     <div className="bg-white">
@@ -327,7 +380,7 @@ export default function Merchendise() {
         >
           <motion.h2
             className="text-3xl md:text-5xl font-semibold text-gray-800 mb-4"
-            style={{ fontFamily: 'fairplaybold' }}
+            style={{ fontFamily: "fairplaybold" }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2, duration: 0.6 }}
@@ -335,9 +388,9 @@ export default function Merchendise() {
           >
             Petite fille Merch
           </motion.h2>
-          <motion.p 
-            className="text-gray-600 mb-6 max-w-md" 
-            style={{ fontFamily: 'arial' }}
+          <motion.p
+            className="text-gray-600 mb-6 max-w-md"
+            style={{ fontFamily: "arial" }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3, duration: 0.6 }}
@@ -346,18 +399,24 @@ export default function Merchendise() {
             Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
             eiusmod tempor incididunt ut labore et dolore magna aliqua.
           </motion.p>
-          <motion.div 
+          <motion.div
             className="flex justify-center md:justify-start"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4, duration: 0.6 }}
             viewport={{ once: true }}
           >
-            <motion.button 
-              className="px-6 py-3 border border-gray-400 rounded-lg text-gray-700 hover:bg-gray-100 transition flex items-center gap-2" 
-              style={{ fontFamily: 'arial' }}
+            <motion.button
+              className="px-6 py-3 border border-gray-400 rounded-lg text-gray-700 hover:bg-gray-100 transition flex items-center gap-2"
+              style={{ fontFamily: "arial" }}
               whileHover={{ x: 5 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              onClick={() => {
+                const firstSection = document.querySelector(
+                  "section[data-category-section]",
+                );
+                firstSection?.scrollIntoView({ behavior: "smooth" });
+              }}
             >
               Take a look at our merch →
             </motion.button>
@@ -365,7 +424,7 @@ export default function Merchendise() {
         </motion.div>
 
         {/* Right Section - Collage */}
-        <motion.div 
+        <motion.div
           className="hidden md:flex flex-1 relative w-full max-w-lg h-[500px]"
           initial={{ opacity: 0, x: 30 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -373,28 +432,28 @@ export default function Merchendise() {
           viewport={{ once: true, amount: 0.3 }}
         >
           {/* Background decorative squares */}
-          <motion.div 
+          <motion.div
             className="absolute top-14 left-14 w-40 h-48 border-2 border-amber-400"
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.5, duration: 0.5 }}
             viewport={{ once: true }}
           />
-          <motion.div 
+          <motion.div
             className="absolute bottom-28 right-14 w-40 h-48 border-2 border-amber-400"
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.6, duration: 0.5 }}
             viewport={{ once: true }}
           />
-          <motion.div 
+          <motion.div
             className="absolute bottom-20 left-5 w-32 h-24 border-2 border-amber-400"
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.7, duration: 0.5 }}
             viewport={{ once: true }}
           />
-          <motion.div 
+          <motion.div
             className="absolute top-0 right-12 w-28 h-24 border-2 border-amber-400"
             initial={{ opacity: 0, scale: 0.8 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -472,139 +531,53 @@ export default function Merchendise() {
           <p className="mt-4 text-gray-600">Loading products...</p>
         </div>
       )}
-      {/* Sections - Only show if there are items */}
-      {!isLoading && mugs.length > 0 && (
-        <motion.section 
-          className="w-full bg-white py-12 px-6 md:px-12 lg:px-20"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <motion.h2
-            className="text-2xl md:text-3xl font-semibold text-center mb-10 text-gray-700" 
-            style={{ fontFamily: 'fairplaybold' }}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
+
+      {/* Dynamic Category Sections */}
+      {!isLoading &&
+        categorySections.map((section, index) => (
+          <motion.section
+            key={section.categoryName}
+            data-category-section
+            className="w-full bg-white py-12 px-6 md:px-12 lg:px-20"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            transition={{ duration: 0.7 }}
+            viewport={{ once: true, amount: 0.2 }}
           >
-            Mugs and Cups
-          </motion.h2>
-          <ProductGrid items={mugs} />
-        </motion.section>
-      )}
-      {!isLoading && candles.length > 0 && (
-        <motion.section 
-          className="w-full bg-white py-12 px-6 md:px-12 lg:px-20"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <motion.h2
-            className="text-2xl md:text-3xl font-semibold text-center mb-10 text-gray-700" 
-            style={{ fontFamily: 'fairplaybold' }}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            Scented Candles
-          </motion.h2>
-          <ProductGrid items={candles} />
-        </motion.section>
-      )}
-      {!isLoading && totes.length > 0 && (
-        <motion.section 
-          className="w-full bg-white py-12 px-6 md:px-12 lg:px-20"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <motion.h2
-            className="text-2xl md:text-3xl font-semibold text-center mb-10 text-gray-700" 
-            style={{ fontFamily: 'fairplaybold' }}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            Tote Bags
-          </motion.h2>
-          <ProductGrid items={totes} />
-        </motion.section>
-      )}
-      {!isLoading && tshirt.length > 0 && (
-        <motion.section 
-          className="w-full bg-white py-12 px-6 md:px-12 lg:px-20"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <motion.h2
-            className="text-2xl md:text-3xl font-semibold text-center mb-10 text-gray-700" 
-            style={{ fontFamily: 'fairplaybold' }}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            T-shirts
-          </motion.h2>
-          <ProductGrid items={tshirt} />
-        </motion.section>
-      )}
-      {!isLoading && caps.length > 0 && (
-        <motion.section 
-          className="w-full bg-white py-12 px-6 md:px-12 lg:px-20"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <motion.h2
-            className="text-2xl md:text-3xl font-semibold text-center mb-10 text-gray-700" 
-            style={{ fontFamily: 'fairplaybold' }}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            Caps
-          </motion.h2>
-          <ProductGrid items={caps} />
-        </motion.section>
-      )}
-      {!isLoading && hoodies.length > 0 && (
-        <motion.section 
-          className="w-full bg-white py-12 px-6 md:px-12 lg:px-20"
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.7 }}
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          <motion.h2
-            className="text-2xl md:text-3xl font-semibold text-center mb-10 text-gray-700" 
-            style={{ fontFamily: 'fairplaybold' }}
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            viewport={{ once: true }}
-          >
-            Hoodies
-          </motion.h2>
-          <ProductGrid items={hoodies} />
-        </motion.section>
-      )}
+            <motion.h2
+              className="text-2xl md:text-3xl font-semibold text-center mb-10 text-gray-700"
+              style={{ fontFamily: "fairplaybold" }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              viewport={{ once: true }}
+            >
+              {section.displayName}
+            </motion.h2>
+            <ProductGrid items={section.products} />
+          </motion.section>
+        ))}
 
       {/* Empty State */}
-      {!isLoading && mugs.length === 0 && candles.length === 0 && totes.length === 0 && tshirt.length === 0 && caps.length === 0 && hoodies.length === 0 && (
-        <div className="w-full py-20 text-center">
-          <p className="text-gray-500 text-lg">No products available at the moment.</p>
-          <p className="text-gray-400 text-sm mt-2">Please check back later!</p>
+      {!isLoading && categorySections.length === 0 && (
+        <div className="w-full py-20 bg-gray-50">
+          <div className="max-w-md mx-auto text-center px-6">
+            <div className="w-20 h-20 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
+              <ShoppingCart className="w-10 h-10 text-gray-400" />
+            </div>
+            <h3
+              className="text-2xl font-semibold text-gray-800 mb-3"
+              style={{ fontFamily: "fairplaybold" }}
+            >
+              No Products Available
+            </h3>
+            <p className="text-gray-500 text-lg mb-2">
+              We're currently updating our merchandise collection.
+            </p>
+            <p className="text-gray-400 text-sm">
+              Please check back later for exciting new products!
+            </p>
+          </div>
         </div>
       )}
     </div>
