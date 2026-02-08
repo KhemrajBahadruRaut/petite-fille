@@ -217,7 +217,7 @@ export default function AdminContacts() {
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="px-4 py-2 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
           >
             <option value="all">All Messages</option>
             <option value="new">New</option>

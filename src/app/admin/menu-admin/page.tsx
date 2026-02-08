@@ -402,13 +402,13 @@ export default function AdminMenu() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Manage Categories
         </h2>
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-3 mb-4 text-gray-500">
           <input
             type="text"
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
             placeholder="Category name"
-            className="flex-1 border rounded-lg px-3 py-2 "
+            className="flex-1 border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors px-3 py-2 "
           />
           <button
             onClick={addCategory}
@@ -437,7 +437,7 @@ export default function AdminMenu() {
               ) : (
                 <span>{cat.name}</span>
               )}
-              <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex gap-1  transition-opacity">
                 {editingCategoryId === cat.id ? (
                   <button
                     onClick={() => updateCategory(cat.id)}
