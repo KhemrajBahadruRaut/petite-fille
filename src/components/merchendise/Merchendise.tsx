@@ -80,7 +80,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           description: product.description,
           image: product.image,
           alt: product.title,
-          category: product.category as "food" | "merchandise",
+          category: "merchandise",
         },
         quantity,
       );
@@ -110,7 +110,7 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
         description: product.description,
         image: product.image,
         alt: product.title,
-        category: product.category as "food" | "merchandise",
+        category: "merchandise",
       });
     }
   };
