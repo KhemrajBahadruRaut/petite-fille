@@ -256,7 +256,7 @@ export default function AdminMerch() {
 
   /* ---------------- JSX ---------------- */
   return (
-    <div className="min-h-screen bg-gray-50 ">
+    <div className="bg-gray-50">
       {/* Toasts */}
       <div className="fixed top-6 right-6 z-50 w-96 space-y-3">
         {toasts.map((t) => (
@@ -277,12 +277,12 @@ export default function AdminMerch() {
             <input
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
-              className="flex-1 border border-gray-300 text-sm text-gray-900 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 outline-none"
+              className="flex-1 border border-gray-300 text-sm text-gray-900 px-3 py-1 focus:ring-2 focus:ring-indigo-500 outline-none"
               placeholder="New category..."
             />
             <button
               onClick={addCategory}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1.5 rounded-lg text-sm transition-colors"
+              className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-1 text-sm transition-colors"
             >
               Add
             </button>
@@ -345,18 +345,18 @@ export default function AdminMerch() {
       </div>
 
       {/* Add/Edit Form */}
-      <div className="bg-white  text-gray-600 shadow-sm p-6 mb-8">
+      <div className="bg-white  text-gray-600 shadow-sm p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-6">
           {editId ? "Edit Merch Item" : "Add New Merch Item"}
         </h2>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           <InputField label="Product Name" required>
             <input
               type="text"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-indigo-500"
               placeholder="Enter product name"
             />
           </InputField>
@@ -367,7 +367,7 @@ export default function AdminMerch() {
               step="0.01"
               value={form.price}
               onChange={(e) => setForm({ ...form, price: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-indigo-500"
               placeholder="0.00"
             />
           </InputField>
@@ -376,7 +376,7 @@ export default function AdminMerch() {
             <select
               value={form.category}
               onChange={(e) => setForm({ ...form, category: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+              className="w-full border border-gray-300 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500"
             >
               <option value="" disabled>
                 Select category
@@ -396,7 +396,7 @@ export default function AdminMerch() {
               onChange={(e) =>
                 setForm({ ...form, image: e.target.files?.[0] || null })
               }
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 file:mr-4 file:py-1 file:px-4 file:rounded file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+              className="w-full border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-indigo-500 file:mr-4 file:px-2 file:rounded file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
             />
           </InputField>
         </div>
@@ -407,7 +407,7 @@ export default function AdminMerch() {
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
             placeholder="Enter product description"
-            className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500"
+            className="w-full border border-gray-300 rounded-lg px-3 py-1 focus:ring-2 focus:ring-indigo-500"
           />
         </InputField>
 
@@ -415,7 +415,7 @@ export default function AdminMerch() {
           <button
             onClick={handleSubmit}
             disabled={isLoading}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-medium transition"
+            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 font-medium transition"
           >
             <Plus className="w-4 h-4" />
             {isLoading ? "Saving..." : editId ? "Update Item" : "Add Item"}
@@ -424,7 +424,7 @@ export default function AdminMerch() {
       </div>
 
       {/* Merch Table */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <div className="bg-white border overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">
             Merchandise Items
