@@ -136,8 +136,12 @@ export default function AdminMenu() {
         "http://localhost/petite-backend/menu/get_menu_item.php",
       );
       const data = await res.json(); // data is categories array
-      const allItems = data.flatMap((cat: { items: any; name: any }) =>
-        (cat.items || []).map((item: any) => ({
+      interface Category {
+        items: MenuItem[];
+        name: string;
+      }
+      const allItems = data.flatMap((cat: Category) =>
+        (cat.items || []).map((item: MenuItem) => ({
           ...item,
           category: cat.name, // add category name for display
         })),
@@ -166,6 +170,7 @@ export default function AdminMenu() {
   useEffect(() => {
     fetchCategories();
     fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Form validation */
@@ -408,7 +413,7 @@ export default function AdminMenu() {
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
             placeholder="Category name"
-            className="flex-1 border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors px-3 py-2 "
+            className="flex-1 border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors px-3 "
           />
           <button
             onClick={addCategory}

@@ -18,9 +18,29 @@ export default function Gallery() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost/petite-backend/gallery/gallery.php")
-      .then((res) => res.json())
-      .then((data) => setSections(data));
+    const fetchGallery = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
+        const res = await fetch(
+          "http://localhost/petite-backend/gallery/gallery.php",
+          { signal: controller.signal },
+        );
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          throw new Error(`API responded with status ${res.status}`);
+        }
+        const data = await res.json();
+        setSections(data);
+      } catch {
+        // Silently handle fetch errors - gallery will show empty state
+        setSections({});
+      }
+    };
+
+    fetchGallery();
   }, []);
 
   const rows = [

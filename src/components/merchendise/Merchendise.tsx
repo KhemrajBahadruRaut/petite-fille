@@ -534,7 +534,7 @@ export default function Merchendise() {
 
       {/* Dynamic Category Sections */}
       {!isLoading &&
-        categorySections.map((section, index) => (
+        categorySections.map((section) => (
           <motion.section
             key={section.categoryName}
             data-category-section
@@ -572,7 +572,7 @@ export default function Merchendise() {
               No Products Available
             </h3>
             <p className="text-gray-500 text-lg mb-2">
-              We're currently updating our merchandise collection.
+              We&apos;re currently updating our merchandise collection.
             </p>
             <p className="text-gray-400 text-sm">
               Please check back later for exciting new products!

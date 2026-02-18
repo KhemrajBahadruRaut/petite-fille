@@ -17,13 +17,37 @@ const slideIn = (x: number, y: number) => ({
   viewport: { once: true, amount: 0.3 },
 });
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type AboutContent = any;
+
 export default function AboutUs() {
-  const [content, setContent] = useState<any>(null);
+  const [content, setContent] = useState<AboutContent | null>(null);
 
   useEffect(() => {
-    fetch("http://localhost/petite-backend/about/aboutus.php") // <-- your PHP endpoint
-      .then((res) => res.json())
-      .then((data) => setContent(data));
+    const fetchContent = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+        const res = await fetch(
+          // "http://localhost/petite-backend/about/aboutus.php",
+          "http://localhost/petite-backend/about/aboutus.php",
+          { signal: controller.signal },
+        );
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          throw new Error(`API responded with status ${res.status}`);
+        }
+        const data = await res.json();
+        setContent(data);
+      } catch {
+        // Silently handle errors
+        setContent(null);
+      }
+    };
+
+    fetchContent();
   }, []);
 
   if (!content) return <p>Loading...</p>;

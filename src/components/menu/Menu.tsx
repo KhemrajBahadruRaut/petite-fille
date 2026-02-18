@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { ChevronRight, ShoppingCart, Heart } from "lucide-react";
+import { ShoppingCart, Heart } from "lucide-react";
 import MenuCarousel from "./MenuCarousel";
 import { useCart } from "@/contexts/CartContexts";
 import Image from "next/image";
@@ -22,7 +22,7 @@ interface Category {
 }
 
 const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
-  ({ item, index }) => {
+  function MenuItemCard({ item, index }) {
     const [imageError, setImageError] = useState(false);
     const [quantity, setQuantity] = useState(1);
     const [showAddedMessage, setShowAddedMessage] = useState(false);
@@ -59,7 +59,11 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
 
     const handleToggleFavorite = (e: React.MouseEvent) => {
       e.stopPropagation();
-      isItemFavorite ? removeFromFavorites(item.id) : addToFavorites(item);
+      if (isItemFavorite) {
+        removeFromFavorites(item.id);
+      } else {
+        addToFavorites(item);
+      }
     };
 
     return (
@@ -120,7 +124,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
         </div>
       </div>
     );
-  },
+  }
 );
 
 const MenuSection: React.FC<{ title: string; items: MenuItem[] }> = ({

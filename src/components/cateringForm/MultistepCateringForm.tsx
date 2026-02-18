@@ -57,7 +57,7 @@ const MultiStepCateringForm = () => {
   const allMenuItems: MenuItem[] = [ { id: "brunch1", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "brunch2", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "brunch3", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "brunch4", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "brunch5", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "bakery1", name: "Croissant Platter", description: "Fresh butter croissants with chocolate and almond varieties", price: 120, serves: 10, image: "🥐", category: "bakery", }, { id: "bakery2", name: "Danish Pastries", description: "Assorted danish pastries with fruit and cream cheese fillings", price: 110, serves: 10, image: "🥐", category: "bakery", }, { id: "bakery3", name: "Muffin Selection", description: "Blueberry, chocolate chip, and banana nut muffins", price: 95, serves: 10, image: "🥐", category: "bakery", }, { id: "salad1", name: "Caesar Salad", description: "Classic caesar with romaine, parmesan, croutons and house dressing", price: 90, serves: 10, image: "🥗", category: "salads", }, { id: "salad2", name: "Greek Salad", description: "Fresh vegetables with feta, olives and olive oil dressing", price: 95, serves: 10, image: "🥗", category: "salads", }, { id: "salad3", name: "Garden Salad", description: "Mixed greens with seasonal vegetables and balsamic vinaigrette", price: 85, serves: 10, image: "🥗", category: "salads", }, { id: "sandwich1", name: "Club Sandwich Platter", description: "Triple-decker sandwiches with turkey, bacon, lettuce and tomato", price: 150, serves: 10, image: "🥪", category: "sandwiches", }, { id: "sandwich2", name: "Wrap Assortment", description: "Variety of wraps including chicken caesar, veggie and tuna", price: 130, serves: 10, image: "🥪", category: "sandwiches", }, { id: "sandwich3", name: "Gourmet Sandwich Selection", description: "Artisan breads with premium meats, cheeses and spreads", price: 145, serves: 10, image: "🥪", category: "sandwiches", }, { id: "beverage1", name: "Fresh Juice Bar", description: "Orange, apple, and tropical fruit juices", price: 80, serves: 10, image: "🥤", category: "beverages", }, { id: "beverage2", name: "Coffee & Tea Station", description: "Premium coffee and selection of teas with milk and sugar", price: 70, serves: 10, image: "🥤", category: "beverages", }, { id: "beverage3", name: "Soft Drinks Package", description: "Assorted sodas, sparkling water, and iced tea", price: 60, serves: 10, image: "🥤", category: "beverages", }, ];
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
-  const updateFormData = useCallback((field: string, value: any) => {
+  const updateFormData = useCallback((field: string, value: string | number | boolean | Date | Record<string, number>) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   }, []);
 
@@ -91,7 +91,7 @@ const MultiStepCateringForm = () => {
                 min="1"
                 value={formData.numberOfGuests}
                 onChange={(e) => updateFormData("numberOfGuests", e.target.value)}
-                className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-700"
+                className="pl-10 pr-4 py-2 w-full border text-gray-800 border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-700"
                 placeholder="Enter guest count"
               />
             </div>
@@ -106,7 +106,7 @@ const MultiStepCateringForm = () => {
                 min={today}
                 value={formData.eventDate}
                 onChange={(e) => updateFormData("eventDate", e.target.value)}
-                className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-700"
+                className="pl-10 pr-4 py-2 text-gray-800 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-700"
               />
             </div>
           </div>
@@ -119,7 +119,7 @@ const MultiStepCateringForm = () => {
                 type="time"
                 value={formData.eventTime}
                 onChange={(e) => updateFormData("eventTime", e.target.value)}
-                className="pl-10 pr-4 py-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-700"
+                className="pl-10 pr-4 py-2 text-gray-800 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-700"
               />
             </div>
           </div>
@@ -132,7 +132,7 @@ const MultiStepCateringForm = () => {
                 type="text"
                 value={formData.deliveryAddress}
                 onChange={handleDeliveryChange}
-                className="px-4 py-3 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-700"
+                className="px-4 py-2 text-gray-800 w-full border border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-700"
                 placeholder="Enter your address"
               />
             </div>
@@ -146,7 +146,7 @@ const MultiStepCateringForm = () => {
               onChange={(e) => updateFormData("pickupMyself", e.target.checked)}
               className="w-5 h-5 text-gray-700 rounded"
             />
-            <label htmlFor="pickupMyself" className="text-gray-700 font-medium">I'll pick up myself</label>
+            <label htmlFor="pickupMyself" className="text-gray-700 font-medium">I&apos;ll pick up myself</label>
           </div>
         </div>
 

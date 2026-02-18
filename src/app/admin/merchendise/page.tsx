@@ -6,7 +6,6 @@ import {
   AlertCircle,
   Trash2,
   Plus,
-  Shirt,
   Pencil,
   Save,
 } from "lucide-react";
@@ -156,6 +155,7 @@ export default function AdminMerch() {
   useEffect(() => {
     fetchCategories();
     fetchItems();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ---------- Category CRUD ---------- */
@@ -209,7 +209,7 @@ export default function AdminMerch() {
       return addToast("Name & price required", "warning");
 
     const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => v && fd.append(k, v as any));
+    Object.entries(form).forEach(([k, v]) => v && fd.append(k, String(v)));
     if (editId) fd.append("id", editId.toString());
 
     const url = editId

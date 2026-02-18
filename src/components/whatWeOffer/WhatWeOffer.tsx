@@ -2,7 +2,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 interface MenuItem {
   id: number;
@@ -17,7 +17,7 @@ const WhatWeOffer = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Fallback items in case fetch fails
-  const fallbackItems = [
+  const fallbackItems = useMemo(() => [
     {
       id: 1,
       name: "Fresh Daily Special",
@@ -50,14 +50,23 @@ const WhatWeOffer = () => {
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
       image: "/whatweoffer/offer4.webp",
     },
-  ];
+  ], []);
 
   useEffect(() => {
     const fetchRandomItems = async () => {
       try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+
         const res = await fetch(
           "http://localhost/petite-backend/menu/get_menu_item.php",
+          { signal: controller.signal },
         );
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          throw new Error(`API responded with status ${res.status}`);
+        }
         const data = await res.json();
 
         // Flatten all items from all categories
@@ -84,8 +93,8 @@ const WhatWeOffer = () => {
         } else {
           setItems(fallbackItems);
         }
-      } catch (error) {
-        console.error("Error fetching menu items:", error);
+      } catch {
+        // Silently use fallback items if fetch fails
         setItems(fallbackItems);
       } finally {
         setIsLoading(false);
@@ -93,7 +102,7 @@ const WhatWeOffer = () => {
     };
 
     fetchRandomItems();
-  }, []);
+  }, [fallbackItems]);
 
   // Show loading skeleton or fallback while loading
   const displayItems = isLoading ? fallbackItems : items;
