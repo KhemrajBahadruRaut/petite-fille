@@ -294,7 +294,7 @@ export default function Merchendise() {
       try {
         // Fetch categories
         const categoriesResponse = await fetch(
-          "http://localhost/petite-backend/merch/categories/get_categories.php",
+          "https://api.gr8.com.np/petite-backend/merch/categories/get_categories.php",
         );
         if (!categoriesResponse.ok)
           throw new Error("Failed to fetch categories");
@@ -302,7 +302,7 @@ export default function Merchendise() {
 
         // Fetch products
         const productsResponse = await fetch(
-          "http://localhost/petite-backend/merch/get_merch_items.php",
+          "https://api.gr8.com.np/petite-backend/merch/get_merch_items.php",
         );
         if (!productsResponse.ok) throw new Error("Failed to fetch products");
         const products: BackendProduct[] = await productsResponse.json();
@@ -321,7 +321,7 @@ export default function Merchendise() {
             priceDisplay: `$${numericPrice.toFixed(2)} AUD`,
             image:
               item.image_url ||
-              `http://localhost/petite-backend/merch/uploads/${item.image}`,
+              `https://api.gr8.com.np/petite-backend/merch/uploads/${item.image}`,
             category: item.category,
           };
         };
@@ -534,7 +534,7 @@ export default function Merchendise() {
 
       {/* Dynamic Category Sections */}
       {!isLoading &&
-        categorySections.map((section) => (
+        categorySections.map((section, index) => (
           <motion.section
             key={section.categoryName}
             data-category-section

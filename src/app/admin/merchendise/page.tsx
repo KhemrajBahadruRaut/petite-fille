@@ -6,6 +6,7 @@ import {
   AlertCircle,
   Trash2,
   Plus,
+  Shirt,
   Pencil,
   Save,
 } from "lucide-react";
@@ -130,7 +131,7 @@ export default function AdminMerch() {
   const fetchCategories = async () => {
     try {
       const r = await fetch(
-        "http://localhost/petite-backend/merch/categories/get_categories.php",
+        "https://api.gr8.com.np/petite-backend/merch/categories/get_categories.php",
       );
       setCategories(await r.json());
     } catch {
@@ -142,7 +143,7 @@ export default function AdminMerch() {
     setIsLoading(true);
     try {
       const r = await fetch(
-        "http://localhost/petite-backend/merch/get_merch_items.php",
+        "https://api.gr8.com.np/petite-backend/merch/get_merch_items.php",
       );
       setItems(await r.json());
     } catch {
@@ -155,7 +156,6 @@ export default function AdminMerch() {
   useEffect(() => {
     fetchCategories();
     fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /* ---------- Category CRUD ---------- */
@@ -167,7 +167,7 @@ export default function AdminMerch() {
     fd.append("name", newCategory);
 
     await fetch(
-      "http://localhost/petite-backend/merch/categories/add_category.php",
+      "https://api.gr8.com.np/petite-backend/merch/categories/add_category.php",
       { method: "POST", body: fd },
     );
 
@@ -182,7 +182,7 @@ export default function AdminMerch() {
     fd.append("name", editingCategoryName);
 
     await fetch(
-      "http://localhost/petite-backend/merch/categories/update_category.php",
+      "https://api.gr8.com.np/petite-backend/merch/categories/update_category.php",
       { method: "POST", body: fd },
     );
 
@@ -195,7 +195,7 @@ export default function AdminMerch() {
     if (!confirm(`Delete category "${name}"?`)) return;
 
     await fetch(
-      `http://localhost/petite-backend/merch/categories/delete_category.php?id=${id}`,
+      `https://api.gr8.com.np/petite-backend/merch/categories/delete_category.php?id=${id}`,
       { method: "DELETE" },
     );
 
@@ -213,8 +213,8 @@ export default function AdminMerch() {
     if (editId) fd.append("id", editId.toString());
 
     const url = editId
-      ? "http://localhost/petite-backend/merch/update_item.php"
-      : "http://localhost/petite-backend/merch/add_item.php";
+      ? "https://api.gr8.com.np/petite-backend/merch/update_item.php"
+      : "https://api.gr8.com.np/petite-backend/merch/add_item.php";
 
     await fetch(url, { method: "POST", body: fd });
 
@@ -246,7 +246,7 @@ export default function AdminMerch() {
     if (!confirm(`Delete "${name}"?`)) return;
 
     await fetch(
-      `http://localhost/petite-backend/merch/delete_item.php?id=${id}`,
+      `https://api.gr8.com.np/petite-backend/merch/delete_item.php?id=${id}`,
       { method: "DELETE" },
     );
 
@@ -460,7 +460,7 @@ export default function AdminMerch() {
                       <div className="flex items-center gap-3">
                         {item.image && (
                           <img
-                            src={`http://localhost/petite-backend/merch/uploads/${item.image}`}
+                            src={`https://api.gr8.com.np/petite-backend/merch/uploads/${item.image}`}
                             alt={item.name}
                             className="w-12 h-12 rounded-lg object-cover border"
                           />

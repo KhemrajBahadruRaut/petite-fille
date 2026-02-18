@@ -22,8 +22,8 @@ export default function AdminGalleryPage() {
   const [dragOver, setDragOver] = useState(false);
   const [imageErrors, setImageErrors] = useState<{ [key: number]: boolean }>({});
 
-  const API_URL = "http://localhost/petite-backend/gallery/gallery.php";
-  const UPLOAD_URL = "http://localhost/petite-backend/gallery/upload.php";
+  const API_URL = "https://api.gr8.com.np/petite-backend/gallery/gallery.php";
+  const UPLOAD_URL = "https://api.gr8.com.np/petite-backend/gallery/upload.php";
 
   const sectionConfig = {
     1: {
@@ -65,8 +65,8 @@ export default function AdminGalleryPage() {
   const getImageUrl = (imagePath: string) => {
     const cleanPath = imagePath.replace(/^[./]+/, '');
     const baseUrls = [
-      `http://localhost/petite-backend/gallery/${cleanPath}`,
-      `http://localhost/petite-backend/gallery/${cleanPath}`,
+      `https://api.gr8.com.np/petite-backend/gallery/${cleanPath}`,
+      `https://api.gr8.com.np/petite-backend/gallery/${cleanPath}`,
       `http://localhost/${cleanPath}`,
       imagePath.startsWith('http') ? imagePath : `http://localhost${imagePath}`
     ];

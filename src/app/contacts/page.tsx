@@ -101,7 +101,7 @@ const ContactForm = () => {
         setSubmitError('');
 
         try {
-            const response = await fetch('http://localhost/petite-backend/contact/submit_contact.php', {
+            const response = await fetch('https://api.gr8.com.np/petite-backend/contact/submit_contact.php', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

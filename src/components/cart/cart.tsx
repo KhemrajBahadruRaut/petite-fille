@@ -208,7 +208,7 @@ const CartPage: React.FC = () => {
             src={
               item.image.startsWith("http")
                 ? item.image
-                : `http://localhost/petite-backend/${item.image}`
+                : `https://api.gr8.com.np/petite-backend/${item.image}`
             }
             alt={item.alt || item.name}
             className="object-cover"

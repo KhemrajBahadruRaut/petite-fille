@@ -59,7 +59,7 @@ const WhatWeOffer = () => {
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
         const res = await fetch(
-          "http://localhost/petite-backend/menu/get_menu_item.php",
+          "https://api.gr8.com.np/petite-backend/menu/get_menu_item.php",
           { signal: controller.signal },
         );
         clearTimeout(timeoutId);
@@ -79,7 +79,7 @@ const WhatWeOffer = () => {
               description:
                 item.description || "Delicious fresh item made with love",
               image: item.image
-                ? `http://localhost/petite-backend/${item.image}`
+                ? `https://api.gr8.com.np/petite-backend/${item.image}`
                 : "/whatweoffer/offer1.webp",
             })),
         );

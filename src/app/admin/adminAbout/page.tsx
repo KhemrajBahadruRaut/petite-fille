@@ -52,7 +52,8 @@ export default function AboutUsCMS() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch("http://localhost/petite-backend/about/aboutus.php");
+        // const res = await fetch("http://localhost/petite-backend/about/aboutus.php");
+        const res = await fetch("https://api.gr8.com.np/petite-backend/about/aboutus.php");
         const data: AboutUsData = await res.json();
         
         setFormData({

@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { ShoppingCart, Heart } from "lucide-react";
+import { ChevronRight, ShoppingCart, Heart } from "lucide-react";
 import MenuCarousel from "./MenuCarousel";
 import { useCart } from "@/contexts/CartContexts";
 import Image from "next/image";
@@ -59,11 +59,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
 
     const handleToggleFavorite = (e: React.MouseEvent) => {
       e.stopPropagation();
-      if (isItemFavorite) {
-        removeFromFavorites(item.id);
-      } else {
-        addToFavorites(item);
-      }
+      isItemFavorite ? removeFromFavorites(item.id) : addToFavorites(item);
     };
 
     return (
@@ -75,7 +71,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
         <div className="relative aspect-square overflow-hidden rounded-lg mb-4 shadow-md bg-gray-200">
           {!imageError ? (
             <Image
-              src={`http://localhost/petite-backend/${item.image}`}
+              src={`https://api.gr8.com.np/petite-backend/${item.image}`}
               alt={item.alt || item.name}
               fill
               className="object-cover w-full h-full transition-all duration-300 group-hover:brightness-75"
@@ -169,7 +165,7 @@ const RestaurantMenu: React.FC = () => {
     const fetchCategories = async () => {
       try {
         const res = await fetch(
-          "http://localhost/petite-backend/menu/get_menu_item.php",
+          "https://api.gr8.com.np/petite-backend/menu/get_menu_item.php",
         );
         const data: Category[] = await res.json();
         // only include categories that have items

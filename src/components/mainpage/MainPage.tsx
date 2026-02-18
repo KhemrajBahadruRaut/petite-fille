@@ -52,7 +52,7 @@ export default function MainPage() {
               className="w-3/4 max-w-sm md:max-w-md lg:max-w-lg"
             >
               <img
-                src="/homepage/PetiteFille.webp"
+                src="/homepage/petiteFille.webp"
                 alt="Left Section"
                 width={500}
                 height={500}

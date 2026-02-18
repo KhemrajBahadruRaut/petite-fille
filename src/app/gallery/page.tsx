@@ -24,7 +24,7 @@ export default function Gallery() {
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
         const res = await fetch(
-          "http://localhost/petite-backend/gallery/gallery.php",
+          "https://api.gr8.com.np/petite-backend/gallery/gallery.php",
           { signal: controller.signal },
         );
         clearTimeout(timeoutId);
@@ -76,7 +76,7 @@ export default function Gallery() {
                 >
                   <div className="overflow-hidden shadow-md">
                     <img
-                      src={`http://localhost/petite-backend/gallery/${img.image_url}`}
+                      src={`https://api.gr8.com.np/petite-backend/gallery/${img.image_url}`}
                       alt="gallery"
                       width={200}
                       height={140}
@@ -105,7 +105,7 @@ export default function Gallery() {
                 &times;
               </button>
               <img
-                src={`http://localhost/petite-backend/gallery/${selectedImage}`}
+                src={`https://api.gr8.com.np/petite-backend/gallery/${selectedImage}`}
                 alt="Enlarged"
                 className="w-full h-auto object-contain"
               />

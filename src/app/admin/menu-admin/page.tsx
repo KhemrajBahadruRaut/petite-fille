@@ -133,7 +133,7 @@ export default function AdminMenu() {
     setIsLoading(true);
     try {
       const res = await fetch(
-        "http://localhost/petite-backend/menu/get_menu_item.php",
+        "https://api.gr8.com.np/petite-backend/menu/get_menu_item.php",
       );
       const data = await res.json(); // data is categories array
       interface Category {
@@ -158,7 +158,7 @@ export default function AdminMenu() {
   const fetchCategories = async () => {
     try {
       const res = await fetch(
-        "http://localhost/petite-backend/menu/get_categories.php",
+        "https://api.gr8.com.np/petite-backend/menu/get_categories.php",
       );
       const data = await res.json();
       setCategories(data);
@@ -170,7 +170,6 @@ export default function AdminMenu() {
   useEffect(() => {
     fetchCategories();
     fetchItems();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Form validation */
@@ -209,8 +208,8 @@ export default function AdminMenu() {
 
     try {
       const url = editingItemId
-        ? `http://localhost/petite-backend/menu/update_menu_item.php?id=${editingItemId}`
-        : "http://localhost/petite-backend/menu/add_menu_item.php";
+        ? `https://api.gr8.com.np/petite-backend/menu/update_menu_item.php?id=${editingItemId}`
+        : "https://api.gr8.com.np/petite-backend/menu/add_menu_item.php";
 
       const method = editingItemId ? "POST" : "POST"; // or PATCH if backend supports
 
@@ -248,7 +247,7 @@ export default function AdminMenu() {
     if (!confirm(`Are you sure you want to delete "${itemName}"?`)) return;
     try {
       const res = await fetch(
-        `http://localhost/petite-backend/menu/delete_item.php?id=${id}`,
+        `https://api.gr8.com.np/petite-backend/menu/delete_item.php?id=${id}`,
         {
           method: "DELETE",
         },
@@ -288,7 +287,7 @@ export default function AdminMenu() {
     formData.append("name", newCategory.trim());
 
     const res = await fetch(
-      "http://localhost/petite-backend/menu/add_category.php",
+      "https://api.gr8.com.np/petite-backend/menu/add_category.php",
       {
         method: "POST",
         body: formData,
@@ -317,7 +316,7 @@ export default function AdminMenu() {
 
     try {
       const res = await fetch(
-        "http://localhost/petite-backend/menu/update_category.php",
+        "https://api.gr8.com.np/petite-backend/menu/update_category.php",
         {
           method: "POST",
           body: formData,
@@ -344,7 +343,7 @@ export default function AdminMenu() {
 
     try {
       const res = await fetch(
-        `http://localhost/petite-backend/menu/delete_category.php?id=${id}`,
+        `https://api.gr8.com.np/petite-backend/menu/delete_category.php?id=${id}`,
         {
           method: "DELETE",
         },
@@ -612,7 +611,7 @@ export default function AdminMenu() {
                       <div className="flex items-center gap-3">
                         {item.image && (
                           <img
-                            src={`http://localhost/petite-backend/${item.image}`}
+                            src={`https://api.gr8.com.np/petite-backend/${item.image}`}
                             alt={item.name}
                             className="w-12 h-12 rounded-lg object-cover border border-gray-200"
                           />

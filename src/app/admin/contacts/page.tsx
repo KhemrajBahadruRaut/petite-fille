@@ -73,7 +73,8 @@ export default function AdminContacts() {
   const fetchContacts = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch("http://localhost/petite-backend/contact/get_contacts.php");
+      // const res = await fetch("https://api.gr8.com.np/petite-backend/contact/get_contacts.php");
+      const res = await fetch("https://api.gr8.com.np/petite-backend/contact/get_contacts.php");
       if (!res.ok) throw new Error("Failed to fetch contacts");
       const data = await res.json();
       setContacts(data);
@@ -88,7 +89,6 @@ export default function AdminContacts() {
 
   useEffect(() => {
     fetchContacts();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ---------- Filter Contacts ----------
@@ -103,7 +103,7 @@ export default function AdminContacts() {
   // ---------- Update Status ----------
   const updateStatus = async (id: number, newStatus: string) => {
     try {
-      const res = await fetch("http://localhost/petite-backend/contact/update_status.php", {
+      const res = await fetch("https://api.gr8.com.np/petite-backend/contact/update_status.php", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status: newStatus }),
@@ -125,7 +125,7 @@ export default function AdminContacts() {
     
     try {
       const res = await fetch(
-        `http://localhost/petite-backend/contact/delete_contact.php?id=${id}`,
+        `https://api.gr8.com.np/petite-backend/contact/delete_contact.php?id=${id}`,
         { method: "DELETE" }
       );
       

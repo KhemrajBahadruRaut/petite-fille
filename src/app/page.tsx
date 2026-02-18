@@ -1,5 +1,5 @@
 import GiftCard from "@/components/giftCard/GiftCard";
-import InstagramFeed from "@/components/instagram/InstagramFeed";
+// import InstagramFeed from "@/components/instagram/InstagramFeed";
 import MainPage from "@/components/mainpage/MainPage";
 import Welcome from "@/components/welcomePage/welcome";
 import WhatWeOffer from "@/components/whatWeOffer/WhatWeOffer";
@@ -17,7 +17,7 @@ async function fetchInstagramPosts() {
     posts = data.data ?? [];
   }
 
-  return posts; // Make sure to return the array
+  return posts; 
 }
 
 export default async function Home() {
@@ -29,7 +29,7 @@ export default async function Home() {
       <Welcome />
       <WhatWeOffer />
       <GiftCard />
-      <InstagramFeed posts={posts} />
+      {/* <InstagramFeed posts={posts} /> */}
     </div>
   );
 }
