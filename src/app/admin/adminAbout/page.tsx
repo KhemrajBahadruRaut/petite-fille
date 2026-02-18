@@ -54,7 +54,15 @@ export default function AboutUsCMS() {
       try {
         // const res = await fetch("http://localhost/petite-backend/about/aboutus.php");
         const res = await fetch("https://api.gr8.com.np/petite-backend/about/aboutus.php");
-        const data: AboutUsData = await res.json();
+        let data: AboutUsData = await res.json();
+        
+        // Transform localhost URLs to production URLs
+        data = JSON.parse(
+          JSON.stringify(data).replace(
+            /http:\/\/localhost\/petite-backend/g,
+            "https://api.gr8.com.np/petite-backend"
+          )
+        );
         
         setFormData({
           top: {

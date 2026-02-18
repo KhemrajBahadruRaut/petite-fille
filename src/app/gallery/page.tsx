@@ -32,7 +32,16 @@ export default function Gallery() {
         if (!res.ok) {
           throw new Error(`API responded with status ${res.status}`);
         }
-        const data = await res.json();
+        let data = await res.json();
+        
+        // Transform localhost URLs to production URLs
+        data = JSON.parse(
+          JSON.stringify(data).replace(
+            /http:\/\/localhost\/petite-backend/g,
+            "https://api.gr8.com.np/petite-backend"
+          )
+        );
+        
         setSections(data);
       } catch {
         // Silently handle fetch errors - gallery will show empty state

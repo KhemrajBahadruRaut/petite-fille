@@ -167,7 +167,16 @@ const RestaurantMenu: React.FC = () => {
         const res = await fetch(
           "https://api.gr8.com.np/petite-backend/menu/get_menu_item.php",
         );
-        const data: Category[] = await res.json();
+        let data: Category[] = await res.json();
+        
+        // Transform localhost URLs to production URLs
+        data = JSON.parse(
+          JSON.stringify(data).replace(
+            /http:\/\/localhost\/petite-backend/g,
+            "https://api.gr8.com.np/petite-backend"
+          )
+        );
+        
         // only include categories that have items
         setCategories(data.filter((cat) => cat.items && cat.items.length > 0));
       } catch (error) {

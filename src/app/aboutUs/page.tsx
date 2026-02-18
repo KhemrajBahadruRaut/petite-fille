@@ -40,7 +40,16 @@ export default function AboutUs() {
           throw new Error(`API responded with status ${res.status}`);
         }
         const data = await res.json();
-        setContent(data);
+        
+        // Transform localhost URLs to production URLs
+        const transformedData = JSON.parse(
+          JSON.stringify(data).replace(
+            /http:\/\/localhost\/petite-backend/g,
+            "https://api.gr8.com.np/petite-backend"
+          )
+        );
+        
+        setContent(transformedData);
       } catch {
         // Silently handle errors
         setContent(null);
