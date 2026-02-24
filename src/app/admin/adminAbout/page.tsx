@@ -201,12 +201,12 @@ export default function AboutUsCMS() {
     }
   };
 
-  const TextEditor = ({ 
-    value, 
-    onChange, 
-    placeholder 
-  }: { 
-    value: string; 
+  const renderTextEditor = ({
+    value,
+    onChange,
+    placeholder
+  }: {
+    value: string;
     onChange: (value: string) => void;
     placeholder: string;
   }) => (
@@ -258,13 +258,13 @@ export default function AboutUsCMS() {
     </div>
   );
 
-  const ImageUploader = ({ 
-    section, 
-    field, 
-    currentImage 
-  }: { 
-    section: "top" | "bottom"; 
-    field: string; 
+  const renderImageUploader = ({
+    section,
+    field,
+    currentImage
+  }: {
+    section: "top" | "bottom";
+    field: "image1" | "image2";
     currentImage?: string;
   }) => {
     const hasImage = formData[section][field as 'image1' | 'image2'] || currentImage;
@@ -325,7 +325,7 @@ export default function AboutUsCMS() {
     );
   };
 
-  const SectionTab = ({ section, label }: { section: "top" | "bottom", label: string }) => (
+  const renderSectionTab = ({ section, label }: { section: "top" | "bottom", label: string }) => (
     <button
       type="button"
       onClick={() => setActiveSection(section)}
@@ -339,7 +339,7 @@ export default function AboutUsCMS() {
     </button>
   );
 
-  const SectionForm = ({ section }: { section: "top" | "bottom" }) => (
+  const renderSectionForm = ({ section }: { section: "top" | "bottom" }) => (
     <div className="space-y-6 p-6 bg-white border-2 border-t-0 border-gray-200 rounded-b-lg">
       {/* Paragraphs */}
       <div className="grid grid-cols-1 gap-6">
@@ -347,37 +347,37 @@ export default function AboutUsCMS() {
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Primary Paragraph
           </label>
-          <TextEditor
-            value={formData[section].paragraph1}
-            onChange={(value) => handleTextChange(section, "paragraph1", value)}
-            placeholder="Enter the main paragraph content for this section..."
-          />
+          {renderTextEditor({
+            value: formData[section].paragraph1,
+            onChange: (value) => handleTextChange(section, "paragraph1", value),
+            placeholder: "Enter the main paragraph content for this section..."
+          })}
         </div>
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Secondary Paragraph
           </label>
-          <TextEditor
-            value={formData[section].paragraph2}
-            onChange={(value) => handleTextChange(section, "paragraph2", value)}
-            placeholder="Enter additional paragraph content for this section..."
-          />
+          {renderTextEditor({
+            value: formData[section].paragraph2,
+            onChange: (value) => handleTextChange(section, "paragraph2", value),
+            placeholder: "Enter additional paragraph content for this section..."
+          })}
         </div>
       </div>
 
       {/* Images */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200">
-        <ImageUploader 
-          section={section} 
-          field="image1" 
-          currentImage={formData[section].currentImage1}
-        />
-        <ImageUploader 
-          section={section} 
-          field="image2" 
-          currentImage={formData[section].currentImage2}
-        />
+        {renderImageUploader({
+          section,
+          field: "image1",
+          currentImage: formData[section].currentImage1
+        })}
+        {renderImageUploader({
+          section,
+          field: "image2",
+          currentImage: formData[section].currentImage2
+        })}
       </div>
     </div>
   );
@@ -392,12 +392,12 @@ export default function AboutUsCMS() {
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section Tabs */}
         <div className="flex border-b border-gray-200">
-          <SectionTab section="top" label="Top Section" />
-          <SectionTab section="bottom" label="Bottom Section" />
+          {renderSectionTab({ section: "top", label: "Top Section" })}
+          {renderSectionTab({ section: "bottom", label: "Bottom Section" })}
         </div>
 
         {/* Active Section Form */}
-        <SectionForm section={activeSection} />
+        {renderSectionForm({ section: activeSection })}
 
         {/* Quick Actions */}
         <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
