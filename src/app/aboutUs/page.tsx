@@ -87,8 +87,7 @@ export default function AboutUs() {
             className="text-gray-600 max-w-2xl mx-auto text-sm sm:text-base"
             style={{ fontFamily: "arial" }}
           >
-            Lorem ipsum dolor sit amet, consectetur adipis scing elit sed do
-            eiusmod tempor incididunt
+           Welcome to Petite Fille, proudly based in Rosanna.
           </p>
         </div>
 
