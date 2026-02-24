@@ -169,7 +169,8 @@ export default function AboutUsCMS() {
         }
       });
 
-      const res = await fetch("http://localhost/petite-backend/about/aboutus_update.php", {
+      // const res = await fetch("http://localhost/petite-backend/about/aboutus_update.php", {
+      const res = await fetch("https://api.gr8.com.np/petite-backend/about/aboutus_update.php", {
         method: "POST",
         body: data,
       });
