@@ -30,8 +30,8 @@ export default function AboutUs() {
         const timeoutId = setTimeout(() => controller.abort(), 5000);
 
         const res = await fetch(
-          "http://localhost/petite-backend/about/aboutus.php",
-          // "https://api.gr8.com.np/petite-backend/about/aboutus.php",
+          // "http://localhost/petite-backend/about/aboutus.php",
+          "https://api.gr8.com.np/petite-backend/about/aboutus.php",
           { signal: controller.signal },
         );
         clearTimeout(timeoutId);
