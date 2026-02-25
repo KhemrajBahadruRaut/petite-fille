@@ -1,15 +1,15 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   X,
   CheckCircle,
   AlertCircle,
   Trash2,
   Plus,
-  Shirt,
   Pencil,
   Save,
 } from "lucide-react";
+import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 
 /* ---------------- Types ---------------- */
 interface MerchItem {
@@ -118,45 +118,44 @@ export default function AdminMerch() {
 
   const [editId, setEditId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   /* ---------- Toast helpers ---------- */
-  const addToast = (message: string, type: Toast["type"]) =>
-    setToasts((p) => [...p, { id: Date.now(), message, type }]);
+  const addToast = useCallback((message: string, type: Toast["type"]) =>
+    setToasts((p) => [...p, { id: Date.now(), message, type }]), []);
 
   const removeToast = (id: number) =>
     setToasts((p) => p.filter((t) => t.id !== id));
 
   /* ---------- Fetch ---------- */
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
-      const r = await fetch(
-        "https://api.gr8.com.np/petite-backend/merch/categories/get_categories.php",
-      );
+      const r = await fetch(apiUrl("merch/categories/get_categories.php"));
+      if (!r.ok) throw new Error("Failed to fetch categories");
       setCategories(await r.json());
     } catch {
       addToast("Failed to load categories", "error");
     }
-  };
+  }, [addToast]);
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setIsLoading(true);
     try {
-      const r = await fetch(
-        "https://api.gr8.com.np/petite-backend/merch/get_merch_items.php",
-      );
+      const r = await fetch(apiUrl("merch/get_merch_items.php"));
+      if (!r.ok) throw new Error("Failed to fetch items");
       setItems(await r.json());
     } catch {
       addToast("Failed to load merch items", "error");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [addToast]);
 
   useEffect(() => {
     fetchCategories();
     fetchItems();
-  }, []);
+  }, [fetchCategories, fetchItems]);
 
   /* ---------- Category CRUD ---------- */
   const addCategory = async () => {
@@ -166,10 +165,10 @@ export default function AdminMerch() {
     const fd = new FormData();
     fd.append("name", newCategory);
 
-    await fetch(
-      "https://api.gr8.com.np/petite-backend/merch/categories/add_category.php",
-      { method: "POST", body: fd },
-    );
+    await fetch(apiUrl("merch/categories/add_category.php"), {
+      method: "POST",
+      body: fd,
+    });
 
     setNewCategory("");
     fetchCategories();
@@ -181,10 +180,10 @@ export default function AdminMerch() {
     fd.append("id", id.toString());
     fd.append("name", editingCategoryName);
 
-    await fetch(
-      "https://api.gr8.com.np/petite-backend/merch/categories/update_category.php",
-      { method: "POST", body: fd },
-    );
+    await fetch(apiUrl("merch/categories/update_category.php"), {
+      method: "POST",
+      body: fd,
+    });
 
     setEditingCategoryId(null);
     fetchCategories();
@@ -194,10 +193,9 @@ export default function AdminMerch() {
   const deleteCategory = async (id: number, name: string) => {
     if (!confirm(`Delete category "${name}"?`)) return;
 
-    await fetch(
-      `https://api.gr8.com.np/petite-backend/merch/categories/delete_category.php?id=${id}`,
-      { method: "DELETE" },
-    );
+    await fetch(apiUrl(`merch/categories/delete_category.php?id=${id}`), {
+      method: "DELETE",
+    });
 
     fetchCategories();
     addToast("Category deleted", "success");
@@ -209,25 +207,48 @@ export default function AdminMerch() {
       return addToast("Name & price required", "warning");
 
     const fd = new FormData();
-    Object.entries(form).forEach(([k, v]) => v && fd.append(k, String(v)));
-    if (editId) fd.append("id", editId.toString());
+    fd.append("name", form.name.trim());
+    fd.append("price", form.price);
+    fd.append("description", form.description.trim());
+    fd.append("category", form.category);
+    if (form.image) {
+      fd.append("image", form.image, form.image.name);
+    }
+    if (editId !== null) {
+      fd.append("id", editId.toString());
+    }
 
-    const url = editId
-      ? "https://api.gr8.com.np/petite-backend/merch/update_item.php"
-      : "https://api.gr8.com.np/petite-backend/merch/add_item.php";
+    const url =
+      editId !== null
+        ? apiUrl("merch/update_item.php")
+        : apiUrl("merch/add_item.php");
 
-    await fetch(url, { method: "POST", body: fd });
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(url, { method: "POST", body: fd });
+      const data = await response.json().catch(() => null);
 
-    setForm({
-      name: "",
-      price: "",
-      description: "",
-      image: null,
-      category: "",
-    });
-    setEditId(null);
-    fetchItems();
-    addToast(editId ? "Item updated" : "Item added", "success");
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.error || data?.message || "Failed to save item");
+      }
+
+      setForm({
+        name: "",
+        price: "",
+        description: "",
+        image: null,
+        category: "",
+      });
+      setEditId(null);
+      await fetchItems();
+      addToast(editId !== null ? "Item updated" : "Item added", "success");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to save item";
+      addToast(message, "error");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleEdit = (item: MerchItem) => {
@@ -245,10 +266,7 @@ export default function AdminMerch() {
   const deleteItem = async (id: number, name: string) => {
     if (!confirm(`Delete "${name}"?`)) return;
 
-    await fetch(
-      `https://api.gr8.com.np/petite-backend/merch/delete_item.php?id=${id}`,
-      { method: "DELETE" },
-    );
+    await fetch(apiUrl(`merch/delete_item.php?id=${id}`), { method: "DELETE" });
 
     fetchItems();
     addToast("Item deleted", "success");
@@ -414,11 +432,11 @@ export default function AdminMerch() {
         <div className="flex justify-end pt-4">
           <button
             onClick={handleSubmit}
-            disabled={isLoading}
+            disabled={isLoading || isSubmitting}
             className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 font-medium transition"
           >
             <Plus className="w-4 h-4" />
-            {isLoading ? "Saving..." : editId ? "Update Item" : "Add Item"}
+            {isSubmitting ? "Saving..." : editId ? "Update Item" : "Add Item"}
           </button>
         </div>
       </div>
@@ -460,7 +478,7 @@ export default function AdminMerch() {
                       <div className="flex items-center gap-3">
                         {item.image && (
                           <img
-                            src={`https://api.gr8.com.np/petite-backend/merch/uploads/${item.image}`}
+                            src={normalizeApiAssetUrl(`merch/uploads/${item.image}`)}
                             alt={item.name}
                             className="w-12 h-12 rounded-lg object-cover border"
                           />
