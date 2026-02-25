@@ -2,7 +2,8 @@
 
 import { useState, useEffect, ReactNode, useMemo } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { clearAdminSession, isAdminAuthenticated } from "@/utils/adminAuth";
 
 interface MenuItem {
   href: string;
@@ -54,6 +55,7 @@ function CurrentDateTime() {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
+  const router = useRouter();
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(false);
   const [expandedSections, setExpandedSections] = useState<
@@ -62,12 +64,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [animatingItems, setAnimatingItems] = useState<Record<string, boolean>>(
     {},
   );
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const pathname = usePathname();
 
   const menuItems = useMemo<MenuItemType[]>(
     () => [
       {
-        href: "/admin",
+        href: "/admin/dashboard",
         label: "Dashboard",
         shortLabel: "Dash",
         icon: (
@@ -224,7 +228,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {
         href: "/admin/contacts",
         label: "Contacts",
-        shortLabel: "cintacts",
+        shortLabel: "Contacts",
         icon: (
           <svg
             className="w-5 h-5"
@@ -255,30 +259,73 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </svg>
         ),
       },
-    // {
-    //   href: '/admin/reservations',
-    //   label: 'Reservations',
-    //   shortLabel: 'Bookings',
-    //   icon: (
-    //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    //     </svg>
-    //   )
-    // },
-    // {
-    //   href: '/admin/settings',
-    //   label: 'Settings',
-    //   shortLabel: 'Settings',
-    //   icon: (
-    //     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-    //       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    //     </svg>
-    //   )
-    // },
+      {
+        href: "/admin/reservations",
+        label: "Reservations",
+        shortLabel: "Bookings",
+        icon: (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+            />
+          </svg>
+        ),
+      },
+      {
+        href: "/admin/settings",
+        label: "Settings",
+        shortLabel: "Settings",
+        icon: (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+          </svg>
+        ),
+      },
     ],
     [],
   );
+
+  const isLoginPage = pathname === "/admin";
+
+  useEffect(() => {
+    if (isLoginPage) {
+      setAuthChecked(true);
+      setIsAuthenticated(false);
+      return;
+    }
+
+    const authenticated = isAdminAuthenticated();
+    setIsAuthenticated(authenticated);
+    setAuthChecked(true);
+
+    if (!authenticated) {
+      router.replace("/admin");
+    }
+  }, [isLoginPage, pathname, router]);
 
   // Auto-expand CMS section if we're on a CMS page
   useEffect(() => {
@@ -337,6 +384,11 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  const handleLogout = (): void => {
+    clearAdminSession();
+    router.push("/admin");
+  };
+
   const getPageTitle = (): string => {
     // Check CMS section first
     const cmsSection = menuItems.find(
@@ -365,6 +417,22 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const isMenuSection = (item: MenuItemType): item is MenuSection => {
     return "type" in item && item.type === "section";
   };
+
+  if (isLoginPage) {
+    return <>{children}</>;
+  }
+
+  if (!authChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-600">
+        Checking admin session...
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50">
@@ -770,12 +838,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
             <div className="flex items-center space-x-6">
               {/* Notification Bell */}
-              <button className="relative p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:scale-110 group">
+              {/* <button className="relative p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:scale-110 group">
                 <svg
                   className="w-5 h-5"
                   fill="none"
                   stroke="currentColor"
-                  viewBox="0 0 24 24"
+                  viewBox="0 0 54 34"
                 >
                   <path
                     strokeLinecap="round"
@@ -785,9 +853,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   />
                 </svg>
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              </button>
+              </button> */}
 
               <CurrentDateTime />
+
+              <button
+                onClick={handleLogout}
+                className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+              >
+                Logout
+              </button>
 
               {/* Profile Avatar */}
               <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-110 group">
