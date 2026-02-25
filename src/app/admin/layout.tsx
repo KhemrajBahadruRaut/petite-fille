@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -26,6 +26,33 @@ interface AdminLayoutProps {
   children: ReactNode;
 }
 
+function CurrentDateTime() {
+  const [now, setNow] = useState<Date>(() => new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60_000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="text-right hidden sm:block">
+      <p className="text-sm font-semibold text-slate-800">
+        {now.toLocaleDateString("en-US", {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        })}
+      </p>
+      <p className="text-xs text-slate-500">
+        {now.toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })}
+      </p>
+    </div>
+  );
+}
+
 export default function AdminLayout({ children }: AdminLayoutProps) {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(true);
   const [isMobile, setIsMobile] = useState<boolean>(false);
@@ -35,199 +62,199 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const [animatingItems, setAnimatingItems] = useState<Record<string, boolean>>(
     {},
   );
-  const [currentTime, setCurrentTime] = useState<string>("");
   const pathname = usePathname();
 
-  const menuItems: MenuItemType[] = [
-    {
-      href: "/admin",
-      label: "Dashboard",
-      shortLabel: "Dash",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"
-          />
-        </svg>
-      ),
-    },
-    {
-      type: "section",
-      id: "cms",
-      label: "Content Management",
-      shortLabel: "CMS",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
-          />
-        </svg>
-      ),
-      children: [
-        {
-          href: "/admin/menu-admin",
-          label: "Menu",
-          shortLabel: "Menu",
-          icon: (
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-              />
-            </svg>
-          ),
-        },
-        {
-          href: "/admin/gallery",
-          label: "Gallery",
-          shortLabel: "Gallery",
-          icon: (
-            <svg
-              className="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-          ),
-        },
-        {
-          href: "/admin/adminAbout",
-          label: "About",
-          shortLabel: "About",
-          icon: (
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5.121 17.804A8 8 0 0112 15a8 8 0 016.879 2.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-              />
-            </svg>
-          ),
-        },
-        {
-          href: "/admin/merchendise",
-          label: "Merchendise",
-          shortLabel: "Merch",
-          icon: (
-            <svg
-              className="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M5 8h14l1 12H4L5 8z"
-              />
-              <path
-                strokeWidth={2}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M9 8a3 3 0 016 0"
-              />
-            </svg>
-          ),
-        },
-      ],
-    },
-    {
-      href: "/admin/orders",
-      label: "Orders",
-      shortLabel: "Orders",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-          />
-        </svg>
-      ),
-    },
-    {
-      href: "/admin/contacts",
-      label: "Contacts",
-      shortLabel: "cintacts",
-      icon: (
-        <svg
-          className="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 4a2 2 0 00-2 2v12a2 2 0 002 2h14a1 1 0 001-1v-1h-3a2 2 0 01-2-2V8a2 2 0 012-2h3V5a1 1 0 00-1-1H5z"
-          />
-          <circle
-            cx="12"
-            cy="10"
-            r="3"
-            strokeWidth={2}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 16a4 4 0 016 0"
-          />
-        </svg>
-      ),
-    },
+  const menuItems = useMemo<MenuItemType[]>(
+    () => [
+      {
+        href: "/admin",
+        label: "Dashboard",
+        shortLabel: "Dash",
+        icon: (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M8 5a2 2 0 012-2h4a2 2 0 012 2v6H8V5z"
+            />
+          </svg>
+        ),
+      },
+      {
+        type: "section",
+        id: "cms",
+        label: "Content Management",
+        shortLabel: "CMS",
+        icon: (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            />
+          </svg>
+        ),
+        children: [
+          {
+            href: "/admin/menu-admin",
+            label: "Menu",
+            shortLabel: "Menu",
+            icon: (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                />
+              </svg>
+            ),
+          },
+          {
+            href: "/admin/gallery",
+            label: "Gallery",
+            shortLabel: "Gallery",
+            icon: (
+              <svg
+                className="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            ),
+          },
+          {
+            href: "/admin/adminAbout",
+            label: "About",
+            shortLabel: "About",
+            icon: (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5.121 17.804A8 8 0 0112 15a8 8 0 016.879 2.804M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                />
+              </svg>
+            ),
+          },
+          {
+            href: "/admin/merchendise",
+            label: "Merchendise",
+            shortLabel: "Merch",
+            icon: (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 8h14l1 12H4L5 8z"
+                />
+                <path
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 8a3 3 0 016 0"
+                />
+              </svg>
+            ),
+          },
+        ],
+      },
+      {
+        href: "/admin/orders",
+        label: "Orders",
+        shortLabel: "Orders",
+        icon: (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
+            />
+          </svg>
+        ),
+      },
+      {
+        href: "/admin/contacts",
+        label: "Contacts",
+        shortLabel: "cintacts",
+        icon: (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 4a2 2 0 00-2 2v12a2 2 0 002 2h14a1 1 0 001-1v-1h-3a2 2 0 01-2-2V8a2 2 0 012-2h3V5a1 1 0 00-1-1H5z"
+            />
+            <circle
+              cx="12"
+              cy="10"
+              r="3"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9 16a4 4 0 016 0"
+            />
+          </svg>
+        ),
+      },
     // {
     //   href: '/admin/reservations',
     //   label: 'Reservations',
@@ -249,7 +276,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     //     </svg>
     //   )
     // },
-  ];
+    ],
+    [],
+  );
 
   // Auto-expand CMS section if we're on a CMS page
   useEffect(() => {
@@ -263,22 +292,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       setExpandedSections((prev) => ({ ...prev, cms: true }));
     }
   }, [pathname]);
-
-  // Update current time
-  useEffect(() => {
-    const updateTime = () => {
-      setCurrentTime(
-        new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      );
-    };
-
-    updateTime();
-    const interval = setInterval(updateTime, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   // Optimized resize handler with debounce
   useEffect(() => {
@@ -774,17 +787,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
               </button>
 
-              {/* Date and Time */}
-              <div className="text-right hidden sm:block">
-                <p className="text-sm font-semibold text-slate-800">
-                  {new Date().toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </p>
-                <p className="text-xs text-slate-500">{currentTime}</p>
-              </div>
+              <CurrentDateTime />
 
               {/* Profile Avatar */}
               <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-110 group">
