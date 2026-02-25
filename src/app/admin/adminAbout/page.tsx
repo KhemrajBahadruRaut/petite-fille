@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 
 interface AboutUsData {
   top: {
@@ -47,22 +48,17 @@ export default function AboutUsCMS() {
     top: { image1?: string; image2?: string };
     bottom: { image1?: string; image2?: string };
   }>({ top: {}, bottom: {} });
+  const previewUrlsRef = useRef(previewUrls);
 
   // Fetch current data
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // const res = await fetch("http://localhost/petite-backend/about/aboutus.php");
-        const res = await fetch("https://api.gr8.com.np/petite-backend/about/aboutus.php");
-        let data: AboutUsData = await res.json();
-        
-        // Transform localhost URLs to production URLs
-        data = JSON.parse(
-          JSON.stringify(data).replace(
-            /http:\/\/localhost\/petite-backend/g,
-            "https://api.gr8.com.np/petite-backend"
-          )
-        );
+        const res = await fetch(apiUrl("about/aboutus.php"));
+        if (!res.ok) {
+          throw new Error("Failed to fetch about data");
+        }
+        const data: AboutUsData = await res.json();
         
         setFormData({
           top: {
@@ -70,16 +66,24 @@ export default function AboutUsCMS() {
             paragraph2: data.top?.paragraph2 || "",
             image1: null,
             image2: null,
-            currentImage1: data.top?.image1,
+            currentImage1: data.top?.image1
+              ? normalizeApiAssetUrl(data.top.image1)
+              : "",
             currentImage2: data.top?.image2
+              ? normalizeApiAssetUrl(data.top.image2)
+              : ""
           },
           bottom: {
             paragraph1: data.bottom?.paragraph1 || "",
             paragraph2: data.bottom?.paragraph2 || "",
             image1: null,
             image2: null,
-            currentImage1: data.bottom?.image1,
+            currentImage1: data.bottom?.image1
+              ? normalizeApiAssetUrl(data.bottom.image1)
+              : "",
             currentImage2: data.bottom?.image2
+              ? normalizeApiAssetUrl(data.bottom.image2)
+              : ""
           }
         });
       } catch (error) {
@@ -102,6 +106,13 @@ export default function AboutUsCMS() {
 
   const handleFileChange = (section: "top" | "bottom", field: string, file: File | null) => {
     if (file) {
+      const previousPreview = previewUrls[section][
+        field as keyof typeof previewUrls.top
+      ];
+      if (previousPreview) {
+        URL.revokeObjectURL(previousPreview);
+      }
+
       // Create preview URL
       const previewUrl = URL.createObjectURL(file);
       setPreviewUrls(prev => ({
@@ -121,6 +132,20 @@ export default function AboutUsCMS() {
       }
     }));
   };
+
+  useEffect(() => {
+    previewUrlsRef.current = previewUrls;
+  }, [previewUrls]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(previewUrlsRef.current).forEach((section) => {
+        Object.values(section).forEach((url) => {
+          if (url) URL.revokeObjectURL(url);
+        });
+      });
+    };
+  }, []);
 
   const removeImage = (section: "top" | "bottom", field: string) => {
     setFormData(prev => ({
@@ -169,8 +194,7 @@ export default function AboutUsCMS() {
         }
       });
 
-      // const res = await fetch("http://localhost/petite-backend/about/aboutus_update.php", {
-      const res = await fetch("https://api.gr8.com.np/petite-backend/about/aboutus_update.php", {
+      const res = await fetch(apiUrl("about/aboutus_update.php"), {
         method: "POST",
         body: data,
       });
