@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Marquee from "react-fast-marquee";
 import { motion, AnimatePresence } from "framer-motion";
+import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 
 interface Image {
   id: number;
@@ -13,9 +14,37 @@ type SectionData = {
   [key: number]: Image[];
 };
 
+const resolveGalleryImageUrl = (imagePath: string) => {
+  if (!imagePath) return "";
+  if (/^https?:\/\//i.test(imagePath)) return normalizeApiAssetUrl(imagePath);
+  const cleanPath = imagePath.replace(/^[./]+/, "");
+  return apiUrl(`gallery/${cleanPath}`);
+};
+
 export default function Gallery() {
   const [sections, setSections] = useState<SectionData>({});
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isTabVisible, setIsTabVisible] = useState(true);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      setIsTabVisible(document.visibilityState === "visible");
+    };
+
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const updateMotionPreference = () =>
+      setPrefersReducedMotion(mediaQuery.matches);
+
+    updateMotionPreference();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    mediaQuery.addEventListener("change", updateMotionPreference);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      mediaQuery.removeEventListener("change", updateMotionPreference);
+    };
+  }, []);
 
   useEffect(() => {
     const fetchGallery = async () => {
@@ -24,7 +53,7 @@ export default function Gallery() {
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
         const res = await fetch(
-          "https://api.gr8.com.np/petite-backend/gallery/gallery.php",
+          apiUrl("gallery/gallery.php"),
           { signal: controller.signal },
         );
         clearTimeout(timeoutId);
@@ -32,17 +61,18 @@ export default function Gallery() {
         if (!res.ok) {
           throw new Error(`API responded with status ${res.status}`);
         }
-        let data = await res.json();
-        
-        // Transform localhost URLs to production URLs
-        data = JSON.parse(
-          JSON.stringify(data).replace(
-            /http:\/\/localhost\/petite-backend/g,
-            "https://api.gr8.com.np/petite-backend"
-          )
-        );
-        
-        setSections(data);
+        const data: SectionData = await res.json();
+
+        const normalizedSections: SectionData = {};
+        Object.entries(data || {}).forEach(([key, images]) => {
+          const sectionKey = Number(key);
+          normalizedSections[sectionKey] = (images || []).map((image) => ({
+            ...image,
+            image_url: resolveGalleryImageUrl(image.image_url),
+          }));
+        });
+
+        setSections(normalizedSections);
       } catch {
         // Silently handle fetch errors - gallery will show empty state
         setSections({});
@@ -52,11 +82,17 @@ export default function Gallery() {
     fetchGallery();
   }, []);
 
-  const rows = [
-    { direction: "left", images: sections[1] || [] },
-    { direction: "right", images: sections[2] || [] },
-    { direction: "left", images: sections[3] || [] },
-  ];
+  const rows = useMemo(
+    () =>
+      [
+        { direction: "left", images: sections[1] || [] },
+        { direction: "right", images: sections[2] || [] },
+        { direction: "left", images: sections[3] || [] },
+      ].filter((row) => row.images.length > 0),
+    [sections],
+  );
+
+  const shouldAnimateMarquee = isTabVisible && !prefersReducedMotion;
 
   return (
     <div className="bg-white pb-20">
@@ -69,34 +105,54 @@ export default function Gallery() {
         </motion.div>
 
         <div className="space-y-8">
-          {rows.map((row, i) => (
-            <Marquee
-              key={i}
-              direction={row.direction as "left" | "right"}
-              speed={40}
-              pauseOnHover
-              gradient={false}
-            >
-              {row.images.map((img) => (
-                <motion.div
-                  key={img.id}
-                  className="mx-3 cursor-pointer"
-                  onClick={() => setSelectedImage(img.image_url)}
-                >
-                  <div className="overflow-hidden shadow-md">
-                    <img
-                      src={`https://api.gr8.com.np/petite-backend/gallery/${img.image_url}`}
-                      alt="gallery"
-                      width={200}
-                      height={140}
-                      className="object-cover transition-transform duration-500 hover:scale-110"
-                    />
+          {rows.map((row, i) => {
+            const rowContent = row.images.map((img) => (
+              <button
+                key={img.id}
+                className="mx-3 cursor-pointer"
+                onClick={() => setSelectedImage(img.image_url)}
+                type="button"
+              >
+                <div className="overflow-hidden shadow-md">
+                  <img
+                    src={img.image_url}
+                    alt="gallery"
+                    width={200}
+                    height={140}
+                    loading="lazy"
+                    decoding="async"
+                    className="object-cover transition-transform duration-500 hover:scale-110"
+                  />
+                </div>
+              </button>
+            ));
 
-                  </div>
-                </motion.div>
-              ))}
-            </Marquee>
-          ))}
+            if (!shouldAnimateMarquee) {
+              return (
+                <div
+                  key={i}
+                  className="flex overflow-x-auto gap-3 pb-2"
+                  style={{ scrollbarWidth: "thin" }}
+                >
+                  {rowContent}
+                </div>
+              );
+            }
+
+            return (
+              <Marquee
+                key={i}
+                direction={row.direction as "left" | "right"}
+                speed={24}
+                pauseOnHover
+                pauseOnClick
+                gradient={false}
+                play={shouldAnimateMarquee}
+              >
+                {rowContent}
+              </Marquee>
+            );
+          })}
         </div>
       </section>
 
@@ -114,7 +170,7 @@ export default function Gallery() {
                 &times;
               </button>
               <img
-                src={`https://api.gr8.com.np/petite-backend/gallery/${selectedImage}`}
+                src={selectedImage}
                 alt="Enlarged"
                 className="w-full h-auto object-contain"
               />
