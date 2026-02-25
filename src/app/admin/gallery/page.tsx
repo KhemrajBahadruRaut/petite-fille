@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
+import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 
 interface Image {
   id: number;
@@ -15,6 +16,7 @@ type SectionData = {
 export default function AdminGalleryPage() {
   const [sections, setSections] = useState<SectionData>({});
   const [files, setFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [section, setSection] = useState(1);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
@@ -22,8 +24,8 @@ export default function AdminGalleryPage() {
   const [dragOver, setDragOver] = useState(false);
   const [imageErrors, setImageErrors] = useState<{ [key: number]: boolean }>({});
 
-  const API_URL = "https://api.gr8.com.np/petite-backend/gallery/gallery.php";
-  const UPLOAD_URL = "https://api.gr8.com.np/petite-backend/gallery/upload.php";
+  const API_URL = apiUrl("gallery/gallery.php");
+  const UPLOAD_URL = apiUrl("gallery/upload.php");
 
   const sectionConfig = {
     1: {
@@ -61,22 +63,14 @@ export default function AdminGalleryPage() {
     }
   };
 
-  // Fix image URL construction
-  const getImageUrl = (imagePath: string) => {
-    const cleanPath = imagePath.replace(/^[./]+/, '');
-    const baseUrls = [
-      `https://api.gr8.com.np/petite-backend/gallery/${cleanPath}`,
-      `https://api.gr8.com.np/petite-backend/gallery/${cleanPath}`,
-      `http://localhost/${cleanPath}`,
-      imagePath.startsWith('http') ? imagePath : `http://localhost${imagePath}`
-    ];
-    
-    return baseUrls[0];
-  };
+  const getImageUrl = useCallback((imagePath: string) => {
+    if (imagePath.startsWith("http")) return normalizeApiAssetUrl(imagePath);
+    const cleanPath = imagePath.replace(/^[./]+/, "");
+    return apiUrl(`gallery/${cleanPath}`);
+  }, []);
 
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
-      console.log('Fetching images from:', API_URL);
       const res = await fetch(API_URL);
       
       if (!res.ok) {
@@ -84,17 +78,36 @@ export default function AdminGalleryPage() {
       }
       
       const data = await res.json();
-      console.log('Fetched images data:', data);
-      setSections(data);
+      const normalizedSections: SectionData = {};
+
+      Object.entries(data || {}).forEach(([sectionKey, images]) => {
+        normalizedSections[Number(sectionKey)] = (images as Image[]).map(
+          (image) => ({
+            ...image,
+            image_url: getImageUrl(image.image_url),
+          }),
+        );
+      });
+
+      setSections(normalizedSections);
     } catch (error) {
       console.error("Error fetching images:", error);
       setSections({ 1: [], 2: [], 3: [] });
     }
-  };
+  }, [API_URL, getImageUrl]);
+
+  useEffect(() => {
+    const urls = files.map((file) => URL.createObjectURL(file));
+    setPreviewUrls(urls);
+
+    return () => {
+      urls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [files]);
 
   useEffect(() => {
     fetchImages();
-  }, []);
+  }, [fetchImages]);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(e.target.files || []);
@@ -138,7 +151,6 @@ export default function AdminGalleryPage() {
   };
 
   const handleImageError = (imageId: number) => {
-    console.log('Image load error for ID:', imageId);
     setImageErrors(prev => ({ ...prev, [imageId]: true }));
   };
 
@@ -209,11 +221,9 @@ export default function AdminGalleryPage() {
         alert('All uploads failed. Please check the console and ensure the server is running.');
       }
 
-      // Clear successful uploads, keep failed ones for retry
-      setFiles(prev => prev.filter((_, index) => {
-        const fileKey = `${prev[index].name}-${index}`;
-        return uploadProgress[fileKey] === -1;
-      }));
+      // Clear selected files after upload to release memory from previews and file buffers.
+      setFiles([]);
+      setImageErrors({});
 
     } catch (error) {
       console.error('Upload process error:', error);
@@ -248,15 +258,12 @@ export default function AdminGalleryPage() {
   const clearSelection = () => {
     setFiles([]);
     setUploadProgress({});
+    setImageErrors({});
   };
 
   const removeFile = (indexToRemove: number) => {
     setFiles(prev => prev.filter((_, index) => index !== indexToRemove));
   };
-
-  useEffect(() => {
-    console.log('Current sections state:', sections);
-  }, [sections]);
 
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6 lg:p-8">
@@ -305,7 +312,7 @@ export default function AdminGalleryPage() {
                         return (
                           <div key={index} className="relative">
                             <img
-                              src={URL.createObjectURL(file)}
+                              src={previewUrls[index]}
                               alt={`Preview ${index + 1}`}
                               className="w-full h-20 object-cover rounded-lg shadow-sm"
                             />
@@ -541,7 +548,7 @@ export default function AdminGalleryPage() {
                           </div>
                         ) : (
                           <img
-                            src={getImageUrl(img.image_url)}
+                            src={img.image_url}
                             alt={`Section ${sec} image ${img.id}`}
                             className="w-full h-32 object-cover"
                             onError={() => handleImageError(img.id)}
