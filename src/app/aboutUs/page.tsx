@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import "../globals.css";
+import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 
 const fadeIn = {
   initial: { opacity: 0 },
@@ -17,42 +18,52 @@ const slideIn = (x: number, y: number) => ({
   viewport: { once: true, amount: 0.3 },
 });
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AboutContent = any;
+interface AboutSection {
+  paragraph1: string;
+  paragraph2: string;
+  image1?: string;
+  image2?: string;
+}
+
+interface AboutContent {
+  top: AboutSection;
+  bottom: AboutSection;
+}
+
+function normalizeAboutSection(section?: AboutSection): AboutSection {
+  return {
+    paragraph1: section?.paragraph1 || "",
+    paragraph2: section?.paragraph2 || "",
+    image1: section?.image1 ? normalizeApiAssetUrl(section.image1) : "",
+    image2: section?.image2 ? normalizeApiAssetUrl(section.image2) : "",
+  };
+}
 
 export default function AboutUs() {
   const [content, setContent] = useState<AboutContent | null>(null);
 
   useEffect(() => {
     const fetchContent = async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-
-        const res = await fetch(
-          // "http://localhost/petite-backend/about/aboutus.php",
-          "https://api.gr8.com.np/petite-backend/about/aboutus.php",
-          { signal: controller.signal },
-        );
-        clearTimeout(timeoutId);
+        const res = await fetch(apiUrl("about/aboutus.php"), {
+          signal: controller.signal,
+        });
 
         if (!res.ok) {
           throw new Error(`API responded with status ${res.status}`);
         }
-        const data = await res.json();
-        
-        // Transform localhost URLs to production URLs
-        const transformedData = JSON.parse(
-          JSON.stringify(data).replace(
-            /http:\/\/localhost\/petite-backend/g,
-            "https://api.gr8.com.np/petite-backend"
-          )
-        );
-        
-        setContent(transformedData);
+        const data: AboutContent = await res.json();
+        setContent({
+          top: normalizeAboutSection(data.top),
+          bottom: normalizeAboutSection(data.bottom),
+        });
       } catch {
         // Silently handle errors
         setContent(null);
+      } finally {
+        clearTimeout(timeoutId);
       }
     };
 
