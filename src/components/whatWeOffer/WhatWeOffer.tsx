@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import React, { useState, useEffect, useMemo } from "react";
+import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 
 interface MenuItem {
   id: number;
@@ -11,6 +12,15 @@ interface MenuItem {
   description: string;
   image: string;
 }
+
+const pickRandomItems = <T,>(items: T[], count: number): T[] => {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
+};
 
 const WhatWeOffer = () => {
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -59,7 +69,7 @@ const WhatWeOffer = () => {
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
         const res = await fetch(
-          "https://api.gr8.com.np/petite-backend/menu/get_menu_item.php",
+          apiUrl("menu/get_menu_item.php"),
           { signal: controller.signal },
         );
         clearTimeout(timeoutId);
@@ -67,15 +77,7 @@ const WhatWeOffer = () => {
         if (!res.ok) {
           throw new Error(`API responded with status ${res.status}`);
         }
-        let data = await res.json();
-        
-        // Transform localhost URLs to production URLs
-        data = JSON.parse(
-          JSON.stringify(data).replace(
-            /http:\/\/localhost\/petite-backend/g,
-            "https://api.gr8.com.np/petite-backend"
-          )
-        );
+        const data = await res.json();
 
         // Flatten all items from all categories
         const allItems: MenuItem[] = data.flatMap(
@@ -87,14 +89,12 @@ const WhatWeOffer = () => {
               description:
                 item.description || "Delicious fresh item made with love",
               image: item.image
-                ? `https://api.gr8.com.np/petite-backend/${item.image}`
+                ? normalizeApiAssetUrl(item.image)
                 : "/whatweoffer/offer1.webp",
             })),
         );
 
-        // Shuffle and take 4 random items
-        const shuffled = allItems.sort(() => Math.random() - 0.5);
-        const randomFour = shuffled.slice(0, 4);
+        const randomFour = pickRandomItems(allItems, 4);
 
         if (randomFour.length > 0) {
           setItems(randomFour);

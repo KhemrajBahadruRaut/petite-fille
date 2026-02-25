@@ -1,8 +1,10 @@
 "use client";
-import React, { useState, useEffect } from "react";
+
+import React, { useEffect, useState } from "react";
 import { ShoppingCart, Heart } from "lucide-react";
+import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContexts";
-import { motion, AnimatePresence } from "framer-motion";
+import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 
 interface Product {
   id: string;
@@ -17,7 +19,7 @@ interface Product {
 interface BackendProduct {
   id: number;
   name: string;
-  price: string | number; // Backend returns string from MySQL
+  price: string | number;
   description: string;
   image: string;
   image_url?: string;
@@ -35,38 +37,48 @@ interface CategorySection {
   products: Product[];
 }
 
-// Fixed Animation variants with proper TypeScript types
-const fadeInUp = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: "easeOut",
-    },
-  },
-} as const;
+const normalizeCategoryKey = (value: string) => value.trim().toLowerCase();
 
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-    },
-  },
-} as const;
+const formatCategoryName = (categoryName: string): string =>
+  categoryName
+    .split(/[-_\s]/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(" ");
 
-// Enhanced Product Card with Cart Integration
-const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
+const transformProduct = (item: BackendProduct): Product => {
+  const parsedPrice =
+    typeof item.price === "number" ? item.price : Number(item.price);
+  const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
+  const imagePath = item.image_url || `merch/uploads/${item.image || ""}`;
+
+  return {
+    id: `${item.category}-${item.id}`,
+    title: item.name,
+    description: item.description || "",
+    price: safePrice,
+    priceDisplay: `$${safePrice.toFixed(2)} AUD`,
+    image: normalizeApiAssetUrl(imagePath),
+    category: item.category,
+  };
+};
+
+const ProductCard = React.memo(function ProductCard({
+  product,
+}: {
+  product: Product;
+}) {
   const [imageError, setImageError] = useState(false);
-  const [quantity, setQuantity] = useState(1);
   const [showAddedMessage, setShowAddedMessage] = useState(false);
-
   const { addToCart, addToFavorites, removeFromFavorites, isFavorite } =
     useCart();
   const isItemFavorite = isFavorite(product.id);
+
+  useEffect(() => {
+    if (!showAddedMessage) return;
+    const timer = setTimeout(() => setShowAddedMessage(false), 1500);
+    return () => clearTimeout(timer);
+  }, [showAddedMessage]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -82,72 +94,48 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           alt: product.title,
           category: "merchandise",
         },
-        quantity,
+        1,
       );
-
       setShowAddedMessage(true);
-      setTimeout(() => setShowAddedMessage(false), 2000);
-
-      console.log(`Added ${quantity} x ${product.title} to cart`);
-      setQuantity(1);
     } catch (error) {
       console.error("Error adding to cart:", error);
-      alert(
-        "Error adding to cart. Make sure CartProvider is set up correctly.",
-      );
     }
   };
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
+
     if (isItemFavorite) {
       removeFromFavorites(product.id);
-    } else {
-      addToFavorites({
-        id: product.id,
-        name: product.title,
-        price: product.price,
-        description: product.description,
-        image: product.image,
-        alt: product.title,
-        category: "merchandise",
-      });
+      return;
     }
+
+    addToFavorites({
+      id: product.id,
+      name: product.title,
+      price: product.price,
+      description: product.description,
+      image: product.image,
+      alt: product.title,
+      category: "merchandise",
+    });
   };
 
   return (
-    <motion.div
-      className="flex flex-col items-center text-center group cursor-pointer"
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.2 }}
-      variants={fadeInUp}
-      whileHover={{ y: -5 }}
-      transition={{ duration: 0.3 }}
-    >
+    <article className="flex flex-col items-center text-center group cursor-pointer">
       <div className="relative w-full max-w-sm aspect-square overflow-hidden shadow-md">
-        {/* Image or placeholder */}
-        {!imageError ? (
-          <motion.div
-            className="relative w-full h-full"
-            whileHover={{ scale: 1.05 }}
-            transition={{ duration: 0.4 }}
-          >
-            <img
-              src={product.image}
-              alt={product.title}
-              className="object-cover transition-transform duration-500 group-hover:brightness-75"
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-              onError={() => setImageError(true)}
-            />
-          </motion.div>
+        {!imageError && product.image ? (
+          <img
+            src={product.image}
+            alt={product.title}
+            loading="lazy"
+            decoding="async"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-75"
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            onError={() => setImageError(true)}
+          />
         ) : (
-          <motion.div
-            className="w-full h-full border border-blue-500 flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
+          <div className="w-full h-full border border-blue-500 flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200">
             <div className="text-center p-4">
               <div className="w-16 h-16 mx-auto mb-3 bg-gray-300 rounded-full flex items-center justify-center">
                 <svg
@@ -164,24 +152,17 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                   />
                 </svg>
               </div>
-              <p className="text-xs text-gray-500 font-medium">
-                {product.title}
-              </p>
+              <p className="text-xs text-gray-500 font-medium">{product.title}</p>
             </div>
-          </motion.div>
+          </div>
         )}
 
-        {/* Favorite button - top right */}
-        <motion.button
+        <button
           onClick={handleToggleFavorite}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 
-                   flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 
-                   hover:bg-white shadow-md z-10"
+          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white shadow-md z-10"
           aria-label={
             isItemFavorite ? "Remove from favorites" : "Add to favorites"
           }
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
         >
           <Heart
             className={`w-4 h-4 transition-all duration-300 ${
@@ -190,41 +171,20 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
                 : "text-gray-600 hover:text-red-500"
             }`}
           />
-        </motion.button>
+        </button>
 
-        {/* Hover overlay with actions */}
-        <motion.div
-          className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center"
-          initial={{ opacity: 0 }}
-          whileHover={{ opacity: 1 }}
-        >
-          <motion.div
-            className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 flex flex-col items-center gap-3"
-            initial={{ y: 2 }}
-            whileHover={{ y: 0 }}
+        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+          <button
+            onClick={handleAddToCart}
+            className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg transition-all duration-300"
           >
-            {/* Add to cart button */}
-            <motion.button
-              onClick={handleAddToCart}
-              className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-full font-medium text-sm 
-                       flex items-center gap-2 shadow-lg transition-all duration-300"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              Add to Cart
-            </motion.button>
-          </motion.div>
-        </motion.div>
+            <ShoppingCart className="w-4 h-4" />
+            Add to Cart
+          </button>
+        </div>
       </div>
 
-      {/* Product details */}
-      <motion.div
-        className="mt-4 space-y-2"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.2 }}
-      >
+      <div className="mt-4 space-y-2">
         <h3
           className="text-lg font-medium text-gray-800 group-hover:text-amber-600 transition-colors duration-200"
           style={{ fontFamily: "fairplay" }}
@@ -241,43 +201,25 @@ const ProductCard: React.FC<{ product: Product }> = ({ product }) => {
           {product.priceDisplay}
         </span>
 
-        {/* Added to cart message */}
-        <AnimatePresence>
-          {showAddedMessage && (
-            <motion.div
-              className="text-center mt-2"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 5 }}
-              transition={{ duration: 0.3 }}
-            >
-              <span className="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full">
-                ✓ Added to cart!
-              </span>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
-    </motion.div>
+        {showAddedMessage && (
+          <div className="text-center mt-2">
+            <span className="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full">
+              Added to cart!
+            </span>
+          </div>
+        )}
+      </div>
+    </article>
   );
-};
+});
 
-// Reusable grid component
 function ProductGrid({ items }: { items: Product[] }) {
   return (
-    <motion.div
-      className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto"
-      variants={staggerContainer}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, amount: 0.1 }}
-    >
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
       {items.map((product) => (
-        <motion.div key={product.id} variants={fadeInUp}>
-          <ProductCard product={product} />
-        </motion.div>
+        <ProductCard key={product.id} product={product} />
       ))}
-    </motion.div>
+    </div>
   );
 }
 
@@ -287,90 +229,83 @@ export default function Merchendise() {
   );
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch categories and products from backend
   useEffect(() => {
+    let isMounted = true;
+    const controller = new AbortController();
+
     const fetchData = async () => {
       setIsLoading(true);
-      try {
-        // Fetch categories
-        const categoriesResponse = await fetch(
-          "https://api.gr8.com.np/petite-backend/merch/categories/get_categories.php",
-        );
-        if (!categoriesResponse.ok)
-          throw new Error("Failed to fetch categories");
-        const categories: MerchCategory[] = await categoriesResponse.json();
 
-        // Fetch products
-        const productsResponse = await fetch(
-          "https://api.gr8.com.np/petite-backend/merch/get_merch_items.php",
-        );
-        if (!productsResponse.ok) throw new Error("Failed to fetch products");
+      try {
+        const [categoriesResponse, productsResponse] = await Promise.all([
+          fetch(apiUrl("merch/categories/get_categories.php"), {
+            signal: controller.signal,
+          }),
+          fetch(apiUrl("merch/get_merch_items.php"), { signal: controller.signal }),
+        ]);
+
+        if (!categoriesResponse.ok) {
+          throw new Error("Failed to fetch categories");
+        }
+        if (!productsResponse.ok) {
+          throw new Error("Failed to fetch products");
+        }
+
+        const categories: MerchCategory[] = await categoriesResponse.json();
         const products: BackendProduct[] = await productsResponse.json();
 
-        // Transform backend data to frontend format
-        const transformProduct = (item: BackendProduct): Product => {
-          const numericPrice =
-            typeof item.price === "string"
-              ? parseFloat(item.price)
-              : item.price;
-          return {
-            id: `${item.category}-${item.id}`,
-            title: item.name,
-            description: item.description || "",
-            price: numericPrice,
-            priceDisplay: `$${numericPrice.toFixed(2)} AUD`,
-            image:
-              item.image_url ||
-              `https://api.gr8.com.np/petite-backend/merch/uploads/${item.image}`,
-            category: item.category,
-          };
-        };
+        const groupedProducts = new Map<string, Product[]>();
+        for (const item of products) {
+          const key = normalizeCategoryKey(item.category);
+          const transformed = transformProduct(item);
+          const existing = groupedProducts.get(key);
 
-        // Group products by category and create sections only for categories with products
+          if (existing) {
+            existing.push(transformed);
+          } else {
+            groupedProducts.set(key, [transformed]);
+          }
+        }
+
         const sections: CategorySection[] = categories
           .map((category) => {
-            const categoryProducts = products
-              .filter(
-                (item) =>
-                  item.category.toLowerCase() === category.name.toLowerCase(),
-              )
-              .map(transformProduct);
-
+            const categoryKey = normalizeCategoryKey(category.name);
             return {
               categoryName: category.name,
               displayName: formatCategoryName(category.name),
-              products: categoryProducts,
+              products: groupedProducts.get(categoryKey) || [],
             };
           })
-          .filter((section) => section.products.length > 0); // Only include sections with products
+          .filter((section) => section.products.length > 0);
 
-        setCategorySections(sections);
+        if (isMounted) {
+          setCategorySections(sections);
+        }
       } catch (error) {
-        console.error("Error fetching data:", error);
+        if ((error as Error).name !== "AbortError") {
+          console.error("Error fetching merch data:", error);
+        }
+        if (isMounted) {
+          setCategorySections([]);
+        }
       } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchData();
+
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
-
-  // Helper function to format category names for display
-  const formatCategoryName = (categoryName: string): string => {
-    // Handle common cases
-    const formatted = categoryName
-      .split(/[-_\s]/)
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-      .join(" ");
-
-    return formatted;
-  };
 
   return (
     <div className="bg-white">
-      {/* Hero Section */}
       <section className="w-full container mx-auto bg-white py-12 px-6 lg:px-20 flex flex-col md:flex-row items-center justify-between sm:gap-10">
-        {/* Left Section */}
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -418,12 +353,11 @@ export default function Merchendise() {
                 firstSection?.scrollIntoView({ behavior: "smooth" });
               }}
             >
-              Take a look at our merch →
+              Take a look at our merch {"->"}
             </motion.button>
           </motion.div>
         </motion.div>
 
-        {/* Right Section - Collage */}
         <motion.div
           className="hidden md:flex flex-1 relative w-full max-w-lg h-[500px]"
           initial={{ opacity: 0, x: 30 }}
@@ -431,7 +365,6 @@ export default function Merchendise() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           viewport={{ once: true, amount: 0.3 }}
         >
-          {/* Background decorative squares */}
           <motion.div
             className="absolute top-14 left-14 w-40 h-48 border-2 border-amber-400"
             initial={{ opacity: 0, scale: 0.8 }}
@@ -461,7 +394,6 @@ export default function Merchendise() {
             viewport={{ once: true }}
           />
 
-          {/* Product Images */}
           <motion.div
             className="absolute -top-3 left-1/2 -translate-x-1/2 w-40 h-48"
             initial={{ opacity: 0, y: -20, rotate: -5 }}
@@ -473,7 +405,9 @@ export default function Merchendise() {
             <img
               src="/merchendise/merch1.webp"
               alt="T-Shirts"
-              className="object-cover shadow-md"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover shadow-md"
             />
           </motion.div>
 
@@ -481,14 +415,16 @@ export default function Merchendise() {
             className="absolute top-28 left-0 w-40 h-48"
             initial={{ opacity: 0, x: -20, rotate: 5 }}
             whileInView={{ opacity: 1, x: 0, rotate: 0 }}
-            transition={{ delay: 1.0, duration: 0.6 }}
+            transition={{ delay: 1, duration: 0.6 }}
             viewport={{ once: true }}
             whileHover={{ y: -5, rotate: 2, transition: { duration: 0.3 } }}
           >
             <img
               src="/merchendise/coffee.webp"
               alt="Coffee Bag"
-              className="object-cover shadow-md"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover shadow-md"
             />
           </motion.div>
 
@@ -503,7 +439,9 @@ export default function Merchendise() {
             <img
               src="/merchendise/bag1.webp"
               alt="Tote Bag"
-              className="object-cover shadow-md"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover shadow-md"
             />
           </motion.div>
 
@@ -518,47 +456,38 @@ export default function Merchendise() {
             <img
               src="/merchendise/cup2.webp"
               alt="Mugs"
-              className="object-cover shadow-md"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover shadow-md"
             />
           </motion.div>
         </motion.div>
       </section>
 
-      {/* Loading State */}
       {isLoading && (
         <div className="w-full py-12 text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-amber-500"></div>
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-gray-300 border-t-amber-500" />
           <p className="mt-4 text-gray-600">Loading products...</p>
         </div>
       )}
 
-      {/* Dynamic Category Sections */}
       {!isLoading &&
-        categorySections.map((section, index) => (
-          <motion.section
+        categorySections.map((section) => (
+          <section
             key={section.categoryName}
             data-category-section
             className="w-full bg-white py-4 px-6 md:px-12 lg:px-20"
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            transition={{ duration: 0.7 }}
-            viewport={{ once: true, amount: 0.2 }}
           >
-            <motion.h2
+            <h2
               className="text-2xl md:text-3xl font-semibold text-center mb-10 text-gray-700"
               style={{ fontFamily: "fairplaybold" }}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              viewport={{ once: true }}
             >
               {section.displayName}
-            </motion.h2>
+            </h2>
             <ProductGrid items={section.products} />
-          </motion.section>
+          </section>
         ))}
 
-      {/* Empty State */}
       {!isLoading && categorySections.length === 0 && (
         <div className="w-full py-20 bg-gray-50">
           <div className="max-w-md mx-auto text-center px-6">

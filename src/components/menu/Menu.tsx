@@ -1,9 +1,10 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
-import { ChevronRight, ShoppingCart, Heart } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ShoppingCart, Heart } from "lucide-react";
 import MenuCarousel from "./MenuCarousel";
 import { useCart } from "@/contexts/CartContexts";
 import Image from "next/image";
+import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 
 interface MenuItem {
   id: string;
@@ -24,34 +25,22 @@ interface Category {
 const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
   function MenuItemCard({ item, index }) {
     const [imageError, setImageError] = useState(false);
-    const [quantity, setQuantity] = useState(1);
     const [showAddedMessage, setShowAddedMessage] = useState(false);
-    const [isVisible, setIsVisible] = useState(false);
-    const sectionRef = useRef<HTMLDivElement>(null);
     const { addToCart, addToFavorites, removeFromFavorites, isFavorite } =
       useCart();
     const isItemFavorite = isFavorite(item.id);
 
     useEffect(() => {
-      const currentSection = sectionRef.current;
-      if (!currentSection) return;
-      const observer = new IntersectionObserver(
-        ([entry]) => {
-          if (entry.isIntersecting) setIsVisible(true);
-        },
-        { threshold: 0.1 },
-      );
-      observer.observe(currentSection);
-      return () => observer.unobserve(currentSection);
-    }, []);
+      if (!showAddedMessage) return;
+      const timer = setTimeout(() => setShowAddedMessage(false), 1500);
+      return () => clearTimeout(timer);
+    }, [showAddedMessage]);
 
     const handleAddToCart = (e: React.MouseEvent) => {
       e.stopPropagation();
       try {
-        addToCart(item, quantity);
+        addToCart(item, 1);
         setShowAddedMessage(true);
-        setTimeout(() => setShowAddedMessage(false), 2000);
-        setQuantity(1);
       } catch (error) {
         console.error("Error adding to cart:", error);
       }
@@ -59,19 +48,22 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
 
     const handleToggleFavorite = (e: React.MouseEvent) => {
       e.stopPropagation();
-      isItemFavorite ? removeFromFavorites(item.id) : addToFavorites(item);
+      if (isItemFavorite) {
+        removeFromFavorites(item.id);
+        return;
+      }
+      addToFavorites(item);
     };
 
     return (
       <div
-        ref={sectionRef}
-        className={`group cursor-pointer transition-all duration-300 hover:scale-[1.02] opacity-0 translate-y-8 ${isVisible ? "animate-fade-in-up" : ""}`}
+        className="group cursor-pointer transition-all duration-300 hover:scale-[1.02]"
         style={{ animationDelay: `${index * 0.1}s` }}
       >
         <div className="relative aspect-square overflow-hidden rounded-lg mb-4 shadow-md bg-gray-200">
           {!imageError ? (
             <Image
-              src={`https://api.gr8.com.np/petite-backend/${item.image}`}
+              src={normalizeApiAssetUrl(item.image)}
               alt={item.alt || item.name}
               fill
               className="object-cover w-full h-full transition-all duration-300 group-hover:brightness-75"
@@ -113,7 +105,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
           {showAddedMessage && (
             <div className="text-center animate-pulse">
               <span className="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full">
-                ✓ Added to cart!
+                Added to cart!
               </span>
             </div>
           )}
@@ -127,27 +119,9 @@ const MenuSection: React.FC<{ title: string; items: MenuItem[] }> = ({
   title,
   items,
 }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const sectionRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const currentSection = sectionRef.current;
-    if (!currentSection) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setIsVisible(true);
-      },
-      { threshold: 0.1 },
-    );
-    observer.observe(currentSection);
-    return () => observer.unobserve(currentSection);
-  }, []);
   return (
-    <section ref={sectionRef} className="py-12 px-6 max-w-7xl mx-auto">
-      <h2
-        className={`text-3xl font-light text-gray-800 mb-8 opacity-0 -translate-x-5 ${isVisible ? "animate-fade-in-left" : ""}`}
-      >
-        {title}
-      </h2>
+    <section className="py-12 px-6 max-w-7xl mx-auto">
+      <h2 className="text-3xl font-light text-gray-800 mb-8">{title}</h2>
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
         {items.map((item, index) => (
           <MenuItemCard key={item.id} item={item} index={index} />
@@ -157,28 +131,32 @@ const MenuSection: React.FC<{ title: string; items: MenuItem[] }> = ({
   );
 };
 
-// 🔥 Dynamic RestaurantMenu
+// Dynamic RestaurantMenu
 const RestaurantMenu: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch(
-          "https://api.gr8.com.np/petite-backend/menu/get_menu_item.php",
-        );
-        let data: Category[] = await res.json();
-        
-        // Transform localhost URLs to production URLs
-        data = JSON.parse(
-          JSON.stringify(data).replace(
-            /http:\/\/localhost\/petite-backend/g,
-            "https://api.gr8.com.np/petite-backend"
-          )
-        );
+        const res = await fetch(apiUrl("menu/get_menu_item.php"));
+        if (!res.ok) throw new Error("Failed to fetch menu categories");
+        const data: Category[] = await res.json();
+
+        const normalizedData: Category[] = data.map((category) => ({
+          ...category,
+          items: (category.items || []).map((item) => ({
+            ...item,
+            image:
+              typeof item.image === "string"
+                ? normalizeApiAssetUrl(item.image)
+                : item.image,
+          })),
+        }));
         
         // only include categories that have items
-        setCategories(data.filter((cat) => cat.items && cat.items.length > 0));
+        setCategories(
+          normalizedData.filter((cat) => cat.items && cat.items.length > 0),
+        );
       } catch (error) {
         console.error("Error fetching categories:", error);
       }
@@ -192,35 +170,6 @@ const RestaurantMenu: React.FC = () => {
       {categories.map((cat) => (
         <MenuSection key={cat.id} title={cat.name} items={cat.items} />
       ))}
-
-      <style jsx global>{`
-        @keyframes fadeInUp {
-          from {
-            opacity: 0;
-            transform: translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        @keyframes fadeInLeft {
-          from {
-            opacity: 0;
-            transform: translateX(-20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(0);
-          }
-        }
-        .animate-fade-in-up {
-          animation: fadeInUp 0.6s ease-out forwards;
-        }
-        .animate-fade-in-left {
-          animation: fadeInLeft 0.6s ease-out forwards;
-        }
-      `}</style>
     </div>
   );
 };
