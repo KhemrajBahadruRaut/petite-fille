@@ -1,8 +1,9 @@
 "use client";
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Coffee, Heart, Gift } from 'lucide-react';
 import CareersCarousal from './CareersCarousel';
 import { motion, AnimatePresence } from 'framer-motion';
+import { apiUrl } from '@/utils/api';
 
 // Types (unchanged)
 interface JobListing {
@@ -47,55 +48,64 @@ const WHY_WORK_WITH_US: WhyWorkWithUsItem[] = [
     }
 ];
 
-const JOB_LISTINGS: JobListing[] = [
-    {
-        id: '1',
-        title: 'Senior Frontend Developer',
-        department: 'Engineering Department',
-        type: 'Full-time',
-        experience: '3yr experience',
-        salary: '$3K - 4K',
-        location: 'Location lorem ipsum',
-        postedDaysAgo: 2,
-        description: 'Ut enim ad minim veniam, eius mode ut tempor incid idunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.',
-        requirements: [
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-            'Ut enim ad minim veniam, eius mode ut tempor incid idunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.',
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-        ]
-    },
-    {
-        id: '2',
-        title: 'UX/UI Designer',
-        department: 'Design Department',
-        type: 'Full-time',
-        experience: '3yr experience',
-        salary: '$3K - 4K',
-        location: 'Location lorem ipsum',
-        postedDaysAgo: 2,
-        description: 'Ut enim ad minim veniam, eius mode ut tempor incid idunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.',
-        requirements: [
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-            'Ut enim ad minim veniam, eius mode ut tempor incid idunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.'
-        ]
-    },
-    {
-        id: '3',
-        title: 'Marketing Specialist',
-        department: 'Marketing Department',
-        type: 'Full-time',
-        experience: '3yr experience',
-        salary: '$3K - 4K',
-        location: 'Location lorem ipsum',
-        postedDaysAgo: 2,
-        description: 'Ut enim ad minim veniam, eius mode ut tempor incid idunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.',
-        requirements: [
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-            'Ut enim ad minim veniam, eius mode ut tempor incid idunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.',
-            'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-        ]
+interface JobsApiRecord {
+    id?: string | number;
+    title?: string;
+    type?: string;
+    experience?: string;
+    salary?: string;
+    location?: string;
+    description?: string;
+    requirements?: string[] | string;
+    postedDaysAgo?: number;
+}
+
+const DEFAULT_DEPARTMENT = 'Open Department';
+
+const normalizeRequirements = (requirements: JobsApiRecord['requirements']): string[] => {
+    if (Array.isArray(requirements)) {
+        return requirements.map((item) => `${item ?? ''}`.trim()).filter(Boolean);
     }
-];
+
+    if (typeof requirements === 'string') {
+        try {
+            const parsed = JSON.parse(requirements || '[]');
+            if (Array.isArray(parsed)) {
+                return parsed.map((item) => `${item ?? ''}`.trim()).filter(Boolean);
+            }
+        } catch {
+            return requirements
+                .split(/\r\n|\r|\n/)
+                .map((item) => item.trim())
+                .filter(Boolean);
+        }
+    }
+
+    return [];
+};
+
+const normalizeJobType = (type: string | undefined): JobListing['type'] => {
+    if (type === 'Part-time' || type === 'Contract') {
+        return type;
+    }
+    return 'Full-time';
+};
+
+const normalizeJob = (job: JobsApiRecord): JobListing => ({
+    // Backend stores no explicit department yet, so keep a stable label for current UI.
+    id: `${job.id ?? ''}`,
+    title: (job.title || '').trim() || 'Untitled Role',
+    department: DEFAULT_DEPARTMENT,
+    type: normalizeJobType(job.type),
+    experience: (job.experience || '').trim() || 'Experience not specified',
+    salary: (job.salary || '').trim() || 'Salary not specified',
+    location: (job.location || '').trim() || 'Location not specified',
+    postedDaysAgo: Number.isFinite(Number(job.postedDaysAgo))
+        ? Math.max(0, Number(job.postedDaysAgo))
+        : 0,
+    description: (job.description || '').trim() || 'Description not available.',
+    requirements: normalizeRequirements(job.requirements)
+});
 
 // Animation variants
 const fadeInUp = {
@@ -265,13 +275,59 @@ const JobDetails = React.memo(({ job }: { job: JobListing }) => (
 JobDetails.displayName = 'JobDetails';
 
 export default function CareersPage() {
+    const [jobs, setJobs] = useState<JobListing[]>([]);
     const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+    const [isLoadingJobs, setIsLoadingJobs] = useState<boolean>(true);
+    const [jobsError, setJobsError] = useState<string | null>(null);
+
+    const fetchJobs = useCallback(async () => {
+        setIsLoadingJobs(true);
+        setJobsError(null);
+
+        try {
+            const response = await fetch(apiUrl('jobs/get_jobs.php'), { cache: 'no-store' });
+            if (!response.ok) {
+                throw new Error('Failed to fetch jobs');
+            }
+
+            const data = await response.json();
+            if (!Array.isArray(data)) {
+                throw new Error('Invalid jobs response');
+            }
+
+            const normalizedJobs = data
+                .map((item: JobsApiRecord) => normalizeJob(item))
+                .filter((item: JobListing) => item.id !== '');
+
+            setJobs(normalizedJobs);
+        } catch {
+            setJobs([]);
+            setJobsError('Unable to load jobs right now. Please try again later.');
+        } finally {
+            setIsLoadingJobs(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchJobs();
+    }, [fetchJobs]);
 
     // Memoized selected job to prevent unnecessary re-renders
     const selectedJob = useMemo(() =>
-        JOB_LISTINGS.find(job => job.id === selectedJobId),
-        [selectedJobId]
+        jobs.find(job => job.id === selectedJobId),
+        [jobs, selectedJobId]
     );
+
+    useEffect(() => {
+        if (!selectedJobId) {
+            return;
+        }
+
+        const exists = jobs.some((job) => job.id === selectedJobId);
+        if (!exists) {
+            setSelectedJobId(null);
+        }
+    }, [jobs, selectedJobId]);
 
     // Optimized job selection handler
     const handleJobSelect = useCallback((jobId: string) => {
@@ -369,14 +425,24 @@ export default function CareersPage() {
                         {/* Job Listings */}
                         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm overflow-hidden">
                             <div className="divide-y divide-gray-200">
-                                {JOB_LISTINGS.map((job) => (
-                                    <JobListItem
-                                        key={job.id}
-                                        job={job}
-                                        isSelected={selectedJobId === job.id}
-                                        onClick={() => handleJobSelect(job.id)}
-                                    />
-                                ))}
+                                {isLoadingJobs ? (
+                                    <div className="p-6 text-center text-gray-500 text-sm sm:text-base">
+                                        Loading openings...
+                                    </div>
+                                ) : jobs.length === 0 ? (
+                                    <div className="p-6 text-center text-gray-500 text-sm sm:text-base">
+                                        There are no listings for now.
+                                    </div>
+                                ) : (
+                                    jobs.map((job) => (
+                                        <JobListItem
+                                            key={job.id}
+                                            job={job}
+                                            isSelected={selectedJobId === job.id}
+                                            onClick={() => handleJobSelect(job.id)}
+                                        />
+                                    ))
+                                )}
                             </div>
                         </div>
 
@@ -406,10 +472,17 @@ export default function CareersPage() {
                                             >
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </motion.svg>
-                                            <h3 className="text-lg font-medium text-gray-900 mb-2">Select a job to view details</h3>
+                                            <h3 className="text-lg font-medium text-gray-900 mb-2">
+                                                {jobs.length === 0 ? 'There are no listings for now.' : 'Select a job to view details'}
+                                            </h3>
                                             <p className="text-gray-500 text-sm">
-                                                Click on any job listing to see the full description and requirements.
+                                                {jobs.length === 0
+                                                    ? 'Please check back later for new openings.'
+                                                    : 'Click on any job listing to see the full description and requirements.'}
                                             </p>
+                                            {jobsError && (
+                                                <p className="text-red-500 text-xs mt-3">{jobsError}</p>
+                                            )}
                                         </div>
                                     </motion.div>
                                 )}

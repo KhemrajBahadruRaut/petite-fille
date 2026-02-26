@@ -203,6 +203,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </svg>
             ),
           },
+          {
+            href: "/admin/jobs",
+            label: "Jobs",
+            shortLabel: "Jobs",
+            icon: (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 7h12a2 2 0 012 2v9a2 2 0 01-2 2H6a2 2 0 01-2-2V9a2 2 0 012-2z"
+                />
+                <path
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 7V5a3 3 0 013-3h0a3 3 0 013 3v2M9 12h6"
+                />
+              </svg>
+            ),
+          },
         ],
       },
       {
@@ -334,6 +360,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       "/admin/gallery",
       "/admin/adminAbout",
       "/admin/merchendise",
+      "/admin/jobs",
     ];
     if (cmsPages.includes(pathname)) {
       setExpandedSections((prev) => ({ ...prev, cms: true }));
