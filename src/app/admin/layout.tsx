@@ -475,7 +475,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       <aside
         className={`
           fixed lg:sticky top-0 left-0 z-50
-          w-70 h-screen bg-white border-r border-slate-200 shadow-sm
+          w-[280px] h-screen bg-white border-r border-slate-200 shadow-sm
           transition-all duration-300 ease-in-out
           flex flex-col
           ${isSidebarOpen ? "translate-x-0 shadow-xl" : "-translate-x-full lg:translate-x-0 lg:w-20"}
@@ -489,10 +489,10 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <span className="text-white font-bold text-lg">PF</span>
               </div>
               <div>
-                <h1 className="font-bold text-slate-800 text-lg">
+                <h1 className="text-base font-bold text-slate-800">
                   Petite Fille
                 </h1>
-                <p className="text-sm text-slate-500">Admin Panel</p>
+                <p className="text-xs text-slate-500">Admin Panel</p>
               </div>
             </div>
           ) : (
@@ -582,7 +582,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         {/* Label */}
                         <span
                           className={`
-                          font-medium transition-all duration-300 flex-1 text-left
+                          flex-1 text-left text-sm font-medium transition-all duration-300
                           ${isSidebarOpen ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 lg:hidden"}
                         `}
                         >
@@ -696,7 +696,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                                   </div>
 
                                   {/* Child Label */}
-                                  <span className="font-medium transition-all duration-300 flex-1">
+                                  <span className="flex-1 text-sm font-medium transition-all duration-300">
                                     {child.label}
                                   </span>
 
@@ -766,7 +766,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         {/* Label */}
                         <span
                           className={`
-                          font-medium transition-all duration-300 flex-1
+                          flex-1 text-sm font-medium transition-all duration-300
                           ${isSidebarOpen ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-2 lg:hidden"}
                         `}
                         >
@@ -814,7 +814,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <p className="text-sm font-semibold text-slate-800 truncate">
                   Administrator
                 </p>
-                <p className="text-xs text-slate-500 truncate">Online now</p>
+                <p className="text-[11px] text-slate-500 truncate">Online now</p>
               </div>
             </div>
           </div>
@@ -853,7 +853,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </button>
 
               <div className="flex items-center space-x-3">
-                <h1 className="text-2xl font-bold text-slate-800">
+                <h1 className="text-xl font-semibold text-slate-800">
                   {getPageTitle()}
                 </h1>
                 <div className="w-1.5 h-1.5 bg-slate-300 rounded-full"></div>

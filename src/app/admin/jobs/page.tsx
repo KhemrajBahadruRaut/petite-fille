@@ -314,7 +314,7 @@ export default function AdminJobsPage() {
           <div className="rounded-lg bg-blue-100 p-2">
             <BriefcaseBusiness className="h-6 w-6 text-blue-700" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Jobs Management</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Jobs Management</h1>
         </div>
         <p className="text-gray-600">Create and update careers listings from admin.</p>
       </div>

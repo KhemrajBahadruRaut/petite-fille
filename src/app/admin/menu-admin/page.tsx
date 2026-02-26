@@ -394,7 +394,7 @@ export default function AdminMenu() {
           <div className="p-2 bg-amber-100 rounded-lg">
             <Utensils className="w-6 h-6 text-amber-700" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Menu Management</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Menu Management</h1>
         </div>
         <p className="text-gray-600">
           Manage your restaurant menu items and categories

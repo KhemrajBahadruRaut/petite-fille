@@ -96,6 +96,35 @@ function formatDateTime(dateString: string): string {
   });
 }
 
+function toTimestamp(value: string): number {
+  if (!value) return 0;
+  const date = new Date(value);
+  const time = date.getTime();
+  return Number.isNaN(time) ? 0 : time;
+}
+
+function reservationTimestamp(record: ReservationRecord): number {
+  const createdAtTime = toTimestamp(record.created_at);
+  if (createdAtTime > 0) return createdAtTime;
+
+  const fallback = toTimestamp(
+    `${record.reservation_date} ${record.reservation_time}`,
+  );
+  if (fallback > 0) return fallback;
+
+  return record.id;
+}
+
+function sortReservationsByRecent(
+  reservations: ReservationRecord[],
+): ReservationRecord[] {
+  return [...reservations].sort((a, b) => {
+    const timeDiff = reservationTimestamp(b) - reservationTimestamp(a);
+    if (timeDiff !== 0) return timeDiff;
+    return b.id - a.id;
+  });
+}
+
 export default function AdminReservationsPage() {
   const [reservations, setReservations] = useState<ReservationRecord[]>([]);
   const [loading, setLoading] = useState(false);
@@ -122,7 +151,7 @@ export default function AdminReservationsPage() {
         throw new Error(data.message || "Failed to fetch reservations.");
       }
 
-      setReservations(data.reservations || []);
+      setReservations(sortReservationsByRecent(data.reservations || []));
     } catch (error) {
       setMessage({
         type: "error",
@@ -153,7 +182,9 @@ export default function AdminReservationsPage() {
         }
 
         setReservations((prev) =>
-          prev.map((item) => (item.id === id ? { ...item, status } : item)),
+          sortReservationsByRecent(
+            prev.map((item) => (item.id === id ? { ...item, status } : item)),
+          ),
         );
         setMessage({ type: "success", text: `Reservation #${id} updated.` });
       } catch (error) {
@@ -207,12 +238,14 @@ export default function AdminReservationsPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reservations</h1>
-          <p className="text-gray-600">Manage booking requests and statuses.</p>
+          <h1 className="text-xl font-semibold text-gray-900">Reservations</h1>
+          <p className="text-sm text-gray-600">
+            Manage booking requests and statuses.
+          </p>
         </div>
         <button
           onClick={fetchReservations}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+          className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-indigo-700"
         >
           Refresh
         </button>
@@ -232,22 +265,22 @@ export default function AdminReservationsPage() {
 
       <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-gray-500">Total</p>
-          <p className="mt-1 text-2xl font-bold text-gray-900">{stats.total}</p>
+          <p className="text-xs text-gray-500">Total</p>
+          <p className="mt-1 text-xl font-bold text-gray-900">{stats.total}</p>
         </div>
         <div className="rounded-xl border border-amber-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-amber-600">Pending</p>
-          <p className="mt-1 text-2xl font-bold text-amber-700">{stats.pending}</p>
+          <p className="text-xs text-amber-600">Pending</p>
+          <p className="mt-1 text-xl font-bold text-amber-700">{stats.pending}</p>
         </div>
         <div className="rounded-xl border border-green-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-green-600">Confirmed</p>
-          <p className="mt-1 text-2xl font-bold text-green-700">
+          <p className="text-xs text-green-600">Confirmed</p>
+          <p className="mt-1 text-xl font-bold text-green-700">
             {stats.confirmed}
           </p>
         </div>
         <div className="rounded-xl border border-red-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-red-600">Cancelled</p>
-          <p className="mt-1 text-2xl font-bold text-red-700">{stats.cancelled}</p>
+          <p className="text-xs text-red-600">Cancelled</p>
+          <p className="mt-1 text-xl font-bold text-red-700">{stats.cancelled}</p>
         </div>
       </div>
 
@@ -256,7 +289,7 @@ export default function AdminReservationsPage() {
         <select
           value={filter}
           onChange={(event) => setFilter(event.target.value as "all" | ReservationStatus)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="rounded-md border border-gray-300 px-3 py-2 text-xs text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
         >
           <option value="all">All</option>
           {STATUS_OPTIONS.map((status) => (
@@ -277,7 +310,7 @@ export default function AdminReservationsPage() {
           <div className="p-8 text-center text-gray-500">No reservations found.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[1200px] divide-y divide-gray-200">
+            <table className="min-w-[1080px] divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -306,19 +339,19 @@ export default function AdminReservationsPage() {
               <tbody className="divide-y divide-gray-100">
                 {reservations.map((reservation) => (
                   <tr key={reservation.id} className="align-top">
-                    <td className="px-4 py-4">
-                      <p className="font-semibold text-gray-900">
+                    <td className="px-3 py-3">
+                      <p className="text-sm font-semibold text-gray-900">
                         {reservation.full_name}
                       </p>
-                      <p className="mt-1 text-sm text-gray-500">
+                      <p className="mt-1 text-xs text-gray-500">
                         #{reservation.id}
                       </p>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700">
+                    <td className="px-3 py-3 text-xs text-gray-700">
                       <p>{reservation.email}</p>
                       <p className="mt-1">{reservation.phone}</p>
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-700">
+                    <td className="px-3 py-3 text-xs text-gray-700">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-gray-500" />
                         {formatDate(reservation.reservation_date)}
@@ -332,7 +365,7 @@ export default function AdminReservationsPage() {
                         {reservation.guests} guest(s)
                       </div>
                     </td>
-                    <td className="max-w-sm px-4 py-4 text-sm text-gray-700">
+                    <td className="max-w-sm px-3 py-3 text-xs text-gray-700">
                       <p>
                         <span className="font-medium">Food:</span>{" "}
                         {reservation.food_preferences || "-"}
@@ -346,7 +379,7 @@ export default function AdminReservationsPage() {
                         {reservation.notes || "-"}
                       </p>
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <span
                         className={`mb-2 inline-flex rounded-full border px-2 py-1 text-xs font-medium ${statusClass(reservation.status)}`}
                       >
@@ -368,22 +401,22 @@ export default function AdminReservationsPage() {
                           </option>
                         ))}
                       </select>
-                      {reservation.cancelled_by && (
-                        <p className="mt-1 text-xs text-gray-500">
+                        {reservation.cancelled_by && (
+                        <p className="mt-1 text-[11px] text-gray-500">
                           cancelled by {reservation.cancelled_by}
                         </p>
                       )}
                     </td>
-                    <td className="px-4 py-4 text-sm text-gray-600">
+                    <td className="px-3 py-3 text-xs text-gray-600">
                       {formatDateTime(reservation.created_at)}
                     </td>
-                    <td className="px-4 py-4">
+                    <td className="px-3 py-3">
                       <div className="flex items-center gap-2">
                         <a
                           href={reservation.cancellation_link}
                           target="_blank"
                           rel="noreferrer"
-                          className="rounded border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100"
+                          className="rounded border border-gray-300 px-2.5 py-1 text-[11px] font-medium text-gray-700 transition hover:bg-gray-100"
                         >
                           Link
                         </a>
@@ -413,4 +446,3 @@ export default function AdminReservationsPage() {
     </div>
   );
 }
-

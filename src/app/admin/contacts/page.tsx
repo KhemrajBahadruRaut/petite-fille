@@ -186,7 +186,7 @@ export default function AdminContacts() {
           <div className="p-2 bg-indigo-100 rounded-lg">
             <Mail className="w-6 h-6 text-indigo-700" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Contact Submissions</h1>
+          <h1 className="text-xl font-semibold text-gray-900">Contact Submissions</h1>
         </div>
         <p className="text-gray-600">Manage and respond to customer inquiries</p>
       </div>

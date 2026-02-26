@@ -410,7 +410,7 @@ export default function AboutUsCMS() {
   return (
     <div className="max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-lg">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 mb-2">About Us Content Editor</h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-2">About Us Content Editor</h2>
         <p className="text-gray-600">Edit both top and bottom sections with rich text formatting</p>
       </div>
 
