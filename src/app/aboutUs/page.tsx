@@ -73,7 +73,7 @@ export default function AboutUs() {
   if (!content) return <p>Loading...</p>;
 
   return (
-    <div className="bg-white">
+    <div className="bg-white pt-10">
       <section className="relative max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
         {/* Centered faint background image */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-4 pointer-events-none">

@@ -79,7 +79,7 @@ const MultiStepCateringForm = () => {
     };
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 ">
         <h2 className="text-3xl font-serif text-gray-800">Event Details</h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div>
@@ -193,7 +193,7 @@ const MultiStepCateringForm = () => {
     const menuItems = allMenuItems.filter((item) => item.category === selectedCategory);
 
     return (
-      <div className="space-y-8">
+      <div className="space-y-8 ">
         <h1 className="text-3xl font-bold text-gray-900 mb-3">Build Your Menu</h1>
         <div className="flex gap-4 overflow-x-auto pb-2">
           {categories.map((cat) => (
@@ -632,7 +632,7 @@ const MultiStepCateringForm = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f1e8] py-12 px-4">
+    <div className="min-h-screen bg-[#f5f1e8] py-12 px-4 pt-25">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
           <h1 className="text-5xl font-serif text-gray-800 mb-6">Build your own Catering</h1>

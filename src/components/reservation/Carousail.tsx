@@ -53,7 +53,7 @@ export default function ReservationCarousal  ()  {
   };
 
   return (
-    <div className="relative h-64 md:h-80 lg:h-96 overflow-hidden group pt-5">
+    <div className="relative h-64 md:h-80 lg:h-96 overflow-hidden group ">
       {/* Carousel Container */}
       <div 
         className="flex h-full transition-transform duration-700 ease-in-out"

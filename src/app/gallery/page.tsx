@@ -95,7 +95,7 @@ export default function Gallery() {
   const shouldAnimateMarquee = isTabVisible && !prefersReducedMotion;
 
   return (
-    <div className="bg-white pb-20">
+    <div className="bg-white pb-20 pt-10">
       <section className="py-16 px-4 container mx-auto">
         <motion.div className="text-center mb-12">
           <h2 className="text-4xl font-bold text-gray-800 mb-4" style={{ fontFamily: 'fairplaybold' }}>Our Gallery</h2>

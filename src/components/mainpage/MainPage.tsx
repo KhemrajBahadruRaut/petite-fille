@@ -38,7 +38,7 @@ const rotateScale: Variants = {
 
 export default function MainPage() {
   return (
-    <div className="bg-white pb-14">
+    <div className="bg-white pb-14 pt-20">
       <div className="w-full grid grid-cols-1 md:grid-cols-2 container mx-auto">
         {/* Left Section */}
         <div className="flex flex-col gap-5  items-center p-6">

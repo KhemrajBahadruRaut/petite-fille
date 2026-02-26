@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ShoppingCart, Heart } from "lucide-react";
+import { ShoppingCart, Heart, CheckCircle, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContexts";
 import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
@@ -69,16 +69,20 @@ const ProductCard = React.memo(function ProductCard({
   product: Product;
 }) {
   const [imageError, setImageError] = useState(false);
-  const [showAddedMessage, setShowAddedMessage] = useState(false);
+  const [toast, setToast] = useState<{ show: boolean; message: string; productName: string }>({ 
+    show: false, 
+    message: "", 
+    productName: "" 
+  });
   const { addToCart, addToFavorites, removeFromFavorites, isFavorite } =
     useCart();
   const isItemFavorite = isFavorite(product.id);
 
   useEffect(() => {
-    if (!showAddedMessage) return;
-    const timer = setTimeout(() => setShowAddedMessage(false), 1500);
+    if (!toast.show) return;
+    const timer = setTimeout(() => setToast({ show: false, message: "", productName: "" }), 3000);
     return () => clearTimeout(timer);
-  }, [showAddedMessage]);
+  }, [toast.show]);
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -96,7 +100,11 @@ const ProductCard = React.memo(function ProductCard({
         },
         1,
       );
-      setShowAddedMessage(true);
+      setToast({ 
+        show: true, 
+        message: `${product.title} added to cart!`,
+        productName: product.title
+      });
     } catch (error) {
       console.error("Error adding to cart:", error);
     }
@@ -200,15 +208,28 @@ const ProductCard = React.memo(function ProductCard({
         >
           {product.priceDisplay}
         </span>
-
-        {showAddedMessage && (
-          <div className="text-center mt-2">
-            <span className="inline-block bg-green-500 text-white text-xs px-3 py-1 rounded-full">
-              Added to cart!
-            </span>
-          </div>
-        )}
       </div>
+
+      {/* Beautiful Toast Notification - Top Right */}
+      {toast.show && (
+        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-right-4 duration-300">
+          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 p-4 flex items-center gap-3 max-w-sm">
+            <div className="flex-shrink-0">
+              <CheckCircle className="w-6 h-6 text-green-500 animate-bounce" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-gray-900 text-sm">Success!</p>
+              <p className="text-gray-600 text-xs mt-0.5">{toast.message}</p>
+            </div>
+            <button
+              onClick={() => setToast({ show: false, message: "", productName: "" })}
+              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
     </article>
   );
 });
@@ -304,7 +325,7 @@ export default function Merchendise() {
   }, []);
 
   return (
-    <div className="bg-white">
+    <div className="bg-white pt-25">
       <section className="w-full container mx-auto bg-white py-12 px-6 lg:px-20 flex flex-col md:flex-row items-center justify-between sm:gap-10">
         <motion.div
           initial={{ opacity: 0, x: -30 }}

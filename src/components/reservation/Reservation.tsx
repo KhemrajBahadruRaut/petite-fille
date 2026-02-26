@@ -782,7 +782,7 @@ export default function ReservationPage() {
   if (!mounted) return <LoadingState />;
 
   return (
-    <div className="w-full bg-white">
+    <div className="w-full bg-white pb-10">
       <div>
         <ReservationCarousal />
       </div>

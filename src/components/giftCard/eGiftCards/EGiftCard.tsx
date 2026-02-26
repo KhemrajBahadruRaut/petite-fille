@@ -151,7 +151,7 @@ const EGiftCard = () => {
     <>
       {/* Header */}
 
-      <div className='bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex-col items-center justify-center'>
+      <div className='bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 flex-col items-center justify-center pt-14 '>
 
       <div className="text-center mb-8 pt-10">
         <h1 className="text-3xl font-bold text-gray-800 mb-3">eGift cards</h1>
@@ -159,7 +159,7 @@ const EGiftCard = () => {
 
       {/* Gift Card Visual */}
       <div>
-      <div className="flex-col space-y-5 bg-yellow-400 py-5">
+      <div className="flex-col space-y-5 bg-[#EEC27E33] py-5">
           <p className="text-gray-600 flex justify-center">Get a voucher for yourself or gift one to a friend</p>
           <div className="relative flex justify-center">
             <div className="w-64 h-40 bg-gradient-to-br from-amber-200 to-yellow-300 rounded-2xl shadow-lg relative overflow-hidden">

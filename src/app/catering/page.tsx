@@ -86,7 +86,7 @@ const Page = () => {
   };
 
   return (
-    <section className="py-12 bg-white text-center overflow-hidden">
+    <section className=" bg-white text-center overflow-hidden pt-25">
       {/* Heading */}
       <motion.div
         initial="hidden"

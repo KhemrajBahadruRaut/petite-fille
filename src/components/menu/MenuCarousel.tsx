@@ -41,7 +41,7 @@ export default function MenuCarousel() {
     };
 
     return (
-        <div className="relative h-48 sm:h-56 md:h-64 lg:h-80 xl:h-96 overflow-hidden group  pt-5">
+        <div className="relative h-48 sm:h-56 md:h-64 lg:h-80 xl:h-96 overflow-hidden group">
             {/* Background Images Container */}
             <div
                 className="flex h-full transition-transform duration-700 ease-in-out"

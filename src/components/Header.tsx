@@ -20,8 +20,8 @@ const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="w-full bg-white z-15">
-      <div className="flex items-center justify-between px-5 py-3 bg-black/20 rounded-full container mx-auto">
+    <header className="w-full absolute z-100">
+      <div className="flex items-center justify-between px-5 sm:py-3 bg-black/20 rounded-full container mx-auto">
         {/* Logo */}
         <Link href="/" className="flex items-center">
           <img
@@ -29,12 +29,12 @@ const Header = () => {
             alt="logo"
             width={50}
             height={50}
-            className="z-10 cursor-pointer hover:scale-110 transition-all duration-500"
+            className="cursor-pointer hover:scale-110 transition-all duration-500"
           />
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden md:flex gap-8 text-sm font-medium">
+        <nav className="hidden md:flex gap-8 text-sm font-medium ">
           {navLinks.map(({ href, label }) => (
             <Link
               key={href}

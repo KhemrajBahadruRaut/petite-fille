@@ -283,7 +283,7 @@ export default function CareersPage() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
-            className="bg-gray-50"
+            className="bg-gray-50 "
         >
             <div>
                 <CareersCarousal />

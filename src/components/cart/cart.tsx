@@ -1,7 +1,7 @@
 // pages/cart.tsx (or app/cart/page.tsx if using App Router)
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo, useCallback } from "react";
 // import Image from 'next/image';
 import {
   Trash2,
@@ -15,6 +15,127 @@ import {
 import { useCart, CartItem } from "@/contexts/CartContexts";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
+
+// Memoized CartItem Component - Outside main component
+const CartItemComponent = React.memo(
+  ({
+    item,
+    onIncrement,
+    onDecrement,
+    onRemove,
+  }: {
+    item: CartItem;
+    onIncrement: (id: string, qty: number) => void;
+    onDecrement: (id: string, qty: number) => void;
+    onRemove: (id: string) => void;
+  }) => {
+    const formatDate = (date: Date) => {
+      return new Intl.DateTimeFormat("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }).format(date);
+    };
+
+    const imageUrl = item.image.startsWith("http")
+      ? item.image
+      : `https://api.gr8.com.np/petite-backend/${item.image}`;
+
+    return (
+      <motion.div
+        layout
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, height: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
+      >
+        <div className="flex gap-4">
+          {/* Item Image */}
+          <div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-200">
+            <img
+              src={imageUrl}
+              alt={item.alt || item.name}
+              className="object-cover w-full h-full"
+              sizes="96px"
+            />
+          </div>
+
+          {/* Item Details */}
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <h3 className="font-semibold text-gray-800 text-lg">
+                  {item.name}
+                </h3>
+                <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+                  {item.category === "merchandise" ? "Merchandise" : "Food"}
+                </span>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => onRemove(item.id)}
+                className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                aria-label="Remove item"
+              >
+                <Trash2 className="w-4 h-4" />
+              </motion.button>
+            </div>
+
+            <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+              {item.description}
+            </p>
+
+            {/* Date added */}
+            <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
+              <Calendar className="w-3 h-3" />
+              Added {formatDate(new Date(item.addedAt))}
+            </div>
+
+            {/* Quantity and Price Controls */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 bg-gray-100 text-black rounded-full px-3 py-2">
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => onDecrement(item.id, item.quantity)}
+                    disabled={item.quantity <= 1}
+                    className="w-6 h-6 rounded-full bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
+                  >
+                    <Minus className="w-3 h-3" />
+                  </motion.button>
+                  <span className="font-medium text-sm min-w-5 text-center">
+                    {item.quantity}
+                  </span>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => onIncrement(item.id, item.quantity)}
+                    className="w-6 h-6 rounded-full bg-white hover:bg-gray-50 flex items-center justify-center transition-colors"
+                  >
+                    <Plus className="w-3 h-3" />
+                  </motion.button>
+                </div>
+              </div>
+
+              <div className="text-right">
+                <div className="text-sm text-gray-500">${item.price} each</div>
+                <div className="font-semibold text-lg text-gray-800">
+                  ${(item.price * item.quantity).toFixed(2)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
+);
+
+CartItemComponent.displayName = "CartItemComponent";
 
 const CartPage: React.FC = () => {
   const {
@@ -45,20 +166,6 @@ const CartPage: React.FC = () => {
       hour: "2-digit",
       minute: "2-digit",
     }).format(date);
-  };
-
-  const incrementQuantity = (id: string, currentQuantity: number) => {
-    updateQuantity(id, currentQuantity + 1);
-  };
-
-  const decrementQuantity = (id: string, currentQuantity: number) => {
-    if (currentQuantity > 1) {
-      updateQuantity(id, currentQuantity - 1);
-    }
-  };
-
-  const handleRemoveItem = (id: string) => {
-    removeFromCart(id);
   };
 
   const handleClearCart = (type: "all" | "food" | "merch") => {
@@ -111,7 +218,7 @@ const CartPage: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="min-h-screen bg-linear-to-b from-amber-50 to-stone-100 py-12"
+        className="min-h-screen bg-linear-to-b from-amber-50 to-stone-100 py-12 pt-25"
       >
         <div className="max-w-4xl mx-auto px-6">
           {/* Header */}
@@ -187,122 +294,27 @@ const CartPage: React.FC = () => {
     );
   }
 
-  // Define CartItemComponent with proper TypeScript typing
-  const CartItemComponent: React.FC<{ item: CartItem }> = ({ item }) => (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      className="bg-white rounded-xl shadow-sm p-6 hover:shadow-md transition-shadow"
-    >
-      <div className="flex gap-4">
-        {/* Item Image */}
-        <motion.div
-          whileHover={{ scale: 1.05 }}
-          transition={{ duration: 0.2 }}
-          className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden bg-gray-200"
-        >
-          <img
-            src={
-              item.image.startsWith("http")
-                ? item.image
-                : `https://api.gr8.com.np/petite-backend/${item.image}`
-            }
-            alt={item.alt || item.name}
-            className="object-cover"
-            sizes="96px"
-          />
-        </motion.div>
+  // Optimize handlers with useCallback
+  const handleIncrement = useCallback((id: string, currentQuantity: number) => {
+    updateQuantity(id, currentQuantity + 1);
+  }, [updateQuantity]);
 
-        {/* Item Details */}
-        <div className="flex-1 min-w-0">
-          <div className="flex justify-between items-start mb-2">
-            <div>
-              <h3 className="font-semibold text-gray-800 text-lg">
-                {item.name}
-              </h3>
-              <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-                {item.category === "merchandise" ? "Merchandise" : "Food"}
-              </span>
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-              onClick={() => handleRemoveItem(item.id)}
-              className="text-gray-400 hover:text-red-500 transition-colors p-1"
-              aria-label="Remove item"
-            >
-              <Trash2 className="w-4 h-4" />
-            </motion.button>
-          </div>
+  const handleDecrement = useCallback((id: string, currentQuantity: number) => {
+    if (currentQuantity > 1) {
+      updateQuantity(id, currentQuantity - 1);
+    }
+  }, [updateQuantity]);
 
-          <p className="text-gray-600 text-sm mb-3 line-clamp-2">
-            {item.description}
-          </p>
-
-          {/* Date added */}
-          <div className="flex items-center gap-1 text-xs text-gray-500 mb-4">
-            <Calendar className="w-3 h-3" />
-            Added {formatDate(new Date(item.addedAt))}
-          </div>
-
-          {/* Quantity and Price Controls */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 bg-gray-100 text-black rounded-full px-3 py-2">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => decrementQuantity(item.id, item.quantity)}
-                  disabled={item.quantity <= 1}
-                  className="w-6 h-6 rounded-full bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition-colors"
-                >
-                  <Minus className="w-3 h-3" />
-                </motion.button>
-                <motion.span
-                  key={item.quantity}
-                  initial={{ scale: 1.2 }}
-                  animate={{ scale: 1 }}
-                  className="font-medium text-sm min-w-5 text-center"
-                >
-                  {item.quantity}
-                </motion.span>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={() => incrementQuantity(item.id, item.quantity)}
-                  className="w-6 h-6 rounded-full bg-white hover:bg-gray-50 flex items-center justify-center transition-colors"
-                >
-                  <Plus className="w-3 h-3" />
-                </motion.button>
-              </div>
-            </div>
-
-            <div className="text-right">
-              <div className="text-sm text-gray-500">${item.price} each</div>
-              <motion.div
-                key={item.price * item.quantity}
-                initial={{ scale: 1.1 }}
-                animate={{ scale: 1 }}
-                className="font-semibold text-lg text-gray-800"
-              >
-                ${(item.price * item.quantity).toFixed(2)}
-              </motion.div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </motion.div>
-  );
+  const handleRemoveItem = useCallback((id: string) => {
+    removeFromCart(id);
+  }, [removeFromCart]);
 
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="min-h-screen bg-linear-to-b from-amber-50 to-stone-100 py-12"
+      className="min-h-screen bg-linear-to-b from-amber-50 to-stone-100 py-12 pt-10"
     >
       <div className="max-w-6xl mx-auto px-6">
         {/* Header */}
@@ -421,7 +433,13 @@ const CartPage: React.FC = () => {
                     >
                       <div className="p-6 space-y-4 bg-white">
                         {foodItems.map((item) => (
-                          <CartItemComponent key={item.id} item={item} />
+                          <CartItemComponent
+                            key={item.id}
+                            item={item}
+                            onIncrement={handleIncrement}
+                            onDecrement={handleDecrement}
+                            onRemove={handleRemoveItem}
+                          />
                         ))}
                       </div>
                     </motion.div>
@@ -499,7 +517,13 @@ const CartPage: React.FC = () => {
                     >
                       <div className="p-6 space-y-4 bg-white">
                         {merchItems.map((item) => (
-                          <CartItemComponent key={item.id} item={item} />
+                          <CartItemComponent
+                            key={item.id}
+                            item={item}
+                            onIncrement={handleIncrement}
+                            onDecrement={handleDecrement}
+                            onRemove={handleRemoveItem}
+                          />
                         ))}
                       </div>
                     </motion.div>
