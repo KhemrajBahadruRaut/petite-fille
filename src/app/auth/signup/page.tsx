@@ -1,8 +1,22 @@
 "use client";
 
-import React from "react";
+import React, { Suspense } from "react";
 import OtpAuthCard from "@/components/auth/OtpAuthCard";
 
+function AuthPageFallback() {
+  return (
+    <div className="min-h-screen bg-gray-50 px-4 py-24">
+      <div className="mx-auto max-w-md rounded-xl border border-gray-200 bg-white p-8 text-center text-gray-600">
+        Loading signup...
+      </div>
+    </div>
+  );
+}
+
 export default function SignupPage() {
-  return <OtpAuthCard mode="signup" />;
+  return (
+    <Suspense fallback={<AuthPageFallback />}>
+      <OtpAuthCard mode="signup" />
+    </Suspense>
+  );
 }
