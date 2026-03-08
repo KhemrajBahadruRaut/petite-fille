@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Clock3,
   Filter,
-  Trash2,
   Users,
 } from "lucide-react";
 import { apiUrl } from "@/utils/api";
@@ -33,7 +32,7 @@ interface ReservationRecord {
   terms_accepted: number;
   terms_version: string;
   cancellation_link: string;
-  cancelled_by: "guest" | "admin" | null;
+  cancelled_by: "guest" | "admin" | "0" | "" | null;
   created_at: string;
   updated_at: string;
 }
@@ -197,32 +196,6 @@ export default function AdminReservationsPage() {
     },
     [],
   );
-
-  const deleteReservation = useCallback(async (id: number) => {
-    const shouldDelete = window.confirm(`Delete reservation #${id}?`);
-    if (!shouldDelete) return;
-
-    try {
-      const response = await fetch(
-        apiUrl(`reservation/delete_reservation.php?id=${id}`),
-        { method: "DELETE" },
-      );
-      const data = (await response.json()) as { success?: boolean; message?: string };
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || "Failed to delete reservation.");
-      }
-
-      setReservations((prev) => prev.filter((item) => item.id !== id));
-      setMessage({ type: "success", text: `Reservation #${id} deleted.` });
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text:
-          error instanceof Error ? error.message : "Unable to delete reservation.",
-      });
-    }
-  }, []);
 
   const stats = useMemo(
     () => ({
@@ -388,6 +361,16 @@ export default function AdminReservationsPage() {
                       <select
                         className="block w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                         value={reservation.status}
+                        disabled={
+                          reservation.status === "cancelled" &&
+                          reservation.cancelled_by !== "admin"
+                        }
+                        title={
+                          reservation.status === "cancelled" &&
+                          reservation.cancelled_by !== "admin"
+                            ? "User-cancelled reservations cannot be changed by admin."
+                            : "Update reservation status"
+                        }
                         onChange={(event) =>
                           updateStatus(
                             reservation.id,
@@ -403,7 +386,10 @@ export default function AdminReservationsPage() {
                       </select>
                         {reservation.cancelled_by && (
                         <p className="mt-1 text-[11px] text-gray-500">
-                          cancelled by {reservation.cancelled_by}
+                          cancelled by{" "}
+                          {reservation.cancelled_by === "0"
+                            ? "guest"
+                            : reservation.cancelled_by}
                         </p>
                       )}
                     </td>
@@ -411,23 +397,14 @@ export default function AdminReservationsPage() {
                       {formatDateTime(reservation.created_at)}
                     </td>
                     <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <a
-                          href={reservation.cancellation_link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="rounded border border-gray-300 px-2.5 py-1 text-[11px] font-medium text-gray-700 transition hover:bg-gray-100"
-                        >
-                          Link
-                        </a>
-                        <button
-                          onClick={() => deleteReservation(reservation.id)}
-                          className="rounded border border-red-200 bg-red-50 p-2 text-red-600 transition hover:bg-red-100"
-                          aria-label={`Delete reservation ${reservation.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <a
+                        href={reservation.cancellation_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded border border-gray-300 px-2.5 py-1 text-[11px] font-medium text-gray-700 transition hover:bg-gray-100"
+                      >
+                        Link
+                      </a>
                     </td>
                   </tr>
                 ))}

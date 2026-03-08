@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { ShoppingCart, Heart, CheckCircle, X } from "lucide-react";
+import { Heart, X } from "lucide-react";
 import MenuCarousel from "./MenuCarousel";
 import { useCart } from "@/contexts/CartContexts";
 import Image from "next/image";
@@ -25,34 +25,10 @@ interface Category {
 const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
   function MenuItemCard({ item, index }) {
     const [imageError, setImageError] = useState(false);
-    const [toast, setToast] = useState<{ show: boolean; message: string; itemName: string }>({ 
-      show: false, 
-      message: "", 
-      itemName: "" 
-    });
-    const { addToCart, addToFavorites, removeFromFavorites, isFavorite } =
-      useCart();
+    const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const { addToFavorites, removeFromFavorites, isFavorite } = useCart();
     const isItemFavorite = isFavorite(item.id);
-
-    useEffect(() => {
-      if (!toast.show) return;
-      const timer = setTimeout(() => setToast({ show: false, message: "", itemName: "" }), 3000);
-      return () => clearTimeout(timer);
-    }, [toast.show]);
-
-    const handleAddToCart = (e: React.MouseEvent) => {
-      e.stopPropagation();
-      try {
-        addToCart(item, 1);
-        setToast({ 
-          show: true, 
-          message: `${item.name} added to cart!`,
-          itemName: item.name
-        });
-      } catch (error) {
-        console.error("Error adding to cart:", error);
-      }
-    };
+    const normalizedImage = normalizeApiAssetUrl(item.image);
 
     const handleToggleFavorite = (e: React.MouseEvent) => {
       e.stopPropagation();
@@ -66,18 +42,19 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
     return (
       <>
         <div
-          className="group cursor-pointer transition-all duration-300 hover:scale-[1.02]"
+          className="group transition-all duration-300 hover:scale-[1.02]"
           style={{ animationDelay: `${index * 0.1}s` }}
         >
-          <div className="relative aspect-square overflow-hidden rounded-lg mb-4 shadow-md bg-gray-200">
+          <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-gray-200 shadow-md sm:mb-4">
             {!imageError ? (
               <Image
-                src={normalizeApiAssetUrl(item.image)}
+                src={normalizedImage}
                 alt={item.alt || item.name}
                 fill
-                className="object-cover w-full h-full transition-all duration-300 group-hover:brightness-75"
+                className="cursor-zoom-in object-cover w-full h-full transition-all duration-300 group-hover:brightness-75"
                 sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
                 onError={() => setImageError(true)}
+                onClick={() => setIsPreviewOpen(true)}
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-100">
@@ -86,54 +63,59 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
             )}
             <button
               onClick={handleToggleFavorite}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-110 z-10"
+              className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm opacity-100 transition-all duration-300 hover:scale-110 md:opacity-0 md:group-hover:opacity-100"
             >
               <Heart
                 className={`w-4 h-4 transition-all duration-300 ${isItemFavorite ? "text-red-500 fill-red-500" : "text-gray-600 hover:text-red-500"}`}
               />
             </button>
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-              <button
-                onClick={handleAddToCart}
-                className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg"
-              >
-                <ShoppingCart className="w-4 h-4" />
-                Add to Cart
-              </button>
-            </div>
+            {!imageError && (
+              <div className="absolute inset-0 hidden items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:flex">
+                <button
+                  type="button"
+                  onClick={() => setIsPreviewOpen(true)}
+                  className="rounded-full border border-white/60 bg-white/90 px-4 py-2 text-xs font-semibold text-gray-800"
+                >
+                  View Image
+                </button>
+              </div>
+            )}
           </div>
 
           <div className="space-y-2">
             <div className="flex justify-between items-start">
-              <h3 className="font-semibold text-gray-800 text-sm">{item.name}</h3>
-              <span className="font-bold text-gray-900 text-sm">
+              <h3 className="line-clamp-2 pr-2 text-sm font-semibold text-gray-800">{item.name}</h3>
+              <span className="shrink-0 text-sm font-bold text-gray-900">
                 ${item.price}
               </span>
             </div>
-            <p className="text-xs text-gray-600">{item.description}</p>
+            <p className="line-clamp-2 text-xs text-gray-600">{item.description}</p>
           </div>
         </div>
-
-        {/* Beautiful Toast Notification */}
-        {toast.show && (
-          <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-right-4 duration-300">
-            <div className="bg-white rounded-lg shadow-2xl border border-gray-200 p-4 flex items-center gap-3 max-w-sm">
-              <div className="flex-shrink-0">
-                <CheckCircle className="w-6 h-6 text-green-500 animate-bounce" />
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-gray-900 text-sm">Success!</p>
-                <p className="text-gray-600 text-xs mt-0.5">{toast.message}</p>
-              </div>
-              <button
-                onClick={() => setToast({ show: false, message: "", itemName: "" })}
-                className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
+        {isPreviewOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            onClick={() => setIsPreviewOpen(false)}
+            role="dialog"
+            aria-modal="true"
+          >
+            <button
+              type="button"
+              className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-gray-800"
+              onClick={() => setIsPreviewOpen(false)}
+              aria-label="Close image preview"
+            >
+              <X className="h-4 w-4" />
+            </button>
+            <img
+              src={normalizedImage}
+              alt={item.alt || item.name}
+              className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+              onClick={(event) => event.stopPropagation()}
+            />
           </div>
         )}
+
       </>
     );
   }
@@ -144,9 +126,9 @@ const MenuSection: React.FC<{ title: string; items: MenuItem[] }> = ({
   items,
 }) => {
   return (
-    <section className="py-12 px-6 max-w-7xl mx-auto">
-      <h2 className="text-3xl font-light text-gray-800 mb-8">{title}</h2>
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 lg:gap-8">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+      <h2 className="mb-6 text-2xl font-light text-gray-800 sm:mb-8 sm:text-3xl">{title}</h2>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:gap-8">
         {items.map((item, index) => (
           <MenuItemCard key={item.id} item={item} index={index} />
         ))}

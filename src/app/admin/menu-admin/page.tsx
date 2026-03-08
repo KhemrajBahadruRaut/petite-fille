@@ -246,16 +246,25 @@ export default function AdminMenu() {
   const deleteItem = async (id: number, itemName: string) => {
     if (!confirm(`Are you sure you want to delete "${itemName}"?`)) return;
     try {
+      const formData = new FormData();
+      formData.append("id", id.toString());
+
       const res = await fetch(
-        `https://api.gr8.com.np/petite-backend/menu/delete_item.php?id=${id}`,
+        "https://api.gr8.com.np/petite-backend/menu/delete_menu_item.php",
         {
-          method: "DELETE",
+          method: "POST",
+          body: formData,
         },
       );
-      if (res.ok) {
+
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data?.success) {
         addToast(`${itemName} deleted successfully`, "success");
         fetchItems();
-      } else throw new Error("Delete failed");
+      } else {
+        addToast(data?.message || "Failed to delete item", "error");
+      }
     } catch (error) {
       console.error(error);
       addToast("Error deleting item. Try again.", "error");

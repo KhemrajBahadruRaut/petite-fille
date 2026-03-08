@@ -1,9 +1,17 @@
 "use client";
 
-import { useState, useEffect, ReactNode, useMemo } from "react";
+import {
+  useState,
+  useEffect,
+  ReactNode,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clearAdminSession, isAdminAuthenticated } from "@/utils/adminAuth";
+import { apiUrl } from "@/utils/api";
 
 interface MenuItem {
   href: string;
@@ -25,6 +33,31 @@ type MenuItemType = MenuItem | MenuSection;
 
 interface AdminLayoutProps {
   children: ReactNode;
+}
+
+interface AdminRealtimeStats {
+  pendingReservations: number;
+  latestReservationId: number;
+  userCancelledReservations: number;
+  latestUserCancelledReservationId: number;
+  newContacts: number;
+  latestContactId: number;
+}
+
+interface AdminRealtimeResponse {
+  success?: boolean;
+  stats?: AdminRealtimeStats;
+  message?: string;
+}
+
+interface AdminAlert {
+  id: number;
+  type: "reservation" | "contact";
+  message: string;
+  route: string;
+  key: string;
+  isRead: boolean;
+  createdAt: string;
 }
 
 function CurrentDateTime() {
@@ -66,6 +99,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   );
   const [authChecked, setAuthChecked] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [realtimeStats, setRealtimeStats] = useState<AdminRealtimeStats | null>(
+    null,
+  );
+  const [adminAlerts, setAdminAlerts] = useState<AdminAlert[]>([]);
+  const [isAlertsOpen, setIsAlertsOpen] = useState(false);
+  const recentAlertKeysRef = useRef<Record<string, number>>({});
+  const unreadAlerts = useMemo(
+    () => adminAlerts.filter((alert) => !alert.isRead).length,
+    [adminAlerts],
+  );
   const pathname = usePathname();
 
   const menuItems = useMemo<MenuItemType[]>(
@@ -232,26 +275,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         ],
       },
       {
-        href: "/admin/orders",
-        label: "Orders",
-        shortLabel: "Orders",
-        icon: (
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"
-            />
-          </svg>
-        ),
-      },
-      {
         href: "/admin/contacts",
         label: "Contacts",
         shortLabel: "Contacts",
@@ -337,6 +360,73 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
   const isLoginPage = pathname === "/admin";
 
+  const appendAlert = useCallback(
+    (
+      type: AdminAlert["type"],
+      message: string,
+      route: string,
+      alertKey = "",
+    ) => {
+      const now = Date.now();
+      const dedupeWindowMs = 45_000;
+      const keyTimestamps = recentAlertKeysRef.current;
+
+      // Keep only recent keys so the map does not grow forever.
+      Object.keys(keyTimestamps).forEach((key) => {
+        if (now - keyTimestamps[key] > 5 * 60 * 1000) {
+          delete keyTimestamps[key];
+        }
+      });
+
+      if (alertKey) {
+        const lastNotifiedAt = keyTimestamps[alertKey] ?? 0;
+        if (now - lastNotifiedAt < dedupeWindowMs) {
+          return;
+        }
+        keyTimestamps[alertKey] = now;
+      }
+
+      const newAlert: AdminAlert = {
+        id: now + Math.floor(Math.random() * 1000),
+        type,
+        message,
+        route,
+        key: alertKey,
+        isRead: false,
+        createdAt: new Date().toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      };
+
+      setAdminAlerts((prev) => [newAlert, ...prev].slice(0, 12));
+    },
+    [],
+  );
+
+  const markAlertReadAndNavigate = useCallback(
+    (alertId: number, route: string) => {
+      setAdminAlerts((prev) =>
+        prev.map((alert) =>
+          alert.id === alertId ? { ...alert, isRead: true } : alert,
+        ),
+      );
+      setIsAlertsOpen(false);
+      if (pathname !== route) {
+        router.push(route);
+      }
+    },
+    [pathname, router],
+  );
+
+  const deleteAlert = useCallback((alertId: number) => {
+    setAdminAlerts((prev) => prev.filter((alert) => alert.id !== alertId));
+  }, []);
+
+  const markAllAlertsRead = useCallback(() => {
+    setAdminAlerts((prev) => prev.map((alert) => ({ ...alert, isRead: true })));
+  }, []);
+
   useEffect(() => {
     if (isLoginPage) {
       setAuthChecked(true);
@@ -352,6 +442,80 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       router.replace("/admin");
     }
   }, [isLoginPage, pathname, router]);
+
+  useEffect(() => {
+    if (isLoginPage || !isAuthenticated) return;
+
+    let mounted = true;
+
+    const pollRealtimeStats = async () => {
+      try {
+        const response = await fetch(apiUrl("admin/get_realtime_alerts.php"), {
+          cache: "no-store",
+        });
+        const data = (await response.json()) as AdminRealtimeResponse;
+
+        if (!response.ok || !data.success || !data.stats || !mounted) {
+          return;
+        }
+
+        const nextStats = data.stats;
+        setRealtimeStats((previous) => {
+          if (previous) {
+            if (nextStats.pendingReservations > previous.pendingReservations) {
+              const diff = nextStats.pendingReservations - previous.pendingReservations;
+              appendAlert(
+                "reservation",
+                `${diff} new pending reservation${diff > 1 ? "s" : ""}.`,
+                "/admin/reservations",
+                `reservation-${nextStats.pendingReservations}`,
+              );
+            }
+
+            if (
+              nextStats.latestUserCancelledReservationId >
+              previous.latestUserCancelledReservationId
+            ) {
+              appendAlert(
+                "reservation",
+                `User cancelled reservation #${nextStats.latestUserCancelledReservationId}.`,
+                "/admin/reservations",
+                `reservation-user-cancel-${nextStats.latestUserCancelledReservationId}`,
+              );
+            }
+
+            if (nextStats.newContacts > previous.newContacts) {
+              const diff = nextStats.newContacts - previous.newContacts;
+              appendAlert(
+                "contact",
+                `${diff} new contact message${diff > 1 ? "s" : ""}.`,
+                "/admin/contacts",
+                `contact-${nextStats.newContacts}`,
+              );
+            }
+          }
+
+          return nextStats;
+        });
+      } catch {
+        // Silent polling failure; next cycle will retry.
+      }
+    };
+
+    void pollRealtimeStats();
+    const interval = window.setInterval(() => {
+      void pollRealtimeStats();
+    }, 12000);
+
+    return () => {
+      mounted = false;
+      window.clearInterval(interval);
+    };
+  }, [appendAlert, isAuthenticated, isLoginPage]);
+
+  useEffect(() => {
+    setIsAlertsOpen(false);
+  }, [pathname]);
 
   // Auto-expand CMS section if we're on a CMS page
   useEffect(() => {
@@ -864,23 +1028,96 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </div>
 
             <div className="flex items-center space-x-6">
-              {/* Notification Bell */}
-              {/* <button className="relative p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:scale-110 group">
-                <svg
-                  className="w-5 h-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 54 34"
+              <div className="relative">
+                <button
+                  onClick={() => setIsAlertsOpen((prev) => !prev)}
+                  className="relative p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:scale-110 group"
+                  aria-label="Admin notifications"
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M15 17h5l-5-5V9a9 9 0 10-10 9v3h5zm5-5a1 1 0 100-2 1 1 0 000 2z"
-                  />
-                </svg>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-              </button> */}
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M7.58 4.08L6.15 2.65C3.75 4.48 2.17 7.3 2.03 10.5h2a8.45 8.45 0 0 1 3.55-6.42m12.39 6.42h2c-.15-3.2-1.73-6.02-4.12-7.85l-1.42 1.43a8.5 8.5 0 0 1 3.54 6.42M18 11c0-3.07-1.64-5.64-4.5-6.32V2.5h-3v2.18C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-6 11c.14 0 .27-.01.4-.04c.65-.14 1.18-.58 1.44-1.18q.15-.36.15-.78h-4c.01 1.1.9 2 2.01 2"/></svg>
+                  {unreadAlerts > 0 && (
+                    <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] leading-[18px] text-center rounded-full font-semibold animate-pulse">
+                      {unreadAlerts > 9 ? "9+" : unreadAlerts}
+                    </div>
+                  )}
+                </button>
+
+                {isAlertsOpen && (
+                  <div className="absolute right-0 mt-2 w-96 max-h-[30rem] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl z-50">
+                    <div className="p-3 border-b border-slate-100 bg-slate-50">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-semibold text-slate-800">
+                          Live Admin Alerts
+                        </p>
+                        <button
+                          onClick={markAllAlertsRead}
+                          className="text-[11px] font-medium text-slate-600 hover:text-slate-800"
+                        >
+                          Mark all read
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        Pending reservations: {realtimeStats?.pendingReservations ?? 0} |
+                        {" "}New contacts:{" "}
+                        {realtimeStats?.newContacts ?? 0}
+                      </p>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        User cancelled reservations:{" "}
+                        {realtimeStats?.userCancelledReservations ?? 0}
+                      </p>
+                    </div>
+
+                    {adminAlerts.length === 0 ? (
+                      <div className="p-4 text-xs text-slate-500">
+                        No new notifications.
+                      </div>
+                    ) : (
+                      <ul className="divide-y divide-slate-100 max-h-80 overflow-y-auto">
+                        {adminAlerts.map((alert) => (
+                          <li
+                            key={alert.id}
+                            className={`group flex items-start gap-2 px-3 py-3 transition ${
+                              alert.isRead ? "bg-white" : "bg-blue-50/40"
+                            }`}
+                          >
+                            <button
+                              onClick={() =>
+                                markAlertReadAndNavigate(alert.id, alert.route)
+                              }
+                              className="flex-1 text-left"
+                            >
+                              <p
+                                className={`text-xs ${
+                                  alert.isRead
+                                    ? "font-medium text-slate-600"
+                                    : "font-semibold text-slate-800"
+                                }`}
+                              >
+                                {alert.message}
+                              </p>
+                              <p className="text-[11px] text-slate-500 mt-1">
+                                {alert.createdAt}
+                              </p>
+                            </button>
+
+                            <button
+                              onClick={() => deleteAlert(alert.id)}
+                              className="mt-0.5 h-6 w-6 rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                              aria-label="Delete notification"
+                            >
+                              x
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <div className="hidden text-[11px] text-slate-500 lg:block">
+                {unreadAlerts > 0 ? `${unreadAlerts} unread alert(s)` : "All alerts read"}
+              </div>
 
               <CurrentDateTime />
 

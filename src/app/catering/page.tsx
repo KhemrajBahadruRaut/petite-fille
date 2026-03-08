@@ -1,5 +1,4 @@
 "use client";
-// import Image from "next/image";
 import React, { useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { BiRightArrow } from "react-icons/bi";
@@ -12,6 +11,12 @@ interface Package {
   title: string;
   desc: string;
   price: string;
+}
+
+interface MenuItem {
+  name: string;
+  price: string;
+  description: string;
 }
 
 const packages: Package[] = [
@@ -38,11 +43,44 @@ const packages: Package[] = [
   },
 ];
 
-// Animation variants with proper TypeScript types using Variants from framer-motion
+const menuItems: MenuItem[] = [
+  {
+    name: "Fruit Platter",
+    price: "$49",
+    description: "Seasonal fruits & berries",
+  },
+  {
+    name: "Gourmet Cheese Platter",
+    price: "$70",
+    description: "Crackers, fresh baguettes, dry fruits, cashews, walnuts, mixed cheese & capers (6–8 people)",
+  },
+  {
+    name: "Mini Danishes and Cakes",
+    price: "$80",
+    description: "Mixed danishes, homemade slices and carrot cake (6–8 people)",
+  },
+  {
+    name: "Breakfast Pack",
+    price: "$18 per person",
+    description: "Mini egg & bacon roll, mini pumpkin & feta quiche and yoghurt granola bowl (10 people min)",
+  },
+  {
+    name: "Baguettes",
+    price: "$13 per person",
+    description: "Mix baguettes (veg, chicken, ham)",
+  },
+  {
+    name: "Whole Carrot Cake",
+    price: "$65",
+    description: "Our signature homemade whole carrot cake",
+  },
+];
+
+// Animation variants
 const fadeIn: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
     transition: { duration: 0.6, ease: "easeOut" }
   }
@@ -50,13 +88,13 @@ const fadeIn: Variants = {
 
 const carouselItem: Variants = {
   hidden: { opacity: 0, scale: 0.9 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     scale: 1,
     transition: { duration: 0.5, ease: "easeOut" }
   },
-  exit: { 
-    opacity: 0, 
+  exit: {
+    opacity: 0,
     scale: 1.1,
     transition: { duration: 0.4, ease: "easeIn" }
   }
@@ -86,7 +124,7 @@ const Page = () => {
   };
 
   return (
-    <section className=" bg-white text-center overflow-hidden pt-25">
+    <section className="bg-white text-center overflow-hidden pt-25">
       {/* Heading */}
       <motion.div
         initial="hidden"
@@ -95,10 +133,10 @@ const Page = () => {
         variants={staggerContainer}
         className="mb-16"
       >
-        <motion.h2 
+        <motion.h2
           variants={fadeIn}
-          className="text-5xl text-gray-800 mb-4" 
-          style={{fontFamily: 'fairplay'}}
+          className="text-5xl text-gray-800 mb-4"
+          style={{ fontFamily: 'fairplay' }}
         >
           Catering
         </motion.h2>
@@ -112,19 +150,19 @@ const Page = () => {
       </motion.div>
 
       {/* Carousel Heading */}
-      <motion.h3 
+      {/* <motion.h3
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
         variants={fadeIn}
-        className="mt-10 text-2xl font-serif text-gray-700 mb-5" 
-        style={{fontFamily: 'fairplay'}}
+        className="mt-10 text-2xl font-serif text-gray-700 mb-5"
+        style={{ fontFamily: 'fairplay' }}
       >
         Choose from our packages
-      </motion.h3>
+      </motion.h3> */}
 
       {/* Carousel */}
-      <motion.div 
+      {/* <motion.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
@@ -133,7 +171,6 @@ const Page = () => {
       >
         <div className="relative max-w-5xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-center gap-8 p-8">
-            {/* Image */}
             <div className="w-full md:w-1/2 overflow-hidden rounded-3xl">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -155,7 +192,6 @@ const Page = () => {
               </AnimatePresence>
             </div>
 
-            {/* Text */}
             <div className="w-full md:w-1/2 text-left md:text-center">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -165,23 +201,23 @@ const Page = () => {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.5 }}
                 >
-                  <h4 className="text-2xl font-serif text-gray-800 mb-2" style={{fontFamily: 'fairplay'}}>
+                  <h4 className="text-2xl font-serif text-gray-800 mb-2" style={{ fontFamily: 'fairplay' }}>
                     &ldquo;{packages[current].title}&rdquo;
                   </h4>
-                  <p className="text-gray-600 italic mb-4" style={{fontFamily: 'arial'}}>
+                  <p className="text-gray-600 italic mb-4" style={{ fontFamily: 'arial' }}>
                     {packages[current].desc}
                   </p>
-                  <p className="text-gray-800 mb-4" style={{fontFamily: 'arial'}}>
+                  <p className="text-gray-800 mb-4" style={{ fontFamily: 'arial' }}>
                     Starting at{" "}
                     <span className="font-semibold text-lg">
                       {packages[current].price}
                     </span>
                   </p>
-                  <motion.button 
+                  <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className="px-6 py-2 border text-gray-700 border-gray-700 rounded-lg hover:bg-gray-100 transition" 
-                    style={{fontFamily: 'arial'}}
+                    className="px-6 py-2 border text-gray-700 border-gray-700 rounded-lg hover:bg-gray-100 transition"
+                    style={{ fontFamily: 'arial' }}
                   >
                     Select This Package
                   </motion.button>
@@ -190,7 +226,6 @@ const Page = () => {
             </div>
           </div>
 
-          {/* Arrows */}
           <motion.button
             onClick={prevSlide}
             aria-label="Previous"
@@ -210,10 +245,66 @@ const Page = () => {
             <ChevronRight className="w-5 h-5 text-gray-700" />
           </motion.button>
         </div>
+      </motion.div> */}
+
+      {/* ── Catering Menu ── */}
+      <motion.div
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.2 }}
+        variants={staggerContainer}
+        className="mt-20 max-w-2xl mx-auto px-6"
+      >
+        {/* <motion.h3
+          variants={fadeIn}
+          className="text-4xl text-[#C07A5A] font-extrabold uppercase tracking-widest mb-10"
+          style={{ fontFamily: 'fairplay' }}
+        >
+          Catering Menu
+        </motion.h3> */}
+
+        <div className="divide-y divide-[#D9CFC3]">
+          {menuItems.map((item, index) => (
+            <motion.div
+              key={index}
+              variants={fadeIn}
+              className="py-6 text-center"
+            >
+              <p className="text-gray-900 font-bold text-lg" style={{ fontFamily: 'arial' }}>
+                {item.name}{" "}
+                <span className="font-bold">{item.price}</span>
+              </p>
+              <p className="text-gray-600 text-sm mt-1" style={{ fontFamily: 'arial' }}>
+                {item.description}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+
+        {/* Note */}
+        <motion.p
+          variants={fadeIn}
+          className="mt-8 text-sm text-gray-700 font-semibold leading-relaxed"
+          style={{ fontFamily: 'arial' }}
+        >
+          Please Note: All preorders must be placed 24–48hr in advanced. We do
+          custom catering as well. Please let us know if you have any questions.
+        </motion.p>
+
+        {/* Daisy icon */}
+        <motion.div variants={fadeIn} className="mt-6 flex justify-center">
+          <img
+            src="/mainimage/main-image.webp"
+            alt="daisy"
+            width={60}
+            height={60}
+            className="opacity-40 object-contain"
+          />
+        </motion.div>
       </motion.div>
 
-      {/* --- Extra Section 1: Build Your Own --- */}
-      <motion.div 
+      {/* ── Build Your Own ── */}
+      {/* <motion.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
@@ -227,66 +318,65 @@ const Page = () => {
             width={500}
             height={450}
             className="opacity-30 object-contain"
-            // priority
           />
         </div>
-        <motion.h3 
+        <motion.h3
           variants={fadeIn}
-          className="text-2xl font-serif text-gray-800 mb-4" 
-          style={{fontFamily: 'fairplay'}}
+          className="text-2xl font-serif text-gray-800 mb-4"
+          style={{ fontFamily: 'fairplay' }}
         >
           We Cater to Your Unique Taste.
         </motion.h3>
         <motion.p
           variants={fadeIn}
-          className="mt-3 text-gray-600" 
-          style={{fontFamily: 'fairplay'}}
+          className="mt-3 text-gray-600"
+          style={{ fontFamily: 'fairplay' }}
         >
           Love our packages but want to tweak them? Or have something entirely
           different in mind? Create the perfect menu for your event with our
           easy <strong>Build Your Own</strong> tool.
         </motion.p>
-        <motion.div 
+        <motion.div
           variants={fadeIn}
           className="mt-6 flex justify-center"
         >
           <Link href="/multistepcatering">
-          <motion.button
-            whileHover={{ scale: 1.05, backgroundColor: "#6B5A3C", color: "white" }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            className="px-4 flex items-center text-yellow-800 gap-3 py-2 border border-yellow-900 rounded-xl shadow-sm focus:outline-none focus:ring-1 focus:ring-yellow-900" 
-            style={{fontFamily: 'arial'}}
+            <motion.button
+              whileHover={{ scale: 1.05, backgroundColor: "#6B5A3C", color: "white" }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              className="px-4 flex items-center text-yellow-800 gap-3 py-2 border border-yellow-900 rounded-xl shadow-sm focus:outline-none focus:ring-1 focus:ring-yellow-900"
+              style={{ fontFamily: 'arial' }}
             >
-            Build your own <BiRightArrow />
-          </motion.button>
-            </Link>
+              Build your own <BiRightArrow />
+            </motion.button>
+          </Link>
         </motion.div>
-        <motion.p 
+        <motion.p
           variants={fadeIn}
-          className="mt-2 text-sm text-yellow-700" 
-          style={{fontFamily: 'arial'}}
+          className="mt-2 text-sm text-yellow-700"
+          style={{ fontFamily: 'arial' }}
         >
           Make sure your order is at least 48 hours before the event
         </motion.p>
-      </motion.div>
+      </motion.div> */}
 
-      {/* --- Extra Section 2: Contact --- */}
-      <motion.div 
+      {/* ── Contact ── */}
+      <motion.div
         initial="hidden"
         whileInView="visible"
         viewport={{ once: true, amount: 0.3 }}
         variants={fadeIn}
         className="mt-20 bg-[#F5F1E8] py-12 px-6 text-center rounded-lg"
       >
-        <h3 className="text-2xl font-serif text-gray-800 mb-4" style={{fontFamily: 'fairplay'}}>
+        <h3 className="text-2xl font-serif text-gray-800 mb-4" style={{ fontFamily: 'fairplay' }}>
           Not Sure Where to Start?
         </h3>
-        <p className="text-gray-600 max-w-xl mx-auto" style={{fontFamily: 'fairplay'}}>
+        <p className="text-gray-600 max-w-xl mx-auto" style={{ fontFamily: 'fairplay' }}>
           Our catering manager is always happy to help. Get in touch for
           personal advice.
         </p>
-        <motion.button 
+        <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           className="mt-6 px-6 py-2 bg-yellow-800 text-white rounded-md hover:bg-gray-800 transition"

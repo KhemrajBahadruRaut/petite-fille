@@ -421,7 +421,7 @@ export default function CareersPage() {
                         Current Openings
                     </motion.h2>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8" style={{fontFamily: 'arial'}}>
+                    <div className="grid grid-cols-1 items-start lg:grid-cols-5 gap-6 lg:gap-8" style={{fontFamily: 'arial'}}>
                         {/* Job Listings */}
                         <div className="lg:col-span-2 bg-white rounded-lg shadow-sm overflow-hidden">
                             <div className="divide-y divide-gray-200">

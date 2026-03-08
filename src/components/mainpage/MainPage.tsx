@@ -69,18 +69,15 @@ export default function MainPage() {
             whileInView="visible"
             viewport={{ once: true, amount: 0.3 }}
             className="hidden md:flex flex-wrap gap-14 justify-center w-full py-6"
-            style={{fontFamily: 'fairplay'}}
+            style={{ fontFamily: "fairplay" }}
 
           >
-            <Link href="/reservation">
-              <button className={`${buttonBase} ${bookTableBtn}`}>
-                Book A Table
-              </button>
+            <Link href="/reservation" className={`${buttonBase} ${bookTableBtn}`}>
+              Book A Table
             </Link>
-            <Link href="/menu">
-              <button className={`${buttonBase} ${orderOnlineBtn}`}>
-                Order Online
-              </button>
+            <Link href="/menu" className={`${buttonBase} ${orderOnlineBtn}`}>
+              {/* Order Online */}
+              See Menu
             </Link>
           </motion.div>
         </div>
@@ -108,14 +105,15 @@ export default function MainPage() {
 
         {/* Mobile Buttons */}
         <div className="flex flex-wrap md:hidden gap-5 justify-center w-full py-6">
-          <button className={`${buttonBase} ${bookTableBtn}`}>
+          <Link href="/reservation" className={`${buttonBase} ${bookTableBtn}`}>
             Book A Table
-          </button>
-          <button
+          </Link>
+          <Link
+            href="/menu"
             className={`${buttonBase} ${orderOnlineBtn}`}
           >
             Order Online
-          </button>
+          </Link>
         </div>
       </div>
     </div>

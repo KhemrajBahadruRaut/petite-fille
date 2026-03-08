@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { ShoppingCart, Heart, CheckCircle, X } from "lucide-react";
+import { Heart, PackageOpen, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContexts";
 import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
@@ -69,46 +69,9 @@ const ProductCard = React.memo(function ProductCard({
   product: Product;
 }) {
   const [imageError, setImageError] = useState(false);
-  const [toast, setToast] = useState<{ show: boolean; message: string; productName: string }>({ 
-    show: false, 
-    message: "", 
-    productName: "" 
-  });
-  const { addToCart, addToFavorites, removeFromFavorites, isFavorite } =
-    useCart();
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const { addToFavorites, removeFromFavorites, isFavorite } = useCart();
   const isItemFavorite = isFavorite(product.id);
-
-  useEffect(() => {
-    if (!toast.show) return;
-    const timer = setTimeout(() => setToast({ show: false, message: "", productName: "" }), 3000);
-    return () => clearTimeout(timer);
-  }, [toast.show]);
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation();
-
-    try {
-      addToCart(
-        {
-          id: product.id,
-          name: product.title,
-          price: product.price,
-          description: product.description,
-          image: product.image,
-          alt: product.title,
-          category: "merchandise",
-        },
-        1,
-      );
-      setToast({ 
-        show: true, 
-        message: `${product.title} added to cart!`,
-        productName: product.title
-      });
-    } catch (error) {
-      console.error("Error adding to cart:", error);
-    }
-  };
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -130,17 +93,18 @@ const ProductCard = React.memo(function ProductCard({
   };
 
   return (
-    <article className="flex flex-col items-center text-center group cursor-pointer">
-      <div className="relative w-full max-w-sm aspect-square overflow-hidden shadow-md">
+    <article className="group flex w-full flex-col items-center text-center">
+      <div className="relative aspect-square w-full overflow-hidden shadow-md sm:max-w-sm">
         {!imageError && product.image ? (
           <img
             src={product.image}
             alt={product.title}
             loading="lazy"
             decoding="async"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-75"
+            className="h-full w-full cursor-zoom-in object-cover transition-transform duration-500 group-hover:scale-105 group-hover:brightness-75"
             sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
             onError={() => setImageError(true)}
+            onClick={() => setIsPreviewOpen(true)}
           />
         ) : (
           <div className="w-full h-full border border-blue-500 flex items-center justify-center bg-linear-to-br from-gray-100 to-gray-200">
@@ -167,7 +131,7 @@ const ProductCard = React.memo(function ProductCard({
 
         <button
           onClick={handleToggleFavorite}
-          className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/90 backdrop-blur-sm border border-gray-200 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 hover:bg-white shadow-md z-10"
+          className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/90 shadow-md backdrop-blur-sm opacity-100 transition-all duration-300 hover:bg-white md:opacity-0 md:group-hover:opacity-100"
           aria-label={
             isItemFavorite ? "Remove from favorites" : "Add to favorites"
           }
@@ -181,25 +145,27 @@ const ProductCard = React.memo(function ProductCard({
           />
         </button>
 
-        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <button
-            onClick={handleAddToCart}
-            className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-full font-medium text-sm flex items-center gap-2 shadow-lg transition-all duration-300"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            Add to Cart
-          </button>
-        </div>
+        {!imageError && product.image && (
+          <div className="absolute inset-0 hidden items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:flex">
+            <button
+              type="button"
+              onClick={() => setIsPreviewOpen(true)}
+              className="rounded-full border border-white/60 bg-white/90 px-4 py-2 text-xs font-semibold text-gray-800"
+            >
+              View Image
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="mt-4 space-y-2">
         <h3
-          className="text-lg font-medium text-gray-800 group-hover:text-amber-600 transition-colors duration-200"
+          className="line-clamp-2 text-base font-medium text-gray-800 transition-colors duration-200 group-hover:text-amber-600 sm:text-lg"
           style={{ fontFamily: "fairplay" }}
         >
           {product.title}
         </h3>
-        <p className="text-sm text-gray-700" style={{ fontFamily: "arial" }}>
+        <p className="line-clamp-2 text-sm text-gray-700" style={{ fontFamily: "arial" }}>
           {product.description}
         </p>
         <span
@@ -209,25 +175,27 @@ const ProductCard = React.memo(function ProductCard({
           {product.priceDisplay}
         </span>
       </div>
-
-      {/* Beautiful Toast Notification - Top Right */}
-      {toast.show && (
-        <div className="fixed top-4 right-4 z-50 animate-in fade-in slide-in-from-right-4 duration-300">
-          <div className="bg-white rounded-lg shadow-2xl border border-gray-200 p-4 flex items-center gap-3 max-w-sm">
-            <div className="flex-shrink-0">
-              <CheckCircle className="w-6 h-6 text-green-500 animate-bounce" />
-            </div>
-            <div className="flex-1">
-              <p className="font-medium text-gray-900 text-sm">Success!</p>
-              <p className="text-gray-600 text-xs mt-0.5">{toast.message}</p>
-            </div>
-            <button
-              onClick={() => setToast({ show: false, message: "", productName: "" })}
-              className="flex-shrink-0 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
+      {isPreviewOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setIsPreviewOpen(false)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            type="button"
+            className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-gray-800"
+            onClick={() => setIsPreviewOpen(false)}
+            aria-label="Close image preview"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <img
+            src={product.image}
+            alt={product.title}
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            onClick={(event) => event.stopPropagation()}
+          />
         </div>
       )}
     </article>
@@ -236,7 +204,7 @@ const ProductCard = React.memo(function ProductCard({
 
 function ProductGrid({ items }: { items: Product[] }) {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+    <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
       {items.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}
@@ -326,7 +294,7 @@ export default function Merchendise() {
 
   return (
     <div className="bg-white pt-25">
-      <section className="w-full container mx-auto bg-white py-12 px-6 lg:px-20 flex flex-col md:flex-row items-center justify-between sm:gap-10">
+      <section className="container mx-auto flex w-full flex-col items-center justify-between gap-8 bg-white px-4 py-10 sm:px-6 sm:py-12 md:flex-row lg:px-20">
         <motion.div
           initial={{ opacity: 0, x: -30 }}
           whileInView={{ opacity: 1, x: 0 }}
@@ -335,7 +303,7 @@ export default function Merchendise() {
           className="flex-1 text-center md:text-left"
         >
           <motion.h2
-            className="text-3xl md:text-5xl font-semibold text-gray-800 mb-4"
+            className="mb-4 text-3xl font-semibold text-gray-800 sm:text-4xl md:text-5xl"
             style={{ fontFamily: "fairplaybold" }}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -363,7 +331,7 @@ export default function Merchendise() {
             viewport={{ once: true }}
           >
             <motion.button
-              className="px-6 py-3 border border-gray-400 rounded-lg text-gray-700 hover:bg-gray-100 transition flex items-center gap-2"
+              className="flex w-full items-center justify-center gap-2 rounded-lg border border-gray-400 px-6 py-3 text-gray-700 transition hover:bg-gray-100 sm:w-auto"
               style={{ fontFamily: "arial" }}
               whileHover={{ x: 5 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
@@ -497,10 +465,10 @@ export default function Merchendise() {
           <section
             key={section.categoryName}
             data-category-section
-            className="w-full bg-white py-4 px-6 md:px-12 lg:px-20"
+            className="w-full bg-white px-4 py-6 sm:px-6 md:px-12 lg:px-20"
           >
             <h2
-              className="text-2xl md:text-3xl font-semibold text-center mb-10 text-gray-700"
+              className="mb-8 text-center text-2xl font-semibold text-gray-700 md:text-3xl"
               style={{ fontFamily: "fairplaybold" }}
             >
               {section.displayName}
@@ -513,7 +481,7 @@ export default function Merchendise() {
         <div className="w-full py-20 bg-gray-50">
           <div className="max-w-md mx-auto text-center px-6">
             <div className="w-20 h-20 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
-              <ShoppingCart className="w-10 h-10 text-gray-400" />
+              <PackageOpen className="h-10 w-10 text-gray-400" />
             </div>
             <h3
               className="text-2xl font-semibold text-gray-800 mb-3"

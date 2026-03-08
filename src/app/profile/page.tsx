@@ -4,45 +4,17 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { AlertTriangle, CheckCircle2, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, X, XCircle } from "lucide-react";
 import { apiUrl } from "@/utils/api";
 import { useUserAuth } from "@/contexts/UserAuthContext";
+import { useCart } from "@/contexts/CartContexts";
 
 interface UserReservation {
   id: number;
-  full_name: string;
-  email: string;
-  phone: string;
   reservation_date: string;
   reservation_time: string;
   guests: number;
-  notes: string;
-  food_preferences: string;
-  allergies: string;
   status: "pending" | "confirmed" | "cancelled" | "fulfilled" | "no_show";
-  cancelled_by: "guest" | "admin" | null;
-  created_at: string;
-}
-
-interface UserOrderItem {
-  id: string;
-  name: string;
-  price: number;
-  quantity: number;
-  category: string;
-  image: string;
-}
-
-interface UserOrder {
-  id: number;
-  status: "placed" | "confirmed" | "preparing" | "completed" | "cancelled";
-  subtotal: number;
-  deliveryFee: number;
-  serviceFee: number;
-  total: number;
-  notes: string;
-  createdAt: string;
-  items: UserOrderItem[];
 }
 
 type ProfileToastType = "success" | "error" | "confirm";
@@ -57,12 +29,20 @@ interface ProfileToastState {
 export default function ProfilePage() {
   const router = useRouter();
   const { user, token, isAuthenticated, isLoading, logout } = useUserAuth();
+  const { favorites, removeFromFavorites, isHydrated } = useCart();
 
   const [reservations, setReservations] = useState<UserReservation[]>([]);
-  const [orders, setOrders] = useState<UserOrder[]>([]);
+  const [reservationsError, setReservationsError] = useState("");
   const [loadingData, setLoadingData] = useState(false);
+  const [pendingReservationActions, setPendingReservationActions] = useState<
+    Record<number, "cancel" | "delete">
+  >({});
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [previewImage, setPreviewImage] = useState<{
+    src: string;
+    alt: string;
+  } | null>(null);
   const [toast, setToast] = useState<ProfileToastState>({
     show: false,
     type: "success",
@@ -71,6 +51,14 @@ export default function ProfilePage() {
   });
 
   const authHeaders = useMemo<Record<string, string>>(() => {
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+    return headers;
+  }, [token]);
+
+  const jsonAuthHeaders = useMemo<Record<string, string>>(() => {
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
     };
@@ -79,66 +67,6 @@ export default function ProfilePage() {
     }
     return headers;
   }, [token]);
-
-  const fetchProfileData = useCallback(async () => {
-    if (!token) return;
-    setLoadingData(true);
-    setError("");
-
-    try {
-      const [reservationsResponse, ordersResponse] = await Promise.all([
-        fetch(apiUrl("reservation/get_user_reservations.php"), {
-          headers: authHeaders,
-          cache: "no-store",
-        }),
-        fetch(apiUrl("orders/get_user_orders.php"), {
-          headers: authHeaders,
-          cache: "no-store",
-        }),
-      ]);
-
-      const reservationsPayload = await reservationsResponse.json().catch(() => null);
-      const ordersPayload = await ordersResponse.json().catch(() => null);
-
-      if (!reservationsResponse.ok || !reservationsPayload?.success) {
-        throw new Error(reservationsPayload?.message || "Failed to load reservations.");
-      }
-      if (!ordersResponse.ok || !ordersPayload?.success) {
-        throw new Error(ordersPayload?.message || "Failed to load orders.");
-      }
-
-      setReservations(
-        Array.isArray(reservationsPayload.reservations)
-          ? (reservationsPayload.reservations as UserReservation[])
-          : [],
-      );
-      setOrders(
-        Array.isArray(ordersPayload.orders) ? (ordersPayload.orders as UserOrder[]) : [],
-      );
-    } catch (fetchError) {
-      const text =
-        fetchError instanceof Error
-          ? fetchError.message
-          : "Unable to load profile data.";
-      setError(text);
-    } finally {
-      setLoadingData(false);
-    }
-  }, [authHeaders, token]);
-
-  useEffect(() => {
-    if (isLoading) return;
-    if (!isAuthenticated) return;
-    fetchProfileData();
-  }, [fetchProfileData, isAuthenticated, isLoading]);
-
-  useEffect(() => {
-    if (!toast.show || toast.type === "confirm") return;
-    const timer = window.setTimeout(() => {
-      setToast({ show: false, type: "success", message: "", onConfirm: null });
-    }, 3000);
-    return () => window.clearTimeout(timer);
-  }, [toast.show, toast.type]);
 
   const showToast = (
     type: ProfileToastType,
@@ -153,14 +81,89 @@ export default function ProfilePage() {
     });
   };
 
+  const closeToast = () => {
+    setToast({ show: false, type: "success", message: "", onConfirm: null });
+  };
+
+  const confirmToastAction = () => {
+    const action = toast.onConfirm;
+    closeToast();
+    if (action) {
+      action();
+    }
+  };
+
+  const fetchProfileData = useCallback(async () => {
+    if (!token) return;
+    setLoadingData(true);
+    setError("");
+    setReservationsError("");
+
+    try {
+      const response = await fetch(apiUrl("reservation/get_user_reservations.php"), {
+        headers: authHeaders,
+        cache: "no-store",
+      });
+      const payload = await response.json().catch(() => null);
+      if (!response.ok || !payload?.success) {
+        throw new Error(payload?.message || "Failed to load reservations.");
+      }
+
+      setReservations(
+        Array.isArray(payload?.reservations)
+          ? (payload.reservations as UserReservation[])
+          : [],
+      );
+    } catch (fetchError) {
+      const text =
+        fetchError instanceof Error
+          ? fetchError.message
+          : "Unable to load profile data.";
+      setReservations([]);
+      setReservationsError(text);
+      setError(text);
+    } finally {
+      setLoadingData(false);
+    }
+  }, [authHeaders, token]);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!isAuthenticated) return;
+    void fetchProfileData();
+  }, [fetchProfileData, isAuthenticated, isLoading]);
+
+  useEffect(() => {
+    if (!toast.show || toast.type === "confirm") return;
+    const timer = window.setTimeout(() => {
+      setToast({ show: false, type: "success", message: "", onConfirm: null });
+    }, 3000);
+    return () => window.clearTimeout(timer);
+  }, [toast.show, toast.type]);
+
   const cancelReservation = async (id: number) => {
+    if (pendingReservationActions[id]) return;
+
+    const previousReservation = reservations.find(
+      (reservation) => reservation.id === id,
+    );
+    if (!previousReservation) return;
+
     setError("");
     setMessage("");
+    setPendingReservationActions((prev) => ({ ...prev, [id]: "cancel" }));
+    setReservations((prev) =>
+      prev.map((reservation) =>
+        reservation.id === id
+          ? { ...reservation, status: "cancelled" }
+          : reservation,
+      ),
+    );
 
     try {
       const response = await fetch(apiUrl("reservation/cancel_user_reservation.php"), {
         method: "POST",
-        headers: authHeaders,
+        headers: jsonAuthHeaders,
         body: JSON.stringify({ id }),
       });
 
@@ -174,40 +177,84 @@ export default function ProfilePage() {
       showToast("success", successMessage);
       await fetchProfileData();
     } catch (cancelError) {
+      setReservations((prev) =>
+        prev.map((reservation) =>
+          reservation.id === id ? previousReservation : reservation,
+        ),
+      );
       const text =
         cancelError instanceof Error
           ? cancelError.message
           : "Unable to cancel reservation.";
       setError(text);
       showToast("error", text);
+    } finally {
+      setPendingReservationActions((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     }
   };
 
-  const cancelOrder = async (orderId: number) => {
+  const deleteReservation = async (id: number) => {
+    if (pendingReservationActions[id]) return;
+
+    const previousIndex = reservations.findIndex(
+      (reservation) => reservation.id === id,
+    );
+    const previousReservation =
+      previousIndex >= 0 ? reservations[previousIndex] : null;
+    if (!previousReservation) return;
+
     setError("");
     setMessage("");
+    setPendingReservationActions((prev) => ({ ...prev, [id]: "delete" }));
+    setReservations((prev) =>
+      prev.filter((reservation) => reservation.id !== id),
+    );
 
     try {
-      const response = await fetch(apiUrl("orders/cancel_order.php"), {
+      const response = await fetch(apiUrl("reservation/delete_user_reservation.php"), {
         method: "POST",
-        headers: authHeaders,
-        body: JSON.stringify({ orderId }),
+        headers: jsonAuthHeaders,
+        body: JSON.stringify({ id }),
       });
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.success) {
-        throw new Error(payload?.message || "Failed to cancel order.");
+        throw new Error(payload?.message || "Failed to delete reservation.");
       }
 
-      const successMessage = payload.message || "Order cancelled.";
+      const successMessage = payload.message || "Reservation deleted.";
       setMessage(successMessage);
       showToast("success", successMessage);
       await fetchProfileData();
-    } catch (cancelError) {
+    } catch (deleteError) {
+      setReservations((prev) => {
+        if (prev.some((reservation) => reservation.id === id)) {
+          return prev;
+        }
+        const restored = [...prev];
+        const insertIndex =
+          previousIndex >= 0 && previousIndex <= restored.length
+            ? previousIndex
+            : restored.length;
+        restored.splice(insertIndex, 0, previousReservation);
+        return restored;
+      });
       const text =
-        cancelError instanceof Error ? cancelError.message : "Unable to cancel order.";
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Unable to delete reservation.";
       setError(text);
       showToast("error", text);
+    } finally {
+      setPendingReservationActions((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     }
   };
 
@@ -221,21 +268,17 @@ export default function ProfilePage() {
     );
   };
 
-  const handleOrderCancelClick = (order: UserOrder) => {
-    showToast("confirm", `Cancel order #${order.id}?`, () => {
-      void cancelOrder(order.id);
+  const handleReservationDeleteClick = (reservation: UserReservation) => {
+    showToast("confirm", `Delete reservation #${reservation.id}?`, () => {
+      void deleteReservation(reservation.id);
     });
   };
 
-  const closeToast = () => {
-    setToast({ show: false, type: "success", message: "", onConfirm: null });
-  };
-
-  const confirmToastAction = () => {
-    const action = toast.onConfirm;
-    closeToast();
-    if (action) {
-      action();
+  const removeFavorite = (favoriteId: string) => {
+    const favorite = favorites.find((item) => item.id === favoriteId);
+    removeFromFavorites(favoriteId);
+    if (favorite) {
+      showToast("success", `${favorite.name} removed from favorites.`);
     }
   };
 
@@ -255,7 +298,7 @@ export default function ProfilePage() {
         <div className="mx-auto max-w-3xl rounded-xl border border-gray-200 bg-white p-8 text-center">
           <h1 className="text-xl font-semibold text-gray-900">Sign in required</h1>
           <p className="mt-2 text-sm text-gray-600">
-            Please login to manage your reservations and orders.
+            Please login to manage your reservations and favorites.
           </p>
           <div className="mt-4">
             <Link
@@ -283,7 +326,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={fetchProfileData}
+                onClick={() => void fetchProfileData()}
                 className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
               >
                 Refresh
@@ -355,7 +398,7 @@ export default function ProfilePage() {
                     <div className="flex-1">
                       <p className="text-sm font-semibold">
                         {toast.type === "confirm"
-                          ? "Please confirm cancellation"
+                          ? "Please confirm action"
                           : toast.type === "success"
                             ? "Action completed"
                             : "Action failed"}
@@ -376,7 +419,7 @@ export default function ProfilePage() {
                             onClick={confirmToastAction}
                             className="rounded-md border border-red-300 bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700"
                           >
-                            Confirm Cancel
+                            Confirm
                           </button>
                         </>
                       ) : (
@@ -404,101 +447,160 @@ export default function ProfilePage() {
           )}
         </AnimatePresence>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 ">
-          <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900">My Reservations</h2>
-            {loadingData ? (
-              <p className="mt-4 text-sm text-gray-500">Loading reservations...</p>
-            ) : reservations.length === 0 ? (
-              <p className="mt-4 text-sm text-gray-500">No reservations found.</p>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {reservations.map((reservation) => (
+        <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900">My Reservations</h2>
+          {!!reservationsError && (
+            <p className="mt-2 text-xs text-red-600">{reservationsError}</p>
+          )}
+          {loadingData ? (
+            <p className="mt-4 text-sm text-gray-500">Loading reservations...</p>
+          ) : reservations.length === 0 ? (
+            <p className="mt-4 text-sm text-gray-500">No reservations found.</p>
+          ) : (
+            <div className="mt-4 space-y-3">
+              {reservations.map((reservation) => {
+                const pendingAction =
+                  pendingReservationActions[reservation.id] || null;
+                return (
                   <div
                     key={reservation.id}
                     className="min-w-0 rounded-lg border border-gray-200 p-4"
                   >
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-gray-900">
-                        Reservation #{reservation.id}
-                      </p>
-                      <span className="rounded-full border border-gray-300 px-2 py-1 text-xs capitalize text-gray-700">
-                        {reservation.status}
-                      </span>
-                    </div>
-                    <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-xs text-gray-600">
-                      <span className="break-words">
-                        {reservation.reservation_date} at {reservation.reservation_time}
-                      </span>
-                      <span className="text-gray-400">|</span>
-                      <span>{reservation.guests} guest(s)</span>
-                    </div>
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="text-sm font-semibold text-gray-900">
+                      Reservation #{reservation.id}
+                    </p>
+                    <span className="rounded-full border border-gray-300 px-2 py-1 text-xs capitalize text-gray-700">
+                      {reservation.status}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-xs text-gray-600">
+                    <span className="break-words">
+                      {reservation.reservation_date} at {reservation.reservation_time}
+                    </span>
+                    <span className="text-gray-400">|</span>
+                    <span>{reservation.guests} guest(s)</span>
+                  </div>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
                     {reservation.status !== "cancelled" &&
                       reservation.status !== "fulfilled" &&
                       reservation.status !== "no_show" && (
                         <button
                           onClick={() => handleReservationCancelClick(reservation)}
-                          className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                          disabled={!!pendingAction}
+                          className="rounded border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          Cancel Reservation
+                          {pendingAction === "cancel"
+                            ? "Cancelling..."
+                            : "Cancel Reservation"}
                         </button>
                       )}
+                    <button
+                      onClick={() => handleReservationDeleteClick(reservation)}
+                      disabled={!!pendingAction}
+                      className="rounded border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {pendingAction === "delete" ? "Deleting..." : "Delete"}
+                    </button>
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
-          <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="text-lg font-semibold text-gray-900">My Orders</h2>
-            {loadingData ? (
-              <p className="mt-4 text-sm text-gray-500">Loading orders...</p>
-            ) : orders.length === 0 ? (
-              <p className="mt-4 text-sm text-gray-500">No orders found.</p>
-            ) : (
-              <div className="mt-4 space-y-3">
-                {orders.map((order) => (
-                  <div key={order.id} className="min-w-0 rounded-lg border border-gray-200 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-gray-900">
-                        Order #{order.id}
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900">My Favorites</h2>
+          {!isHydrated ? (
+            <p className="mt-4 text-sm text-gray-500">Loading favorites...</p>
+          ) : favorites.length === 0 ? (
+            <p className="mt-4 text-sm text-gray-500">No favorite items selected yet.</p>
+          ) : (
+            <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {favorites.map((favorite) => (
+                <div
+                  key={favorite.id}
+                  className="min-w-0 rounded-lg border border-gray-200 p-3"
+                >
+                  <div className="flex items-start gap-3">
+                    <button
+                      type="button"
+                      className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-gray-100"
+                      onClick={() => {
+                        if (!favorite.image) return;
+                        setPreviewImage({
+                          src: favorite.image,
+                          alt: favorite.alt || favorite.name,
+                        });
+                      }}
+                      aria-label={`Preview ${favorite.name}`}
+                    >
+                      {favorite.image ? (
+                        <img
+                          src={favorite.image}
+                          alt={favorite.alt || favorite.name}
+                          className="h-16 w-16 object-cover"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">
+                          No Image
+                        </div>
+                      )}
+                    </button>
+
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-gray-900">
+                        {favorite.name}
                       </p>
-                      <span className="rounded-full border border-gray-300 px-2 py-1 text-xs capitalize text-gray-700">
-                        {order.status}
-                      </span>
+                      <p className="mt-1 text-xs capitalize text-gray-500">
+                        {favorite.category || "food"}
+                      </p>
+                      <p className="mt-1 text-sm font-medium text-gray-800">
+                        ${Number(favorite.price || 0).toFixed(2)}
+                      </p>
                     </div>
-
-                    <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-xs text-gray-600">
-                      <span className="break-words">
-                        {new Date(order.createdAt).toLocaleString()}
-                      </span>
-                      <span className="text-gray-400">|</span>
-                      <span>Total ${Number(order.total || 0).toFixed(2)}</span>
-                    </div>
-
-                    <div className="mt-2 max-h-24 overflow-y-auto pr-1 text-xs text-gray-600">
-                      {order.items?.map((item) => (
-                        <p key={`${order.id}-${item.id}`} className="break-words">
-                          {item.name} x {item.quantity}
-                        </p>
-                      ))}
-                    </div>
-
-                    {(order.status === "placed" || order.status === "confirmed") && (
-                      <button
-                        onClick={() => handleOrderCancelClick(order)}
-                        className="mt-3 rounded border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100"
-                      >
-                        Cancel Order
-                      </button>
-                    )}
                   </div>
-                ))}
-              </div>
-            )}
-          </section>
-        </div>
+
+                  <div className="mt-3 flex items-center gap-2">
+                    <button
+                      onClick={() => removeFavorite(favorite.id)}
+                      className="rounded border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
       </div>
+
+      {previewImage && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setPreviewImage(null)}
+          role="dialog"
+          aria-modal="true"
+        >
+          <button
+            type="button"
+            className="absolute right-4 top-4 rounded-full bg-white/90 p-2 text-gray-800"
+            onClick={() => setPreviewImage(null)}
+            aria-label="Close image preview"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <img
+            src={previewImage.src}
+            alt={previewImage.alt}
+            className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

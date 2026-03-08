@@ -3,6 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FaCalendarAlt, FaChair, FaClock, FaUser } from "react-icons/fa";
 import { apiUrl } from "@/utils/api";
+import { useUserAuth } from "@/contexts/UserAuthContext";
 import ReservationCarousal from "./Carousail";
 
 interface ReservationData {
@@ -127,6 +128,10 @@ function parseTimeParts(timeValue: string): { hours: number; minutes: number } |
   return { hours, minutes };
 }
 
+function isValidEmailAddress(email: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
 function validateReservationDateTime(
   dateValue: string,
   timeValue: string,
@@ -239,6 +244,7 @@ const LoadingState = React.memo(() => (
 LoadingState.displayName = "LoadingState";
 
 export default function ReservationPage() {
+  const { user, token: authToken, isAuthenticated } = useUserAuth();
   const [step, setStep] = useState(1);
   const [mounted, setMounted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -387,12 +393,12 @@ export default function ReservationPage() {
       personalInfo.fullName.trim() &&
       personalInfo.email.trim() &&
       personalInfo.phone.trim() &&
-      emailVerification.status === "verified",
-    [emailVerification.status, personalInfo],
+      (isAuthenticated || emailVerification.status === "verified"),
+    [emailVerification.status, isAuthenticated, personalInfo],
   );
 
-  const isValidGmail = useMemo(
-    () => /^[a-zA-Z0-9._%+\-]+@gmail\.com$/i.test(personalInfo.email.trim()),
+  const isValidEmail = useMemo(
+    () => isValidEmailAddress(personalInfo.email.trim()),
     [personalInfo.email],
   );
 
@@ -411,10 +417,10 @@ export default function ReservationPage() {
     if (isSendingOtp) return;
 
     const email = personalInfo.email.trim();
-    if (!isValidGmail) {
+    if (!isValidEmail) {
       setEmailVerification((prev) => ({
         ...prev,
-        errorMessage: "Please enter a valid Gmail address first.",
+        errorMessage: "Please enter a valid email address first.",
         infoMessage: "",
       }));
       return;
@@ -464,7 +470,7 @@ export default function ReservationPage() {
         status: "sent",
         otpToken: data.otpToken,
         verificationToken: "",
-        infoMessage: "Verification code sent. Please check your Gmail inbox.",
+        infoMessage: "Verification code sent. Please check your inbox.",
         errorMessage: "",
       });
     } catch (error) {
@@ -482,7 +488,7 @@ export default function ReservationPage() {
     } finally {
       setIsSendingOtp(false);
     }
-  }, [isSendingOtp, isValidGmail, personalInfo.email]);
+  }, [isSendingOtp, isValidEmail, personalInfo.email]);
 
   const verifyEmailCode = useCallback(async () => {
     if (isVerifyingOtp) return;
@@ -597,8 +603,8 @@ export default function ReservationPage() {
       specialRequests: "",
     });
     setPersonalInfo({
-      fullName: "",
-      email: "",
+      fullName: isAuthenticated ? user?.name || "" : "",
+      email: isAuthenticated ? user?.email || "" : "",
       phone: "",
     });
     setEmailOtpCode("");
@@ -609,14 +615,15 @@ export default function ReservationPage() {
       infoMessage: "",
       errorMessage: "",
     });
-  }, []);
+  }, [isAuthenticated, user?.email, user?.name]);
 
   const handleSubmit = useCallback(async () => {
     if (isSubmitting) return;
 
     if (
-      emailVerification.status !== "verified" ||
-      !emailVerification.verificationToken
+      !isAuthenticated &&
+      (emailVerification.status !== "verified" ||
+        !emailVerification.verificationToken)
     ) {
       setStep(2);
       setFeedback({
@@ -662,12 +669,19 @@ export default function ReservationPage() {
         allergies: reservationData.allergies.trim(),
         notes,
         termsAccepted: reservationData.agreement,
-        emailVerificationToken: emailVerification.verificationToken,
+        ...(isAuthenticated
+          ? {}
+          : { emailVerificationToken: emailVerification.verificationToken }),
       };
+
+      const headers: HeadersInit = { "Content-Type": "application/json" };
+      if (authToken) {
+        headers.Authorization = `Bearer ${authToken}`;
+      }
 
       const response = await fetch(apiUrl("reservation/submit_reservation.php"), {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify(payload),
       });
 
@@ -684,7 +698,7 @@ export default function ReservationPage() {
       setFeedback({
         type: "success",
         message:
-          "Reservation submitted successfully. Please check your mail for details and cancellation instructions.",
+          "Reservation submitted successfully. Please check your mail for details",
       });
 
       resetForm();
@@ -700,8 +714,10 @@ export default function ReservationPage() {
       setIsSubmitting(false);
     }
   }, [
+    authToken,
     emailVerification.status,
     emailVerification.verificationToken,
+    isAuthenticated,
     isSubmitting,
     personalInfo,
     reservationData,
@@ -734,7 +750,26 @@ export default function ReservationPage() {
       infoMessage: "",
       errorMessage: "",
     });
-  }, [personalInfo.email]);
+  }, [isAuthenticated, personalInfo.email]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) {
+      return;
+    }
+
+    setPersonalInfo((prev) => {
+      const nextName = prev.fullName.trim() || user.name || "";
+      const nextEmail = user.email || prev.email;
+      if (prev.fullName === nextName && prev.email === nextEmail) {
+        return prev;
+      }
+      return {
+        ...prev,
+        fullName: nextName,
+        email: nextEmail,
+      };
+    });
+  }, [isAuthenticated, user]);
 
   useEffect(() => {
     if (!reservationData.date) return;
@@ -1029,32 +1064,38 @@ export default function ReservationPage() {
                   value={personalInfo.email}
                   onChange={(e) => updatePersonalInfo({ email: e.target.value })}
                   placeholder="Enter your email address"
-                  className="w-full border-b border-yellow-500 p-2 text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  readOnly={isAuthenticated}
+                  className={`w-full border-b border-yellow-500 p-2 text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500 ${
+                    isAuthenticated ? "cursor-not-allowed bg-gray-100" : ""
+                  }`}
                   required
                 />
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={sendEmailVerificationCode}
-                    disabled={isSendingOtp || !isValidGmail}
-                    className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isSendingOtp ? "Sending..." : "Send verification code"}
-                  </button>
-                  {emailVerification.status === "verified" && (
-                    <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
-                      Verified
-                    </span>
-                  )}
-                </div>
+                {!isAuthenticated && (
+                  <div className="mt-2 flex flex-wrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={sendEmailVerificationCode}
+                      disabled={isSendingOtp || !isValidEmail}
+                      className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isSendingOtp ? "Sending..." : "Send verification code"}
+                    </button>
+                    {emailVerification.status === "verified" && (
+                      <span className="rounded-full bg-green-100 px-2 py-1 text-xs font-medium text-green-700">
+                        Verified
+                      </span>
+                    )}
+                  </div>
+                )}
 
-                {!isValidGmail && personalInfo.email.trim() !== "" && (
+                {!isAuthenticated && !isValidEmail && personalInfo.email.trim() !== "" && (
                   <p className="mt-2 text-xs text-red-600">
-                    Please use a valid Gmail address.
+                    Please use a valid email address.
                   </p>
                 )}
 
-                {emailVerification.status !== "verified" &&
+                {!isAuthenticated &&
+                  emailVerification.status !== "verified" &&
                   emailVerification.otpToken !== "" && (
                     <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 p-3">
                       <label
@@ -1090,6 +1131,12 @@ export default function ReservationPage() {
                       </div>
                     </div>
                   )}
+
+                {isAuthenticated && (
+                  <p className="mt-2 text-xs text-green-700">
+                    Logged in account verified. OTP is not required.
+                  </p>
+                )}
 
                 {emailVerification.infoMessage && (
                   <p className="mt-2 text-xs text-green-700">
@@ -1173,7 +1220,7 @@ export default function ReservationPage() {
                 />
               </div>
             </div>
-            {emailVerification.status !== "verified" && (
+            {!isAuthenticated && emailVerification.status !== "verified" && (
               <p className="mt-3 text-xs text-amber-700">
                 Verify your email to continue.
               </p>

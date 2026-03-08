@@ -159,12 +159,12 @@ export default function Gallery() {
       <AnimatePresence>
         {selectedImage && (
           <motion.div
-            className="fixed inset-0 bg-black/80 bg-opacity-90 z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/80 bg-opacity-90 p-4"
             onClick={() => setSelectedImage(null)}
           >
             <motion.div className="relative max-w-4xl w-full max-h-full">
               <button
-                className="absolute right-[-30px] text-white text-3xl z-10"
+                className="absolute right-[-30px] text-white text-3xl "
                 onClick={() => setSelectedImage(null)}
               >
                 &times;
