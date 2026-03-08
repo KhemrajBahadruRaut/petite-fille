@@ -199,7 +199,7 @@ function validateReservationDateTime(
 }
 
 const TERMS_PARAGRAPHS = [
-  "If you are unable to fulfil your booking, you are obligated to cancel it as soon as possible using the booking link we will send you after completing the booking, or by contacting us by phone (thank you).",
+  "If you are unable to fulfil your booking, you are obligated to cancel it as soon as possible using the booking link on your profile section, or by contacting us by phone (thank you).",
   "You accept that petite fille cafe and its suppliers collect, store and process your personal data and data collected automatically when making this booking. Data is also collected while communicating with and visiting the restaurant.",
   "This data includes, but is not limited to: name, e-mail address, phone number, food and drink preferences and allergies, location and device specifications.",
   "Under the European GDPR law you may request a copy of the data we have collected, by sending an e-mail to petitefillerosanna@gmail.com.",
@@ -1304,10 +1304,10 @@ export default function ReservationPage() {
                 </span>
               </div>
               <hr className="my-3 text-gray-400" />
-              <div className="flex justify-between text-lg font-semibold">
+              {/* <div className="flex justify-between text-lg font-semibold">
                 <span className="text-gray-900">Total Fee:</span>
                 <span className="text-gray-900">${totalFee}</span>
-              </div>
+              </div> */}
             </div>
             <nav className="mt-6 flex justify-between">
               <button

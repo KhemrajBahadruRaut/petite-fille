@@ -274,9 +274,9 @@ export default function AdminMerch() {
 
   /* ---------------- JSX ---------------- */
   return (
-    <div className="bg-gray-50">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       {/* Toasts */}
-      <div className="fixed top-6 right-6 z-50 w-96 space-y-3">
+      <div className="fixed left-3 right-3 top-3 z-50 space-y-3 sm:left-auto sm:right-6 sm:top-6 sm:w-96">
         {toasts.map((t) => (
           <ToastNotification
             key={t.id}
@@ -287,11 +287,11 @@ export default function AdminMerch() {
       </div>
 
       {/* CATEGORY MANAGER */}
-      <div className="bg-white border p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 rounded-xl border bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
           <h2 className="text-lg font-semibold text-black">Merch Categories</h2>
           {/* Compact Add Input */}
-          <div className="flex gap-2 w-full max-w-xs">
+          <div className="flex w-full flex-col gap-2 sm:max-w-xs sm:flex-row">
             <input
               value={newCategory}
               onChange={(e) => setNewCategory(e.target.value)}
@@ -363,7 +363,7 @@ export default function AdminMerch() {
       </div>
 
       {/* Add/Edit Form */}
-      <div className="bg-white  text-gray-600 shadow-sm p-6">
+      <div className="mb-6 rounded-xl border bg-white p-4 text-gray-600 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-6">
           {editId ? "Edit Merch Item" : "Add New Merch Item"}
         </h2>
@@ -433,7 +433,7 @@ export default function AdminMerch() {
           <button
             onClick={handleSubmit}
             disabled={isLoading || isSubmitting}
-            className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-2 py-1 font-medium transition"
+            className="flex w-full items-center justify-center gap-2 bg-indigo-600 px-3 py-2 font-medium text-white transition hover:bg-indigo-700 sm:w-auto"
           >
             <Plus className="w-4 h-4" />
             {isSubmitting ? "Saving..." : editId ? "Update Item" : "Add Item"}
@@ -442,15 +442,15 @@ export default function AdminMerch() {
       </div>
 
       {/* Merch Table */}
-      <div className="bg-white border overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+      <div className="overflow-hidden rounded-xl border bg-white">
+        <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
           <h2 className="text-lg font-semibold text-gray-900">
             Merchandise Items
           </h2>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[880px]">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">
@@ -507,7 +507,7 @@ export default function AdminMerch() {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex gap-3">
+                      <div className="flex flex-wrap gap-3">
                         <button
                           onClick={() => handleEdit(item)}
                           className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"

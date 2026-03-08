@@ -365,7 +365,7 @@ export default function AboutUsCMS() {
   );
 
   const renderSectionForm = ({ section }: { section: "top" | "bottom" }) => (
-    <div className="space-y-6 p-6 bg-white border-2 border-t-0 border-gray-200 rounded-b-lg">
+    <div className="space-y-6 rounded-b-lg border-2 border-t-0 border-gray-200 bg-white p-4 sm:p-6">
       {/* Paragraphs */}
       <div className="grid grid-cols-1 gap-6">
         <div>
@@ -408,7 +408,7 @@ export default function AboutUsCMS() {
   );
 
   return (
-    <div className="max-w-6xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+    <div className="mx-auto max-w-6xl bg-white p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
         <h2 className="text-xl font-semibold text-gray-900 mb-2">About Us Content Editor</h2>
         <p className="text-gray-600">Edit both top and bottom sections with rich text formatting</p>
@@ -416,7 +416,7 @@ export default function AboutUsCMS() {
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Section Tabs */}
-        <div className="flex border-b border-gray-200">
+        <div className="flex flex-wrap border-b border-gray-200">
           {renderSectionTab({ section: "top", label: "Top Section" })}
           {renderSectionTab({ section: "bottom", label: "Bottom Section" })}
         </div>
@@ -425,13 +425,13 @@ export default function AboutUsCMS() {
         {renderSectionForm({ section: activeSection })}
 
         {/* Quick Actions */}
-        <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
-          <div className="flex justify-between items-center">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
               <h3 className="text-sm font-medium text-gray-700">Quick Actions</h3>
               <p className="text-sm text-gray-500">Manage both sections efficiently</p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:space-x-0">
               <button
                 type="button"
                 onClick={() => {
@@ -440,7 +440,7 @@ export default function AboutUsCMS() {
                     bottom: { ...formData.bottom, paragraph1: "", paragraph2: "" }
                   });
                 }}
-                className="px-4 py-2 text-sm text-red-600 border border-red-300 rounded hover:bg-red-50"
+                className="w-full rounded border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 sm:w-auto"
               >
                 Clear All Text
               </button>
@@ -452,7 +452,7 @@ export default function AboutUsCMS() {
                     bottom: { ...prev.bottom, image1: null, image2: null, currentImage1: undefined, currentImage2: undefined }
                   }));
                 }}
-                className="px-4 py-2 text-sm text-red-600 border border-red-300 rounded hover:bg-red-50"
+                className="w-full rounded border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 sm:w-auto"
               >
                 Remove All Images
               </button>
@@ -461,14 +461,14 @@ export default function AboutUsCMS() {
         </div>
 
         {/* Submit Button */}
-        <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-6">
           <div className="text-sm text-gray-500">
             Editing: <span className="font-medium capitalize">{activeSection} Section</span>
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="px-8 py-3 bg-blue-600 text-white font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="w-full rounded-md bg-blue-600 px-6 py-3 font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
           >
             {loading ? (
               <span className="flex items-center">

@@ -993,9 +993,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       `}
       >
         {/* Top Bar */}
-        <header className="border-b border-slate-200 sticky top-0 z-30 backdrop-blur-sm bg-white/95 shadow-sm">
-          <div className="flex items-center justify-between p-2">
-            <div className="flex items-center space-x-4">
+        <header className="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur-sm">
+          <div className="flex items-center justify-between gap-2 p-2 sm:p-3">
+            <div className="flex min-w-0 items-center space-x-2 sm:space-x-4">
               <button
                 onClick={toggleSidebar}
                 className="p-2 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:scale-110 lg:hidden group"
@@ -1016,18 +1016,18 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </svg>
               </button>
 
-              <div className="flex items-center space-x-3">
-                <h1 className="text-xl font-semibold text-slate-800">
+              <div className="flex min-w-0 items-center space-x-2 sm:space-x-3">
+                <h1 className="truncate text-base font-semibold text-slate-800 sm:text-xl">
                   {getPageTitle()}
                 </h1>
-                <div className="w-1.5 h-1.5 bg-slate-300 rounded-full"></div>
-                <span className="text-sm text-slate-500 font-medium">
+                <div className="hidden h-1.5 w-1.5 rounded-full bg-slate-300 sm:block"></div>
+                <span className="hidden text-sm font-medium text-slate-500 sm:inline">
                   Management
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center gap-2 sm:gap-4">
               <div className="relative">
                 <button
                   onClick={() => setIsAlertsOpen((prev) => !prev)}
@@ -1043,7 +1043,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 </button>
 
                 {isAlertsOpen && (
-                  <div className="absolute right-0 mt-2 w-96 max-h-[30rem] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl z-50">
+                  <div className="absolute right-0 z-50 mt-2 w-[calc(100vw-1rem)] max-h-[30rem] overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl sm:w-96">
                     <div className="p-3 border-b border-slate-100 bg-slate-50">
                       <div className="flex items-center justify-between gap-3">
                         <p className="text-sm font-semibold text-slate-800">
@@ -1123,13 +1123,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
               <button
                 onClick={handleLogout}
-                className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100"
+                className="rounded-lg border border-slate-300 px-2 py-2 text-xs font-medium text-slate-700 transition hover:bg-slate-100 sm:px-3 sm:text-sm"
               >
                 Logout
               </button>
 
               {/* Profile Avatar */}
-              <div className="w-10 h-10 bg-linear-to-br from-blue-600 to-blue-800 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all duration-300 cursor-pointer hover:scale-110 group">
+              <div className="group hidden h-10 w-10 cursor-pointer items-center justify-center rounded-full bg-linear-to-br from-blue-600 to-blue-800 shadow-md transition-all duration-300 hover:scale-110 hover:shadow-lg sm:flex">
                 <span className="text-white font-semibold text-sm group-hover:scale-110 transition-transform duration-300">
                   A
                 </span>
@@ -1140,7 +1140,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
 
         {/* Page Content */}
         <div>
-          <div className="bg-white rounded-xl border border-slate-200 shadow-sm min-h-[calc(100vh-180px)] transition-all duration-300 hover:shadow-md">
+          <div className="min-h-[calc(100vh-180px)] rounded-none border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:shadow-md sm:rounded-xl">
             {children}
           </div>
         </div>

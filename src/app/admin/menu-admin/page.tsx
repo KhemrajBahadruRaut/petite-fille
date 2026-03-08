@@ -385,9 +385,9 @@ export default function AdminMenu() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       {/* Toasts */}
-      <div className="fixed top-6 right-6 z-50 w-96 max-w-full">
+      <div className="fixed left-3 right-3 top-3 z-50 sm:left-auto sm:right-6 sm:top-6 sm:w-96 sm:max-w-full">
         {toasts.map((t) => (
           <ToastNotification
             key={t.id}
@@ -411,11 +411,11 @@ export default function AdminMenu() {
       </div>
 
       {/* Categories */}
-      <div className="bg-white rounded-xl border p-6 mb-8">
+      <div className="mb-8 rounded-xl border bg-white p-4 sm:p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">
           Manage Categories
         </h2>
-        <div className="flex gap-3 mb-4 text-gray-500">
+        <div className="mb-4 flex flex-col gap-3 text-gray-500 sm:flex-row">
           <input
             type="text"
             value={newCategory}
@@ -425,7 +425,7 @@ export default function AdminMenu() {
           />
           <button
             onClick={addCategory}
-            className="bg-amber-600 text-white px-4 rounded-lg"
+            className="rounded-lg bg-amber-600 px-4 py-2 text-white sm:w-auto"
           >
             Add
           </button>
@@ -485,7 +485,7 @@ export default function AdminMenu() {
       </div>
 
       {/* Add/Edit Item Form */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8 text-gray-500">
+      <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4 text-gray-500 shadow-sm sm:p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-6">
           {editingItemId ? "Edit Menu Item" : "Add New Menu Item"}
         </h2>
@@ -565,7 +565,7 @@ export default function AdminMenu() {
           <button
             onClick={submitItem}
             disabled={isLoading}
-            className="flex items-center gap-2 bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400 text-white px-6 py-2.5 rounded-lg font-medium transition-colors duration-200"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-600 px-6 py-2.5 font-medium text-white transition-colors duration-200 hover:bg-amber-700 disabled:bg-amber-400 sm:w-auto"
           >
             <Plus className="w-4 h-4" />
             {isLoading
@@ -579,7 +579,7 @@ export default function AdminMenu() {
 
       {/* Tables */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
           <h2 className="text-lg font-semibold text-gray-900">
             Main Menu Items
           </h2>
@@ -589,7 +589,7 @@ export default function AdminMenu() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[980px]">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
@@ -650,7 +650,8 @@ export default function AdminMenu() {
                         </span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap flex gap-2">
+                    <td className="whitespace-nowrap px-6 py-4">
+                      <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => editItem(item)}
                         className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
@@ -663,6 +664,7 @@ export default function AdminMenu() {
                       >
                         <Trash2 className="w-4 h-4" /> Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -689,7 +691,7 @@ export default function AdminMenu() {
 
       {/* Sides Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
+        <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
           <h2 className="text-lg font-semibold text-gray-900">
             Sides & Add-ons
           </h2>
@@ -699,7 +701,7 @@ export default function AdminMenu() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[720px]">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
@@ -733,7 +735,8 @@ export default function AdminMenu() {
                     <td className="px-6 py-4 text-gray-900 font-medium">
                       ${parseFloat(item.price.toString()).toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 flex gap-2">
+                    <td className="px-6 py-4">
+                      <div className="flex flex-wrap gap-2">
                       <button
                         onClick={() => editItem(item)}
                         className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
@@ -746,6 +749,7 @@ export default function AdminMenu() {
                       >
                         <Trash2 className="w-4 h-4" /> Delete
                       </button>
+                      </div>
                     </td>
                   </tr>
                 ))

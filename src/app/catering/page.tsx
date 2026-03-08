@@ -113,15 +113,15 @@ const staggerContainer: Variants = {
 };
 
 const Page = () => {
-  const [current, setCurrent] = useState(0);
+  // const [current, setCurrent] = useState(0);
 
-  const prevSlide = () => {
-    setCurrent((prev) => (prev === 0 ? packages.length - 1 : prev - 1));
-  };
+  // const prevSlide = () => {
+  //   setCurrent((prev) => (prev === 0 ? packages.length - 1 : prev - 1));
+  // };
 
-  const nextSlide = () => {
-    setCurrent((prev) => (prev === packages.length - 1 ? 0 : prev + 1));
-  };
+  // const nextSlide = () => {
+  //   setCurrent((prev) => (prev === packages.length - 1 ? 0 : prev + 1));
+  // };
 
   return (
     <section className="bg-white text-center overflow-hidden pt-25">

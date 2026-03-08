@@ -112,7 +112,7 @@ export default function MainPage() {
             href="/menu"
             className={`${buttonBase} ${orderOnlineBtn}`}
           >
-            Order Online
+            See Menu
           </Link>
         </div>
       </div>

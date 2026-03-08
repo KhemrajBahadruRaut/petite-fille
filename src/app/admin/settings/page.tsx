@@ -101,7 +101,7 @@ export default function AdminSettingsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="mb-6">
         <h1 className="text-xl font-semibold text-gray-900">Settings</h1>
         <p className="text-gray-600">Manage your admin account settings.</p>
@@ -119,8 +119,8 @@ export default function AdminSettingsPage() {
         </div>
       )}
 
-      <div className="max-w-2xl rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="mb-5 flex items-start justify-between gap-4">
+      <div className="max-w-2xl rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-5 flex flex-wrap items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="rounded-lg bg-blue-100 p-2">
               <ShieldCheck className="h-5 w-5 text-blue-700" />
@@ -139,7 +139,7 @@ export default function AdminSettingsPage() {
               setFeedback({ type: "idle", message: "" });
               setShowChangePassword((prev) => !prev);
             }}
-            className="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 sm:w-auto"
           >
             {showChangePassword ? "Cancel" : "Change Password"}
           </button>
@@ -216,7 +216,7 @@ export default function AdminSettingsPage() {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+              className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
             >
               {isSubmitting ? "Updating..." : "Update Password"}
             </button>

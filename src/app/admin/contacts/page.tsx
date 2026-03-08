@@ -172,9 +172,9 @@ export default function AdminContacts() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       {/* Toasts */}
-      <div className="fixed top-6 right-6 z-50 w-96 max-w-full">
+      <div className="fixed left-3 right-3 top-3 z-50 sm:left-auto sm:right-6 sm:top-6 sm:w-96 sm:max-w-full">
         {toasts.map((t) => (
           <ToastNotification key={t.id} toast={t} onClose={() => removeToast(t.id)} />
         ))}
@@ -192,7 +192,7 @@ export default function AdminContacts() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+      <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
           <p className="text-sm text-gray-600 mb-1">Total Messages</p>
           <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
@@ -212,13 +212,13 @@ export default function AdminContacts() {
       </div>
 
       {/* Filter */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-        <div className="flex items-center gap-4">
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex flex-wrap items-center gap-3 sm:gap-4">
           <Filter className="w-5 h-5 text-gray-500" />
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 text-gray-900 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+            className="w-full rounded-lg border border-gray-300 px-4 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto"
           >
             <option value="all">All Messages</option>
             <option value="new">New</option>
@@ -226,7 +226,7 @@ export default function AdminContacts() {
             <option value="replied">Replied</option>
             <option value="archived">Archived</option>
           </select>
-          <span className="text-sm text-gray-600">
+          <span className="text-sm text-gray-600 sm:ml-auto">
             Showing {filteredContacts.length} of {contacts.length} messages
           </span>
         </div>
@@ -288,8 +288,8 @@ export default function AdminContacts() {
         {/* Contact Detail */}
         <div className="lg:sticky lg:top-6 h-fit">
           {selectedContact ? (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <div className="flex items-start justify-between mb-6">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+              <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <h2 className="text-xl font-bold text-gray-900 mb-1">{selectedContact.full_name}</h2>
                   <a href={`mailto:${selectedContact.email}`} className="text-sm text-indigo-600 hover:underline">
@@ -327,7 +327,7 @@ export default function AdminContacts() {
 
               <div className="border-t pt-4">
                 <p className="text-sm font-medium text-gray-700 mb-3">Update Status</p>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                   {['read', 'replied', 'archived'].map((status) => (
                     <button
                       key={status}
@@ -346,7 +346,7 @@ export default function AdminContacts() {
               </div>
             </div>
           ) : (
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm sm:p-12">
               <Mail className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500">Select a message to view details</p>
             </div>

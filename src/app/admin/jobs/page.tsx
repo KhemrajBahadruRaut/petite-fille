@@ -298,8 +298,8 @@ export default function AdminJobsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="fixed right-6 top-6 z-50 w-96 max-w-full">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
+      <div className="fixed left-3 right-3 top-3 z-50 sm:left-auto sm:right-6 sm:top-6 sm:w-96 sm:max-w-full">
         {toasts.map((toast) => (
           <ToastNotification
             key={toast.id}
@@ -319,7 +319,7 @@ export default function AdminJobsPage() {
         <p className="text-gray-600">Create and update careers listings from admin.</p>
       </div>
 
-      <div className="mb-8 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
         <h2 className="mb-6 text-lg font-semibold text-gray-900">
           {editId !== null ? "Edit Job Listing" : "Add New Job Listing"}
         </h2>
@@ -408,11 +408,11 @@ export default function AdminJobsPage() {
           </InputField>
         </div>
 
-        <div className="flex items-center justify-end gap-3">
+        <div className="flex flex-wrap items-center justify-end gap-3">
           {editId !== null && (
             <button
               onClick={resetForm}
-              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+              className="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 sm:w-auto"
             >
               Cancel Edit
             </button>
@@ -420,7 +420,7 @@ export default function AdminJobsPage() {
           <button
             onClick={submitJob}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400 sm:w-auto"
           >
             <Plus className="h-4 w-4" />
             {isSubmitting ? "Saving..." : editId !== null ? "Update Job" : "Add Job"}
@@ -429,11 +429,11 @@ export default function AdminJobsPage() {
       </div>
 
       <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-        <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-4 sm:px-6">
           <h2 className="text-lg font-semibold text-gray-900">Job Listings</h2>
           <button
             onClick={fetchJobs}
-            className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100"
+            className="w-full rounded-lg border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition hover:bg-gray-100 sm:w-auto"
           >
             Refresh
           </button>
@@ -498,7 +498,7 @@ export default function AdminJobsPage() {
                       {job.postedDaysAgo}d ago
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-3">
+                      <div className="flex flex-wrap items-center gap-3">
                         <button
                           onClick={() => handleEdit(job)}
                           className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 transition-colors hover:text-blue-800"

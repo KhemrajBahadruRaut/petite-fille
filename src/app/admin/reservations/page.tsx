@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Calendar,
   CheckCircle2,
@@ -127,6 +127,14 @@ function sortReservationsByRecent(
 export default function AdminReservationsPage() {
   const [reservations, setReservations] = useState<ReservationRecord[]>([]);
   const [loading, setLoading] = useState(false);
+  const [updatingReservationIds, setUpdatingReservationIds] = useState<
+    Record<number, boolean>
+  >({});
+  const [deletingReservationIds, setDeletingReservationIds] = useState<
+    Record<number, boolean>
+  >({});
+  const inFlightUpdateIdsRef = useRef<Set<number>>(new Set());
+  const inFlightDeleteIdsRef = useRef<Set<number>>(new Set());
   const [filter, setFilter] = useState<"all" | ReservationStatus>("all");
   const [message, setMessage] = useState<{
     type: "success" | "error" | "idle";
@@ -168,6 +176,12 @@ export default function AdminReservationsPage() {
 
   const updateStatus = useCallback(
     async (id: number, status: ReservationStatus) => {
+      if (inFlightUpdateIdsRef.current.has(id)) {
+        return;
+      }
+      inFlightUpdateIdsRef.current.add(id);
+      setUpdatingReservationIds((prev) => ({ ...prev, [id]: true }));
+
       try {
         const response = await fetch(apiUrl("reservation/update_status.php"), {
           method: "POST",
@@ -192,10 +206,58 @@ export default function AdminReservationsPage() {
           text:
             error instanceof Error ? error.message : "Unable to update reservation.",
         });
+      } finally {
+        inFlightUpdateIdsRef.current.delete(id);
+        setUpdatingReservationIds((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
       }
     },
     [],
   );
+
+  const deleteReservation = useCallback(async (id: number) => {
+    if (inFlightDeleteIdsRef.current.has(id)) {
+      return;
+    }
+
+    inFlightDeleteIdsRef.current.add(id);
+    setDeletingReservationIds((prev) => ({ ...prev, [id]: true }));
+
+    try {
+      const response = await fetch(apiUrl("reservation/delete_reservation.php"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = (await response.json()) as { success?: boolean; message?: string };
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to delete reservation.");
+      }
+
+      setReservations((prev) => prev.filter((item) => item.id !== id));
+      setMessage({
+        type: "success",
+        text: data.message || `Reservation #${id} deleted.`,
+      });
+    } catch (error) {
+      setMessage({
+        type: "error",
+        text:
+          error instanceof Error ? error.message : "Unable to delete reservation.",
+      });
+    } finally {
+      inFlightDeleteIdsRef.current.delete(id);
+      setDeletingReservationIds((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
+    }
+  }, []);
 
   const stats = useMemo(
     () => ({
@@ -208,7 +270,7 @@ export default function AdminReservationsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">Reservations</h1>
@@ -218,7 +280,7 @@ export default function AdminReservationsPage() {
         </div>
         <button
           onClick={fetchReservations}
-          className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-indigo-700"
+          className="w-full rounded-lg bg-indigo-600 px-4 py-2 text-xs font-medium text-white transition hover:bg-indigo-700 sm:w-auto"
         >
           Refresh
         </button>
@@ -236,7 +298,7 @@ export default function AdminReservationsPage() {
         </div>
       )}
 
-      <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
           <p className="text-xs text-gray-500">Total</p>
           <p className="mt-1 text-xl font-bold text-gray-900">{stats.total}</p>
@@ -257,12 +319,12 @@ export default function AdminReservationsPage() {
         </div>
       </div>
 
-      <div className="mb-4 flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
         <Filter className="h-4 w-4 text-gray-500" />
         <select
           value={filter}
           onChange={(event) => setFilter(event.target.value as "all" | ReservationStatus)}
-          className="rounded-md border border-gray-300 px-3 py-2 text-xs text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto"
         >
           <option value="all">All</option>
           {STATUS_OPTIONS.map((status) => (
@@ -271,7 +333,7 @@ export default function AdminReservationsPage() {
             </option>
           ))}
         </select>
-        <span className="text-sm text-gray-500">
+        <span className="text-sm text-gray-500 sm:ml-auto">
           Showing {reservations.length} reservation(s)
         </span>
       </div>
@@ -283,7 +345,7 @@ export default function AdminReservationsPage() {
           <div className="p-8 text-center text-gray-500">No reservations found.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-[1080px] divide-y divide-gray-200">
+            <table className="min-w-[980px] divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
@@ -358,33 +420,48 @@ export default function AdminReservationsPage() {
                       >
                         {statusLabel(reservation.status)}
                       </span>
-                      <select
-                        className="block w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                        value={reservation.status}
-                        disabled={
-                          reservation.status === "cancelled" &&
-                          reservation.cancelled_by !== "admin"
+                      {(() => {
+                        const isCancelled = reservation.status === "cancelled";
+                        const isUpdating =
+                          updatingReservationIds[reservation.id] === true;
+
+                        if (isCancelled) {
+                          return (
+                            <div
+                              className="block w-full rounded-md border border-red-200 bg-red-50 px-2 py-1.5 text-xs font-medium text-red-700"
+                              title="Cancelled reservations cannot be changed."
+                            >
+                              Locked (cancelled)
+                            </div>
+                          );
                         }
-                        title={
-                          reservation.status === "cancelled" &&
-                          reservation.cancelled_by !== "admin"
-                            ? "User-cancelled reservations cannot be changed by admin."
-                            : "Update reservation status"
-                        }
-                        onChange={(event) =>
-                          updateStatus(
-                            reservation.id,
-                            event.target.value as ReservationStatus,
-                          )
-                        }
-                      >
-                        {STATUS_OPTIONS.map((status) => (
-                          <option key={status} value={status}>
-                            {statusLabel(status)}
-                          </option>
-                        ))}
-                      </select>
-                        {reservation.cancelled_by && (
+
+                        return (
+                          <select
+                            className="block w-full rounded-md border border-gray-300 px-2 py-1.5 text-xs text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:cursor-not-allowed disabled:opacity-60"
+                            value={reservation.status}
+                            disabled={isUpdating}
+                            title={
+                              isUpdating
+                                ? "Updating reservation status..."
+                                : "Update reservation status"
+                            }
+                            onChange={(event) =>
+                              updateStatus(
+                                reservation.id,
+                                event.target.value as ReservationStatus,
+                              )
+                            }
+                          >
+                            {STATUS_OPTIONS.map((status) => (
+                              <option key={status} value={status}>
+                                {statusLabel(status)}
+                              </option>
+                            ))}
+                          </select>
+                        );
+                      })()}
+                      {reservation.cancelled_by && (
                         <p className="mt-1 text-[11px] text-gray-500">
                           cancelled by{" "}
                           {reservation.cancelled_by === "0"
@@ -397,14 +474,16 @@ export default function AdminReservationsPage() {
                       {formatDateTime(reservation.created_at)}
                     </td>
                     <td className="px-3 py-3">
-                      <a
-                        href={reservation.cancellation_link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="rounded border border-gray-300 px-2.5 py-1 text-[11px] font-medium text-gray-700 transition hover:bg-gray-100"
+                      <button
+                        type="button"
+                        onClick={() => deleteReservation(reservation.id)}
+                        disabled={deletingReservationIds[reservation.id] === true}
+                        className="rounded border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        Link
-                      </a>
+                        {deletingReservationIds[reservation.id] === true
+                          ? "Deleting..."
+                          : "Delete"}
+                      </button>
                     </td>
                   </tr>
                 ))}
