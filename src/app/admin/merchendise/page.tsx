@@ -310,7 +310,7 @@ export default function AdminMerch() {
         <hr className="mb-4 border-gray-100" />
 
         {/* Scrollable Grid Container */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-2 gap-y-2 max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-x-2 gap-y-2 max-h-75 overflow-y-auto pr-2 custom-scrollbar">
           {categories.map((c) => (
             <div
               key={c.id}
@@ -450,7 +450,7 @@ export default function AdminMerch() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[880px]">
+          <table className="w-full min-w-220">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase">

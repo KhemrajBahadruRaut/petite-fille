@@ -348,7 +348,7 @@ export default function Merchendise() {
         </motion.div>
 
         <motion.div
-          className="hidden md:flex flex-1 relative w-full max-w-lg h-[500px]"
+          className="hidden md:flex flex-1 relative w-full max-w-lg h-125"
           initial={{ opacity: 0, x: 30 }}
           whileInView={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: "easeOut" }}

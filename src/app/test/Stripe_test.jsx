@@ -1,27 +1,228 @@
 "use client";
 import { useState, useCallback, useMemo } from "react";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  CardElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
+import {apiUrl} from "../../utils/api"
+import { useEffect } from "react";
 
-interface EGiftCardData {
-  amount: number;
-  recipient: string;
-  message: string;
-  quantity: number;
-  senderName: string;
-  senderEmail: string;
-}
-
-interface FormErrors {
-  recipient?: string;
-  message?: string;
-  senderName?: string;
-  senderEmail?: string;
-  quantity?: string;
-}
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+);
 
 const AMOUNT_OPTIONS = [10, 25, 50, 100, 200];
 
-const EGiftCard = () => {
-  const [formData, setFormData] = useState<EGiftCardData>({
+const CARD_ELEMENT_OPTIONS = {
+  style: {
+    base: {
+      fontSize: "16px",
+      color: "#1f2937",
+      fontFamily: "inherit",
+      "::placeholder": { color: "#9ca3af" },
+    },
+    invalid: {
+      color: "#dc2626",
+      iconColor: "#dc2626",
+    },
+  },
+};
+
+const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const [cardError, setCardError] = useState(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const handlePayment = async () => {
+    if (!stripe || !elements) return;
+
+    setIsProcessing(true);
+    setCardError(null);
+
+    try {
+      const res = await fetch(apiUrl("payment/create-payment.php"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          recipient: formData.recipient,
+          message: formData.message,
+          senderName: formData.senderName,
+          senderEmail: formData.senderEmail,
+          quantity: formData.quantity,
+          giftCardAmount: formData.amount,
+          currency: "usd",
+        }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || "Failed to create payment intent.");
+      }
+
+      const { clientSecret } = await res.json();
+
+      const cardElement = elements.getElement(CardElement);
+      if (!cardElement) throw new Error("Card element not found.");
+
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: formData.senderName,
+              email: formData.senderEmail,
+            },
+          },
+        },
+      );
+
+      if (error) {
+        setCardError(error.message || "Payment failed. Please try again.");
+      } else if (paymentIntent?.status === "succeeded") {
+        onSuccess();
+      }
+    } catch (err) {
+      setCardError(err.message || "Something went wrong.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <div className="bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 min-h-screen flex items-center justify-center p-4">
+      <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
+        {/* Header */}
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-800 mb-1">Payment</h2>
+          <p className="text-gray-500 text-sm">
+            Complete your eGift card purchase
+          </p>
+        </div>
+
+        {/* Order summary */}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6 space-y-1 text-sm text-gray-700">
+          <div className="flex justify-between">
+            <span className="text-gray-500">To</span>
+            <span className="font-medium">{formData.recipient}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Amount × Qty</span>
+            <span className="font-medium">
+              ${formData.amount} × {formData.quantity}
+            </span>
+          </div>
+          {formData.message && (
+            <div className="flex justify-between">
+              <span className="text-gray-500">Message</span>
+              <span className="font-medium italic truncate max-w-[60%]">
+                &ldquo;{formData.message}&rdquo;
+              </span>
+            </div>
+          )}
+          <div className="border-t border-amber-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
+            <span>Total</span>
+            <span>${totalPrice}.00</span>
+          </div>
+        </div>
+
+        {/* Stripe Card Element */}
+        <div className="mb-6">
+          <label className="block text-gray-700 font-medium mb-2 text-sm">
+            Card details
+          </label>
+          <div
+            className={`border-2 rounded-xl px-4 py-3 transition-colors ${
+              cardError
+                ? "border-red-400 bg-red-50"
+                : "border-gray-200 focus-within:border-amber-400 bg-white"
+            }`}
+          >
+            <CardElement
+              options={CARD_ELEMENT_OPTIONS}
+              onChange={() => setCardError(null)}
+            />
+          </div>
+          {cardError && (
+            <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
+              <svg
+                className="w-4 h-4 shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </svg>
+              {cardError}
+            </p>
+          )}
+        </div>
+
+        {/* Stripe badge */}
+        <p className="text-xs text-gray-400 mb-4 flex items-center gap-1">
+          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13.976 9.15c-2.172-.806-3.356-1.426-3.356-2.409 0-.831.683-1.305 1.901-1.305 2.227 0 4.515.858 6.09 1.631l.89-5.494C18.252.975 15.697 0 12.165 0 9.667 0 7.589.654 6.104 1.872 4.56 3.147 3.757 4.992 3.757 7.218c0 4.039 2.467 5.76 6.476 7.219 2.585.92 3.445 1.574 3.445 2.583 0 .98-.84 1.545-2.354 1.545-1.875 0-4.965-.921-6.99-2.109l-.9 5.555C5.175 22.99 8.385 24 11.714 24c2.641 0 4.843-.624 6.328-1.813 1.664-1.305 2.525-3.236 2.525-5.732 0-4.128-2.524-5.851-6.591-7.305z" />
+          </svg>
+          Secured by Stripe — your card info is never stored on our servers
+        </p>
+
+        {/* Actions */}
+        <div className="flex gap-3">
+          <button
+            onClick={onBack}
+            disabled={isProcessing}
+            className="flex-1 py-3 border-2 border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-all disabled:opacity-50"
+          >
+            ← Back
+          </button>
+          <button
+            onClick={handlePayment}
+            disabled={isProcessing || !stripe}
+            className="flex-1 py-3 bg-linear-to-r from-amber-600 to-yellow-600 text-white font-medium rounded-xl hover:from-amber-700 hover:to-yellow-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg flex items-center justify-center gap-2"
+          >
+            {isProcessing ? (
+              <>
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
+                </svg>
+                Processing…
+              </>
+            ) : (
+              `Pay $${totalPrice}.00`
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const Stripe_test = () => {
+  const [formData, setFormData] = useState({
     amount: 10,
     recipient: "",
     message: "",
@@ -30,91 +231,76 @@ const EGiftCard = () => {
     senderEmail: "",
   });
 
-  const [errors, setErrors] = useState<FormErrors>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [step, setStep] = useState("form");
 
-  const totalPrice = useMemo(() => {
-    return formData.amount * formData.quantity;
-  }, [formData.amount, formData.quantity]);
+  const totalPrice = useMemo(
+    () => formData.amount * formData.quantity,
+    [formData.amount, formData.quantity],
+  );
 
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
-  const validateForm = useCallback((): FormErrors => {
-    const newErrors: FormErrors = {};
-
-    if (!formData.recipient.trim()) {
+  const validateForm = useCallback(() => {
+    const newErrors = {};
+    if (!formData.recipient.trim())
       newErrors.recipient = "Recipient name is required";
-    } else if (formData.recipient.trim().length < 2) {
+    else if (formData.recipient.trim().length < 2)
       newErrors.recipient = "Recipient name must be at least 2 characters";
-    }
-
-    if (formData.message.trim().length > 200) {
+    if (formData.message.trim().length > 200)
       newErrors.message = "Message must be less than 200 characters";
-    }
-
-    if (!formData.senderName.trim()) {
+    if (!formData.senderName.trim())
       newErrors.senderName = "Your name is required";
-    } else if (formData.senderName.trim().length < 2) {
+    else if (formData.senderName.trim().length < 2)
       newErrors.senderName = "Name must be at least 2 characters";
-    }
-
-    if (!formData.senderEmail.trim()) {
+    if (!formData.senderEmail.trim())
       newErrors.senderEmail = "Email is required";
-    } else if (!validateEmail(formData.senderEmail)) {
+    else if (!validateEmail(formData.senderEmail))
       newErrors.senderEmail = "Please enter a valid email address";
-    }
-
-    if (formData.quantity < 1 || formData.quantity > 10) {
+    if (formData.quantity < 1 || formData.quantity > 10)
       newErrors.quantity = "Quantity must be between 1 and 10";
-    }
-
     return newErrors;
   }, [formData]);
 
   const handleInputChange = useCallback(
-    (field: keyof EGiftCardData, value: string | number) => {
+    (field, value) => {
       setFormData((prev) => ({ ...prev, [field]: value }));
-
-      // Clear error when user starts typing
-      if (errors[field as keyof FormErrors]) {
+      if (errors[field]) {
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     },
     [errors],
   );
 
-  const handleQuantityChange = useCallback((delta: number) => {
+  const handleQuantityChange = useCallback((delta) => {
     setFormData((prev) => ({
       ...prev,
       quantity: Math.max(1, Math.min(10, prev.quantity + delta)),
     }));
   }, []);
 
-  const handleSubmit = async () => {
+  const handleContinue = () => {
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
       return;
     }
-
-    setIsSubmitting(true);
-
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setShowSuccess(true);
-    } catch (error) {
-      console.error("Purchase error:", error);
-    } finally {
-      setIsSubmitting(false);
-    }
+    setStep("payment");
   };
 
-  if (showSuccess) {
+  const handleReset = () => {
+    setFormData({
+      amount: 10,
+      recipient: "",
+      message: "",
+      quantity: 1,
+      senderName: "",
+      senderEmail: "",
+    });
+    setErrors({});
+    setStep("form");
+  };
+  if (step === "success") {
     return (
       <div className="min-h-screen bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
@@ -137,20 +323,12 @@ const EGiftCard = () => {
             Gift Card Purchased!
           </h2>
           <p className="text-gray-600 mb-6">
-            Your eGift card worth ${totalPrice} has been sent successfully.
+            Your eGift card worth <strong>${totalPrice}</strong> has been sent
+            to <strong>{formData.recipient}</strong>. A confirmation will be
+            sent to {formData.senderEmail}.
           </p>
           <button
-            onClick={() => {
-              setShowSuccess(false);
-              setFormData({
-                amount: 10,
-                recipient: "",
-                message: "",
-                quantity: 1,
-                senderName: "",
-                senderEmail: "",
-              });
-            }}
+            onClick={handleReset}
             className="px-8 py-3 bg-linear-to-r from-amber-600 to-yellow-600 text-white rounded-xl hover:from-amber-700 hover:to-yellow-700 transition-all font-medium shadow-lg"
           >
             Purchase Another
@@ -160,16 +338,28 @@ const EGiftCard = () => {
     );
   }
 
+  if (step === "payment") {
+    return (
+      <Elements stripe={stripePromise}>
+        <CheckoutForm
+          formData={formData}
+          totalPrice={totalPrice}
+          onSuccess={() => setStep("success")}
+          onBack={() => setStep("form")}
+        />
+      </Elements>
+    );
+  }
+
+
+
   return (
     <>
-      {/* Header */}
-
-      <div className="bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 flex-col items-center justify-center pt-14 ">
+      <div className="bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 flex-col items-center justify-center pt-14">
         <div className="text-center mb-8 pt-10">
           <h1 className="text-3xl font-bold text-gray-800 mb-3">eGift cards</h1>
         </div>
 
-        {/* Gift Card Visual */}
         <div>
           <div className="flex-col space-y-5 bg-[#EEC27E33] py-5">
             <p className="text-gray-600 flex justify-center">
@@ -187,9 +377,8 @@ const EGiftCard = () => {
                   </div>
                 </div>
               </div>
-              {/* Bow decoration */}
               <div className="relative">
-                <div className="absolute top-2 right-2  w-12 h-12 bg-linear-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md">
+                <div className="absolute top-2 right-2 w-12 h-12 bg-linear-to-br from-amber-400 to-yellow-500 rounded-full flex items-center justify-center shadow-md">
                   <div className="w-6 h-6 bg-linear-to-br from-amber-300 to-yellow-400 rounded-full"></div>
                 </div>
               </div>
@@ -197,9 +386,10 @@ const EGiftCard = () => {
           </div>
         </div>
       </div>
+
       <div className="bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center p-1 sm:p-4">
         <div className="p-8 max-w-2xl w-full">
-          {/* Special Note */}
+          {/* Special note */}
           <div className="mb-6">
             <h3 className="text-lg font-medium text-amber-800 mb-3">
               Special note before making a purchase:
@@ -242,7 +432,7 @@ const EGiftCard = () => {
                 <div className="flex items-center flex-wrap">
                   <label
                     htmlFor="recipient"
-                    className="block text-gray-700 font-medium "
+                    className="block text-gray-700 font-medium"
                   >
                     To:
                   </label>
@@ -267,10 +457,10 @@ const EGiftCard = () => {
                   )}
                 </div>
 
-                <div className="flex items-center flex-wrap ">
+                <div className="flex items-center flex-wrap">
                   <label
                     htmlFor="message"
-                    className="block text-gray-700 font-medium "
+                    className="block text-gray-700 font-medium"
                   >
                     Message:
                   </label>
@@ -280,7 +470,7 @@ const EGiftCard = () => {
                     onChange={(e) =>
                       handleInputChange("message", e.target.value)
                     }
-                    className={`w-full px-0 py-2  border-0 border-b-2 bg-transparent sm:ml-10 text-gray-600 focus:outline-none resize-none transition-colors ${
+                    className={`w-full px-0 py-2 border-0 border-b-2 bg-transparent sm:ml-10 text-gray-600 focus:outline-none resize-none transition-colors ${
                       errors.message
                         ? "border-red-500 focus:border-red-500"
                         : "border-gray-300 focus:border-amber-500"
@@ -288,7 +478,7 @@ const EGiftCard = () => {
                     placeholder="Your personal message (optional)"
                     maxLength={200}
                   />
-                  <div className="flex justify-between items-center mt-1">
+                  <div className="flex justify-between items-center mt-1 w-full">
                     {errors.message && (
                       <p className="text-sm text-red-600">{errors.message}</p>
                     )}
@@ -302,7 +492,7 @@ const EGiftCard = () => {
 
             {/* Quantity */}
             <div className="flex items-center flex-wrap">
-              <label className="block text-amber-800 font-medium ">
+              <label className="block text-amber-800 font-medium">
                 Quantity: *
               </label>
               <div className="flex items-center sm:ml-10">
@@ -311,9 +501,8 @@ const EGiftCard = () => {
                   disabled={formData.quantity <= 1}
                   className="w-10 h-10 rounded-lg flex items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  <span className="text-lg font-medium  text-gray-600 ">−</span>
+                  <span className="text-lg font-medium text-gray-600">−</span>
                 </button>
-
                 <input
                   type="number"
                   value={formData.quantity}
@@ -322,17 +511,15 @@ const EGiftCard = () => {
                   }
                   min="1"
                   max="10"
-                  className="w-16 h-10 text-center border border-gray-300 rounded-lg  text-gray-600  focus:outline-none focus:border-amber-500"
+                  className="w-16 h-10 text-center border border-gray-300 rounded-lg text-gray-600 focus:outline-none focus:border-amber-500"
                 />
-
                 <button
                   onClick={() => handleQuantityChange(1)}
                   disabled={formData.quantity >= 10}
                   className="w-10 h-10 rounded-lg flex text-gray-600 items-center justify-center hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  <span className="text-lg font-medium text-gray-600 ">+</span>
+                  <span className="text-lg font-medium text-gray-600">+</span>
                 </button>
-
                 <span className="text-sm text-gray-600 ml-4">
                   Total: ${totalPrice}.00
                 </span>
@@ -345,12 +532,11 @@ const EGiftCard = () => {
             {/* Your Details */}
             <div>
               <h3 className="text-amber-800 font-medium mb-4">Your details:</h3>
-
-              <div className="space-y-4 ">
+              <div className="space-y-4">
                 <div className="flex items-center flex-wrap">
                   <label
                     htmlFor="senderName"
-                    className=" text-gray-700 font-medium "
+                    className="text-gray-700 font-medium"
                   >
                     From:*
                   </label>
@@ -361,7 +547,7 @@ const EGiftCard = () => {
                     onChange={(e) =>
                       handleInputChange("senderName", e.target.value)
                     }
-                    className={`w-full px-0 py-2 border-0 border-b-2 sm:ml-10 bg-transparent focus:outline-none transition-colors ${
+                    className={`w-full px-0 py-2 border-0 border-b-2 sm:ml-10 bg-transparent text-black focus:outline-none transition-colors ${
                       errors.senderName
                         ? "border-red-500 focus:border-red-500"
                         : "border-gray-300 focus:border-amber-500"
@@ -378,7 +564,7 @@ const EGiftCard = () => {
                 <div className="flex items-center flex-wrap">
                   <label
                     htmlFor="senderEmail"
-                    className="block text-gray-700 font-medium "
+                    className="block text-gray-700 font-medium"
                   >
                     Email:*
                   </label>
@@ -389,7 +575,7 @@ const EGiftCard = () => {
                     onChange={(e) =>
                       handleInputChange("senderEmail", e.target.value)
                     }
-                    className={`w-full px-0 py-2 border-0 border-b-2 sm:ml-10 bg-transparent focus:outline-none transition-colors ${
+                    className={`w-full px-0 py-2 border-0 border-b-2 sm:ml-10 bg-transparent text-black focus:outline-none transition-colors ${
                       errors.senderEmail
                         ? "border-red-500 focus:border-red-500"
                         : "border-gray-300 focus:border-amber-500"
@@ -407,37 +593,10 @@ const EGiftCard = () => {
 
             {/* Continue Button */}
             <button
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="w-full py-4 bg-linear-to-r from-amber-600 to-yellow-600 text-white font-medium rounded-xl hover:from-amber-700 hover:to-yellow-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg"
+              onClick={handleContinue}
+              className="w-full py-4 bg-linear-to-r from-amber-600 to-yellow-600 text-white font-medium rounded-xl hover:from-amber-700 hover:to-yellow-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all shadow-lg"
             >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center">
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Processing...
-                </span>
-              ) : (
-                `Continue - $${totalPrice}.00`
-              )}
+              Continue — ${totalPrice}.00
             </button>
           </div>
         </div>
@@ -446,4 +605,4 @@ const EGiftCard = () => {
   );
 };
 
-export default EGiftCard;
+export default Stripe_test;

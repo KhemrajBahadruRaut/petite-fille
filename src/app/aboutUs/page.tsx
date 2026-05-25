@@ -114,7 +114,7 @@ export default function AboutUs() {
           </div>
 
           {/* Frame 1 with 2 images */}
-          <div className="md:col-span-6 relative w-full max-w-[400px] h-[350px] sm:h-[350px] md:h-[400px] mx-auto">
+          <div className="md:col-span-6 relative w-full max-w-100 h-87.5 sm:h-87.5 md:h-100 mx-auto">
             <motion.div {...fadeIn} className="absolute inset-0 z-10">
               <img
                 src="/about/frame/Frame1.webp"
@@ -136,7 +136,7 @@ export default function AboutUs() {
             </motion.div>
             <motion.div
               {...slideIn(-50, -50)}
-              className="absolute bottom-[-55px] sm:bottom-4 right-4 sm:right-6 w-42 sm:w-44 md:w-48 z-11"
+              className="absolute -bottom-13.75 sm:bottom-4 right-4 sm:right-6 w-42 sm:w-44 md:w-48 z-11"
             >
               <img
                 src={content.top.image2}
@@ -151,7 +151,7 @@ export default function AboutUs() {
 
         {/* Bottom Section */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-start relative">
-          <div className="md:col-span-6 max-sm:hidden relative w-full max-w-[400px] h-[300px] sm:h-[350px] md:h-[400px] mx-auto">
+          <div className="md:col-span-6 max-sm:hidden relative w-full max-w-100 h-75 sm:h-87.5 md:h-100 mx-auto">
             <motion.div {...fadeIn} className="absolute inset-0 z-10">
               <img
                 src="/about/frame/Frame2.webp"

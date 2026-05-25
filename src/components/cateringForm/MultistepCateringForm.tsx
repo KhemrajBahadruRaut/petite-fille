@@ -210,7 +210,7 @@ const MultiStepCateringForm = () => {
           ))}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 max-h-[500px] overflow-y-auto pr-4" style={{ scrollBehavior: 'auto' }}>
+        <div className="grid md:grid-cols-2 gap-6 max-h-125 overflow-y-auto pr-4" style={{ scrollBehavior: 'auto' }}>
           {menuItems.map((item) => (
             <div key={item.id} className="border p-4 rounded-lg flex justify-between items-start gap-4">
               <div className="space-y-2 flex-1">

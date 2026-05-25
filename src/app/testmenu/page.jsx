@@ -326,7 +326,7 @@ const Menu = () => {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3" style={{ fontFamily: 'arial' }}>
               {menuData.sides.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between items-start pt-2 border-t border-gray-100 first:border-t-0 md:first:border-t first:pt-0 md:[&:nth-child(2)]:border-t-0 md:[&:nth-child(2)]:pt-0 md:first:pt-0">
+                <div key={idx} className="flex justify-between items-start pt-2 border-t border-gray-100 first:border-t-0 md:first:border-t first:pt-0 md:nth-2:border-t-0 md:nth-2:pt-0 md:first:pt-0">
                   <span className="text-gray-700 text-sm pr-4">{item.name}</span>
                   <span className="text-gray-700 font-medium text-sm whitespace-nowrap">${item.price}</span>
                 </div>

@@ -11,6 +11,8 @@
     "export": "next export"
   },
   "dependencies": {
+    "@stripe/react-stripe-js": "^6.2.0",
+    "@stripe/stripe-js": "^9.3.0",
     "framer-motion": "^12.23.12",
     "lucide": "^0.542.0",
     "lucide-react": "^0.542.0",

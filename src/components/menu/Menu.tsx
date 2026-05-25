@@ -22,28 +22,71 @@ interface Category {
   items: MenuItem[];
 }
 
+// skeleton loading 
+const SkeletonCard: React.FC<{ index: number }> = ({ index }) => (
+  <div
+    className="animate-pulse"
+    style={{ animationDelay: `${index * 0.07}s` }}
+  >
+    <div className="mb-3 aspect-square w-full rounded-lg bg-gray-200 sm:mb-4" />
+    <div className="space-y-2">
+      <div className="flex justify-between gap-2">
+        <div className="h-4 w-3/5 rounded bg-gray-200" />
+        <div className="h-4 w-1/5 rounded bg-gray-200" />
+      </div>
+      <div className="h-3 w-full rounded bg-gray-100" />
+      <div className="h-3 w-4/5 rounded bg-gray-100" />
+    </div>
+  </div>
+);
+
+// One skeleton section (title + grid of cards)
+const SkeletonSection: React.FC<{ cardCount?: number }> = ({
+  cardCount = 4,
+}) => (
+  <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+    {/* Section title placeholder */}
+    <div className="mb-6 h-8 w-48 rounded-md bg-gray-200 animate-pulse sm:mb-8" />
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:gap-8">
+      {Array.from({ length: cardCount }).map((_, i) => (
+        <SkeletonCard key={i} index={i} />
+      ))}
+    </div>
+  </section>
+);
 const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
   function MenuItemCard({ item, index }) {
     const [imageError, setImageError] = useState(false);
     const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+    const [visible, setVisible] = useState(false);
     const { addToFavorites, removeFromFavorites, isFavorite } = useCart();
     const isItemFavorite = isFavorite(item.id);
     const normalizedImage = normalizeApiAssetUrl(item.image);
+
+    // Staggered entrance when card mounts
+    useEffect(() => {
+      const t = setTimeout(() => setVisible(true), index * 60);
+      return () => clearTimeout(t);
+    }, [index]);
 
     const handleToggleFavorite = (e: React.MouseEvent) => {
       e.stopPropagation();
       if (isItemFavorite) {
         removeFromFavorites(item.id);
-        return;
+      } else {
+        addToFavorites(item);
       }
-      addToFavorites(item);
     };
 
     return (
       <>
         <div
-          className="group transition-all duration-300 hover:scale-[1.02]"
-          style={{ animationDelay: `${index * 0.1}s` }}
+          className="group transition-all duration-500 hover:scale-[1.02]"
+          style={{
+            opacity: visible ? 1 : 0,
+            transform: visible ? "translateY(0)" : "translateY(18px)",
+            transition: "opacity 0.45s ease, transform 0.45s ease",
+          }}
         >
           <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-gray-200 shadow-md sm:mb-4">
             {!imageError ? (
@@ -84,7 +127,9 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
 
           <div className="space-y-2">
             <div className="flex justify-between items-start">
-              <h3 className="line-clamp-2 pr-2 text-sm font-semibold text-gray-800">{item.name}</h3>
+              <h3 className="line-clamp-2 pr-2 text-sm font-semibold text-gray-800">
+                {item.name}
+              </h3>
               <span className="shrink-0 text-sm font-bold text-gray-900">
                 ${item.price}
               </span>
@@ -92,9 +137,10 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
             <p className="line-clamp-2 text-xs text-gray-600">{item.description}</p>
           </div>
         </div>
+
         {isPreviewOpen && (
           <div
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
             onClick={() => setIsPreviewOpen(false)}
             role="dialog"
             aria-modal="true"
@@ -111,35 +157,43 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
               src={normalizedImage}
               alt={item.alt || item.name}
               className="max-h-[90vh] max-w-[90vw] rounded-lg object-contain"
-              onClick={(event) => event.stopPropagation()}
+              onClick={(e) => e.stopPropagation()}
             />
           </div>
         )}
-
       </>
     );
   }
 );
 
+// ── Menu section ───────────────────────────────────────────────────────────
 const MenuSection: React.FC<{ title: string; items: MenuItem[] }> = ({
   title,
   items,
-}) => {
-  return (
-    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
-      <h2 className="mb-6 text-2xl font-light text-gray-800 sm:mb-8 sm:text-3xl">{title}</h2>
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:gap-8">
-        {items.map((item, index) => (
-          <MenuItemCard key={item.id} item={item} index={index} />
-        ))}
-      </div>
-    </section>
-  );
-};
+}) => (
+  <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12">
+    <h2 className="mb-6 text-2xl font-light text-gray-800 sm:mb-8 sm:text-3xl">
+      {title}
+    </h2>
+    <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 lg:gap-8">
+      {items.map((item, index) => (
+        <MenuItemCard key={item.id} item={item} index={index} />
+      ))}
+    </div>
+  </section>
+);
 
-// Dynamic RestaurantMenu
+// ── Root component ─────────────────────────────────────────────────────────
 const RestaurantMenu: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [pageReady, setPageReady] = useState(false);
+
+  // Fade-in the whole page once it mounts
+  useEffect(() => {
+    const t = setTimeout(() => setPageReady(true), 30);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -158,24 +212,41 @@ const RestaurantMenu: React.FC = () => {
                 : item.image,
           })),
         }));
-        
-        // only include categories that have items
+
         setCategories(
           normalizedData.filter((cat) => cat.items && cat.items.length > 0),
         );
       } catch (error) {
         console.error("Error fetching categories:", error);
+      } finally {
+        setLoading(false);
       }
     };
+
     fetchCategories();
   }, []);
 
   return (
-    <div className="bg-linear-to-b from-amber-50 to-stone-100">
+    <div
+      className="bg-linear-to-b from-amber-50 to-stone-100 min-h-screen"
+      style={{
+        opacity: pageReady ? 1 : 0,
+        transition: "opacity 0.35s ease",
+      }}
+    >
       <MenuCarousel />
-      {categories.map((cat) => (
-        <MenuSection key={cat.id} title={cat.name} items={cat.items} />
-      ))}
+
+      {loading ? (
+        // Show 2 skeleton sections while data loads
+        <>
+          <SkeletonSection cardCount={4} />
+          <SkeletonSection cardCount={4} />
+        </>
+      ) : (
+        categories.map((cat) => (
+          <MenuSection key={cat.id} title={cat.name} items={cat.items} />
+        ))
+      )}
     </div>
   );
 };

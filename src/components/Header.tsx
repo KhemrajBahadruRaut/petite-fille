@@ -38,7 +38,7 @@ const Header = () => {
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden gap-8 text-sm font-medium md:flex">
+        <nav className="hidden gap-8 text-sm font-medium md:flex text-white" >
           {navLinks.map(({ href, label }) => (
             <Link
               key={href}
@@ -53,8 +53,8 @@ const Header = () => {
         </nav>
 
         {/* Icons */}
-        <div className="flex items-center gap-4">
-          <span className="group relative hidden cursor-pointer transition-all hover:scale-105 hover:text-[#B7AA99] md:block">
+        <div className="flex items-center gap-4 text-white">
+          <span className="group relative hidden cursor-pointer transition-all hover:scale-105 hover:text-[#d5cfc8] md:block">
             <Link href="/menu" style={{ fontFamily: "arial" }}>
               Menu
             </Link>

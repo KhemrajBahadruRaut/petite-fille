@@ -5,23 +5,23 @@ import Welcome from "@/components/welcomePage/welcome";
 import WhatWeOffer from "@/components/whatWeOffer/WhatWeOffer";
 import "./globals.css";
 
-async function fetchInstagramPosts() {
-  const token = process.env.INSTAGRAM_TOKEN;
-  const res = await fetch(
-    `https://graph.instagram.com/me/media?fields=id,caption,media_url,permalink&access_token=${token}`
-  );
+// async function fetchInstagramPosts() {
+//   const token = process.env.INSTAGRAM_TOKEN;
+//   const res = await fetch(
+//     `https://graph.instagram.com/me/media?fields=id,caption,media_url,permalink&access_token=${token}`
+//   );
 
-  let posts = [];
-  if (res.ok) {
-    const data = await res.json();
-    posts = data.data ?? [];
-  }
+//   let posts = [];
+//   if (res.ok) {
+//     const data = await res.json();
+//     posts = data.data ?? [];
+//   }
 
-  return posts; 
-}
+//   return posts; 
+// }
 
 export default async function Home() {
-  const posts = await fetchInstagramPosts();
+  // const posts = await fetchInstagramPosts();
 
   return (
     <div>
