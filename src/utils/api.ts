@@ -1,7 +1,6 @@
-const DEFAULT_API_BASE = "https://api.gr8.com.np/petite-backend";
+const DEFAULT_API_BASE = "https://petitefille.com.au/petite-backend";
 // const DEFAULT_API_BASE = "http://localhost/petite-backend";
 const LOCALHOST_API_BASE = "http://localhost/petite-backend";
-
 const sanitizeBase = (base: string) => base.replace(/\/+$/, "");
 const sanitizePath = (path: string) => path.replace(/^\/+/, "");
 

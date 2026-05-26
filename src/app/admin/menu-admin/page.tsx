@@ -11,6 +11,7 @@ import {
   Pencil,
   Save,
 } from "lucide-react";
+import { apiUrl } from "@/utils/api";
 
 interface MenuItem {
   id: number;
@@ -107,9 +108,7 @@ export default function AdminMenu() {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
-  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(
-    null,
-  );
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState("");
 
   const [form, setForm] = useState<MenuForm>({
@@ -132,18 +131,16 @@ export default function AdminMenu() {
   const fetchItems = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(
-        "https://api.gr8.com.np/petite-backend/menu/get_menu_item.php",
-      );
-      const data = await res.json(); // data is categories array
-      interface Category {
+      const res = await fetch(apiUrl("menu/get_menu_item.php"));
+      const data = await res.json();
+      interface CategoryData {
         items: MenuItem[];
         name: string;
       }
-      const allItems = data.flatMap((cat: Category) =>
+      const allItems = data.flatMap((cat: CategoryData) =>
         (cat.items || []).map((item: MenuItem) => ({
           ...item,
-          category: cat.name, // add category name for display
+          category: cat.name,
         })),
       );
       setItems(allItems);
@@ -157,9 +154,7 @@ export default function AdminMenu() {
   /** Fetch categories */
   const fetchCategories = async () => {
     try {
-      const res = await fetch(
-        "https://api.gr8.com.np/petite-backend/menu/get_categories.php",
-      );
+      const res = await fetch(apiUrl("menu/get_categories.php"));
       const data = await res.json();
       setCategories(data);
     } catch {
@@ -208,12 +203,10 @@ export default function AdminMenu() {
 
     try {
       const url = editingItemId
-        ? `https://api.gr8.com.np/petite-backend/menu/update_menu_item.php?id=${editingItemId}`
-        : "https://api.gr8.com.np/petite-backend/menu/add_menu_item.php";
+        ? apiUrl(`menu/update_menu_item.php?id=${editingItemId}`)
+        : apiUrl("menu/add_menu_item.php");
 
-      const method = editingItemId ? "POST" : "POST"; // or PATCH if backend supports
-
-      const res = await fetch(url, { method, body: formData });
+      const res = await fetch(url, { method: "POST", body: formData });
 
       if (res.ok) {
         addToast(
@@ -222,13 +215,7 @@ export default function AdminMenu() {
             : `${form.name} added successfully`,
           "success",
         );
-        setForm({
-          name: "",
-          price: "",
-          description: "",
-          image: null,
-          category: "",
-        });
+        setForm({ name: "", price: "", description: "", image: null, category: "" });
         setEditingItemId(null);
         fetchItems();
       } else {
@@ -249,13 +236,10 @@ export default function AdminMenu() {
       const formData = new FormData();
       formData.append("id", id.toString());
 
-      const res = await fetch(
-        "https://api.gr8.com.np/petite-backend/menu/delete_menu_item.php",
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const res = await fetch(apiUrl("menu/delete_menu_item.php"), {
+        method: "POST",
+        body: formData,
+      });
 
       const data = await res.json().catch(() => null);
 
@@ -295,13 +279,10 @@ export default function AdminMenu() {
     const formData = new FormData();
     formData.append("name", newCategory.trim());
 
-    const res = await fetch(
-      "https://api.gr8.com.np/petite-backend/menu/add_category.php",
-      {
-        method: "POST",
-        body: formData,
-      },
-    );
+    const res = await fetch(apiUrl("menu/add_category.php"), {
+      method: "POST",
+      body: formData,
+    });
 
     if (res.ok) {
       addToast("Category added", "success");
@@ -324,13 +305,10 @@ export default function AdminMenu() {
     formData.append("name", editingCategoryName.trim());
 
     try {
-      const res = await fetch(
-        "https://api.gr8.com.np/petite-backend/menu/update_category.php",
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
+      const res = await fetch(apiUrl("menu/update_category.php"), {
+        method: "POST",
+        body: formData,
+      });
 
       if (res.ok) {
         addToast("Category updated", "success");
@@ -351,12 +329,9 @@ export default function AdminMenu() {
     if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
     try {
-      const res = await fetch(
-        `https://api.gr8.com.np/petite-backend/menu/delete_category.php?id=${id}`,
-        {
-          method: "DELETE",
-        },
-      );
+      const res = await fetch(apiUrl(`menu/delete_category.php?id=${id}`), {
+        method: "DELETE",
+      });
 
       const data = await res.json();
 
@@ -364,11 +339,7 @@ export default function AdminMenu() {
         addToast("Category deleted", "success");
         fetchCategories();
       } else {
-        // Show the backend error message (e.g., "This category contains X menu items...")
-        addToast(
-          data.message || data.error || "Failed to delete category",
-          "error",
-        );
+        addToast(data.message || data.error || "Failed to delete category", "error");
       }
     } catch (error) {
       console.error(error);
@@ -421,7 +392,7 @@ export default function AdminMenu() {
             value={newCategory}
             onChange={(e) => setNewCategory(e.target.value)}
             placeholder="Category name"
-            className="flex-1 border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors px-3 "
+            className="flex-1 border border-gray-300 rounded-lg pl-8 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors px-3"
           />
           <button
             onClick={addCategory}
@@ -450,7 +421,7 @@ export default function AdminMenu() {
               ) : (
                 <span>{cat.name}</span>
               )}
-              <div className="flex gap-1  transition-opacity">
+              <div className="flex gap-1 transition-opacity">
                 {editingCategoryId === cat.id ? (
                   <button
                     onClick={() => updateCategory(cat.id)}
@@ -465,7 +436,7 @@ export default function AdminMenu() {
                       setEditingCategoryId(cat.id);
                       setEditingCategoryName(cat.name);
                     }}
-                    className="text-amber-600 hover:text-amber-800 p-0.5"
+                    className="text-amber-600 hover:text-amber-800 p.5"
                     title="Edit"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -552,9 +523,7 @@ export default function AdminMenu() {
             <textarea
               placeholder="Enter item description"
               value={form.description}
-              onChange={(e) =>
-                setForm({ ...form, description: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, description: e.target.value })}
               rows={3}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 transition-colors"
             />
@@ -577,12 +546,10 @@ export default function AdminMenu() {
         </div>
       </div>
 
-      {/* Tables */}
+      {/* Main Menu Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
         <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Main Menu Items
-          </h2>
+          <h2 className="text-lg font-semibold text-gray-900">Main Menu Items</h2>
           <p className="text-sm text-gray-600 mt-1">
             Manage breakfast, lunch, pastry, and coffee items
           </p>
@@ -592,46 +559,29 @@ export default function AdminMenu() {
           <table className="w-full min-w-245">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                  Item
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                  Category
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                  Description
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Item</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Category</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Description</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {mainItems.length > 0 ? (
                 mainItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         {item.image && (
                           <img
-                            src={`https://api.gr8.com.np/petite-backend/${item.image}`}
+                            src={apiUrl(item.image)}
                             alt={item.name}
                             className="w-12 h-12 rounded-lg object-cover border border-gray-200"
                           />
                         )}
                         <div>
-                          <div className="font-medium text-gray-900">
-                            {item.name}
-                          </div>
-                          <div className="text-sm text-gray-500">
-                            ID: {item.id}
-                          </div>
+                          <div className="font-medium text-gray-900">{item.name}</div>
+                          <div className="text-sm text-gray-500">ID: {item.id}</div>
                         </div>
                       </div>
                     </td>
@@ -645,35 +595,30 @@ export default function AdminMenu() {
                     </td>
                     <td className="px-6 py-4 text-gray-600 max-w-xs">
                       {item.description || (
-                        <span className="text-gray-400 italic">
-                          No description
-                        </span>
+                        <span className="text-gray-400 italic">No description</span>
                       )}
                     </td>
                     <td className="whitespace-nowrap px-6 py-4">
                       <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => editItem(item)}
-                        className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" /> Edit
-                      </button>
-                      <button
-                        onClick={() => deleteItem(item.id, item.name)}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" /> Delete
-                      </button>
+                        <button
+                          onClick={() => editItem(item)}
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" /> Edit
+                        </button>
+                        <button
+                          onClick={() => deleteItem(item.id, item.name)}
+                          className="flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" /> Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={5}
-                    className="px-6 py-8 text-center text-gray-500"
-                  >
+                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                     {isLoading ? (
                       <div className="flex justify-center">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-600"></div>
@@ -692,44 +637,27 @@ export default function AdminMenu() {
       {/* Sides Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
-          <h2 className="text-lg font-semibold text-gray-900">
-            Sides & Add-ons
-          </h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage side dishes and additional items
-          </p>
+          <h2 className="text-lg font-semibold text-gray-900">Sides & Add-ons</h2>
+          <p className="text-sm text-gray-600 mt-1">Manage side dishes and additional items</p>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full min-w-180">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                  Item
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                  Price
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Item</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Price</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border-b">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {sideItems.length > 0 ? (
                 sideItems.map((item) => (
-                  <tr
-                    key={item.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
+                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div>
-                        <div className="font-medium text-gray-900">
-                          {item.name}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          ID: {item.id}
-                        </div>
+                        <div className="font-medium text-gray-900">{item.name}</div>
+                        <div className="text-sm text-gray-500">ID: {item.id}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-900 font-medium">
@@ -737,28 +665,25 @@ export default function AdminMenu() {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => editItem(item)}
-                        className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        <Edit2 className="w-4 h-4" /> Edit
-                      </button>
-                      <button
-                        onClick={() => deleteItem(item.id, item.name)}
-                        className="flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4" /> Delete
-                      </button>
+                        <button
+                          onClick={() => editItem(item)}
+                          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Edit2 className="w-4 h-4" /> Edit
+                        </button>
+                        <button
+                          onClick={() => deleteItem(item.id, item.name)}
+                          className="flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <Trash2 className="w-4 h-4" /> Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
-                  <td
-                    colSpan={3}
-                    className="px-6 py-8 text-center text-gray-500"
-                  >
+                  <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
                     {isLoading ? (
                       <div className="flex justify-center">
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-600"></div>
