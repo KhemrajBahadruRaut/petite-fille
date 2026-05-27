@@ -270,15 +270,25 @@ export default function AdminMenu() {
   };
 
   /** Category add */
-  const addCategory = async () => {
-    if (!newCategory.trim()) {
-      addToast("Category name required", "warning");
-      return;
-    }
+ const addCategory = async () => {
+  if (!newCategory.trim()) {
+    addToast("Category name required", "warning");
+    return;
+  }
 
-    const formData = new FormData();
-    formData.append("name", newCategory.trim());
+  // Optimistic update — add to UI immediately
+  const tempCategory: Category = {
+    id: Date.now(),       // temporary ID
+    name: newCategory.trim(),
+    slug: newCategory.trim().toLowerCase().replace(/\s+/g, "-"),
+  };
+  setCategories((prev) => [...prev, tempCategory]);
+  setNewCategory("");
 
+  const formData = new FormData();
+  formData.append("name", tempCategory.name);
+
+  try {
     const res = await fetch(apiUrl("menu/add_category.php"), {
       method: "POST",
       body: formData,
@@ -286,12 +296,17 @@ export default function AdminMenu() {
 
     if (res.ok) {
       addToast("Category added", "success");
-      setNewCategory("");
-      fetchCategories();
+      fetchCategories(); // sync real ID from server
     } else {
+      // Rollback on failure
+      setCategories((prev) => prev.filter((c) => c.id !== tempCategory.id));
       addToast("Failed to add category", "error");
     }
-  };
+  } catch {
+    setCategories((prev) => prev.filter((c) => c.id !== tempCategory.id));
+    addToast("Failed to add category", "error");
+  }
+};
 
   /** Update category */
   const updateCategory = async (id: number) => {
@@ -325,27 +340,30 @@ export default function AdminMenu() {
   };
 
   /** Delete category */
-  const deleteCategory = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+ const deleteCategory = async (id: number, name: string) => {
+  if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
 
-    try {
-      const res = await fetch(apiUrl(`menu/delete_category.php?id=${id}`), {
-        method: "DELETE",
-      });
+  // Optimistic removal
+  setCategories((prev) => prev.filter((c) => c.id !== id));
 
-      const data = await res.json();
+  try {
+    const res = await fetch(apiUrl(`menu/delete_category.php?id=${id}`), {
+      method: "DELETE",
+    });
+    const data = await res.json();
 
-      if (res.ok && data.success) {
-        addToast("Category deleted", "success");
-        fetchCategories();
-      } else {
-        addToast(data.message || data.error || "Failed to delete category", "error");
-      }
-    } catch (error) {
-      console.error(error);
-      addToast("Error deleting category", "error");
+    if (res.ok && data.success) {
+      addToast("Category deleted", "success");
+      fetchCategories(); // re-sync
+    } else {
+      addToast(data.message || data.error || "Failed to delete category", "error");
+      fetchCategories(); // restore on failure
     }
-  };
+  } catch {
+    addToast("Error deleting category", "error");
+    fetchCategories();
+  }
+};
 
   /** Split items */
   const mainItems = items.filter(

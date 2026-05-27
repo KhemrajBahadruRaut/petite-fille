@@ -5,6 +5,7 @@ import MenuCarousel from "./MenuCarousel";
 import { useCart } from "@/contexts/CartContexts";
 import Image from "next/image";
 import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
+import Link from "next/link";
 
 interface MenuItem {
   id: string;
@@ -22,12 +23,9 @@ interface Category {
   items: MenuItem[];
 }
 
-// skeleton loading 
+// skeleton loading
 const SkeletonCard: React.FC<{ index: number }> = ({ index }) => (
-  <div
-    className="animate-pulse"
-    style={{ animationDelay: `${index * 0.07}s` }}
-  >
+  <div className="animate-pulse" style={{ animationDelay: `${index * 0.07}s` }}>
     <div className="mb-3 aspect-square w-full rounded-lg bg-gray-200 sm:mb-4" />
     <div className="space-y-2">
       <div className="flex justify-between gap-2">
@@ -134,7 +132,9 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
                 ${item.price}
               </span>
             </div>
-            <p className="line-clamp-2 text-xs text-gray-600">{item.description}</p>
+            <p className="line-clamp-2 text-xs text-gray-600">
+              {item.description}
+            </p>
           </div>
         </div>
 
@@ -163,10 +163,10 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
         )}
       </>
     );
-  }
+  },
 );
 
-// ── Menu section ───────────────────────────────────────────────────────────
+// Menu section
 const MenuSection: React.FC<{ title: string; items: MenuItem[] }> = ({
   title,
   items,
@@ -183,7 +183,7 @@ const MenuSection: React.FC<{ title: string; items: MenuItem[] }> = ({
   </section>
 );
 
-// ── Root component ─────────────────────────────────────────────────────────
+// Root component
 const RestaurantMenu: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -235,6 +235,15 @@ const RestaurantMenu: React.FC = () => {
       }}
     >
       <MenuCarousel />
+
+      <div className="mx-auto max-w-7xl px-4 pt-3 sm:px-6 flex justify-center">
+        <Link
+          href="/menu/detailedmenu"
+          className="rounded-full bg-black px-6 py-2 text-sm font-semibold text-white transition-all duration-300 hover:scale-105 hover:bg-gray-800"
+        >
+          Full Menu
+        </Link>
+      </div>
 
       {loading ? (
         // Show 2 skeleton sections while data loads
