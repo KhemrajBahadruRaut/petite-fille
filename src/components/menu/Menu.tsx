@@ -239,7 +239,7 @@ const RestaurantMenu: React.FC = () => {
       </div>
       <div className="mx-auto max-w-7xl px-4 pt-3 sm:px-6 flex justify-center">
         <Link
-          href="/menu/detailedmenu"
+          href="/detailedmenu"
           className="relative z-50 pointer-events-auto rounded-full bg-black px-6 py-3 text-sm font-semibold text-white transition-all duration-300 hover:scale-105 hover:bg-gray-800"
         >
           Full Menu
