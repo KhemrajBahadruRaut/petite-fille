@@ -4,6 +4,13 @@ import { Coffee, Heart, Gift } from 'lucide-react';
 import CareersCarousal from './CareersCarousel';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiUrl } from '@/utils/api';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Petite Fille Cafe Careers | Join Our Team",
+  description:
+    "Join the team at Petite Fille Cafe in Rosanna. Explore café careers in hospitality, barista roles, kitchen positions, and front-of-house opportunities.",
+};
 
 // Types (unchanged)
 interface JobListing {

@@ -5,7 +5,7 @@ import React from "react";
 
 const GiftCard = () => {
   return (
-    <div className="bg-white overflow-hidden">
+    <div className="bg-white overflow-hidden pb-10">
       <div className="flex flex-col md:flex-row items-center justify-center px-4 md:px-16 bg-white relative container mx-auto">
         {/* Image */}
         <div className="md:w-1/2 flex justify-center md:mb-0 overflow-hidden">

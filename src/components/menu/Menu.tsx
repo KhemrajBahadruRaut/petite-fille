@@ -6,6 +6,14 @@ import { useCart } from "@/contexts/CartContexts";
 import Image from "next/image";
 import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 import Link from "next/link";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title:
+    "Petite Fille Cafe Menu | Brunch, Coffee & All Day Breakfast Rosanna",
+  description:
+    "View the Petite Fille Cafe menu featuring specialty coffee, all-day breakfast, brunch favourites, fresh pastries, and seasonal Melbourne café dishes in Rosanna.",
+};
 
 interface MenuItem {
   id: string;
