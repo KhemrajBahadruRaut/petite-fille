@@ -4,24 +4,25 @@ import MainPage from "@/components/mainpage/MainPage";
 import Welcome from "@/components/welcomePage/welcome";
 import WhatWeOffer from "@/components/whatWeOffer/WhatWeOffer";
 import "./globals.css";
+import type { Metadata } from "next";
 
-// async function fetchInstagramPosts() {
-//   const token = process.env.INSTAGRAM_TOKEN;
-//   const res = await fetch(
-//     `https://graph.instagram.com/me/media?fields=id,caption,media_url,permalink&access_token=${token}`
-//   );
-
-//   let posts = [];
-//   if (res.ok) {
-//     const data = await res.json();
-//     posts = data.data ?? [];
-//   }
-
-//   return posts; 
-// }
+export const metadata: Metadata = {
+  title: "Petite Fille Cafe | Specialty Coffee & Brunch in Rosanna Melbourne",
+  description:
+    "Visit Petite Fille Cafe in Rosanna for Melbourne’s best specialty coffee, all-day breakfast, brunch favourites, fresh pastries, and seasonal cafe dishes.",
+  keywords: [
+    "cafe in Rosanna",
+    "brunch in Rosanna",
+    "all day breakfast Rosanna",
+    "specialty coffee Rosanna",
+    "Melbourne brunch cafe",
+    "cafe near Heidelberg",
+    "cafe near Ivanhoe",
+    "family friendly cafe Rosanna",
+  ],
+};
 
 export default async function Home() {
-  // const posts = await fetchInstagramPosts();
 
   return (
     <div>
@@ -29,7 +30,6 @@ export default async function Home() {
       <Welcome />
       <WhatWeOffer />
       <GiftCard />
-      {/* <InstagramFeed posts={posts} /> */}
     </div>
   );
 }

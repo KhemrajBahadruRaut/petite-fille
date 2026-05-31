@@ -523,7 +523,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       "/admin/menu-admin",
       "/admin/gallery",
       "/admin/adminAbout",
-      "/admin/merchendise",
+      "/admin/merchandise",
       "/admin/jobs",
     ];
     if (cmsPages.includes(pathname)) {

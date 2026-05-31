@@ -4,6 +4,25 @@ import { motion } from "framer-motion";
 import "../globals.css";
 import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
 
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "About Petite Fille Cafe | Local Brunch Cafe in Rosanna Melbourne",
+  description:
+    "Learn more about Petite Fille Cafe in Rosanna — a welcoming Melbourne brunch cafe serving specialty coffee, all-day breakfast, fresh pastries, and seasonal dishes made for the local community.",
+  keywords: [
+    "cafe in Rosanna",
+    "brunch in Rosanna",
+    "all day breakfast Rosanna",
+    "specialty coffee Rosanna",
+    "Melbourne brunch cafe",
+    "cafe near Heidelberg",
+    "cafe near Ivanhoe",
+    "family friendly cafe Rosanna",
+  ],
+};
+
+
 const fadeIn = {
   initial: { opacity: 0 },
   whileInView: { opacity: 1 },

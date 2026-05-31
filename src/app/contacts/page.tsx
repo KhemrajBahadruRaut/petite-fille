@@ -1,6 +1,13 @@
 "use client";
 import ContactsCarousel from '@/components/contactsCarousel/ContactsCarousel';
 import { useState, useCallback } from 'react';
+import { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: "Contact Petite Fille Cafe | Get in Touch",
+  description:
+    "Get in touch with Petite Fille Cafe for bookings, catering inquiries, collaborations, and general questions about our Melbourne brunch cafe.",
+};
 
 interface FormData {
     fullName: string;
