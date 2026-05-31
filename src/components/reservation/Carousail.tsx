@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
 
-
-
-
-
 export default function ReservationCarousal  ()  {
   const [currentSlide, setCurrentSlide] = useState(0);
 

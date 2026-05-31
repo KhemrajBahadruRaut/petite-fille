@@ -10,6 +10,7 @@ const buttonBase =
 const bookTableBtn =
   "border border-[#B7AA99] text-[#B7AA99] rounded-tr-3xl rounded-bl-3xl hover:rounded-tl-3xl hover:rounded-br-3xl hover:rounded-tr-none hover:rounded-bl-none transition-all duration-300 ease-in-out px-6 py-2";
 const orderOnlineBtn =
+  // "bg-[#B7AA99] text-white hover:rounded-bl-3xl hover:rounded-tr-3xl rounded-tl-3xl rounded-br-3xl";
   "bg-[#B7AA99] text-white border border-[#B7AA99] text-[#B7AA99] rounded-tr-3xl rounded-bl-3xl hover:rounded-tl-3xl hover:rounded-br-3xl hover:rounded-tr-none hover:rounded-bl-none transition-all duration-300 ease-in-out px-6 py-2";
 
 

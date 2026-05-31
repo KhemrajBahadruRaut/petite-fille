@@ -4,13 +4,6 @@ import React, { useEffect, useMemo, useState } from "react";
 import Marquee from "react-fast-marquee";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title: "Petite Fille Cafe Gallery | Brunch, Coffee & Cafe Photos Rosanna",
-  description:
-    "Explore the Petite Fille Cafe gallery and discover our specialty coffee, brunch dishes, fresh pastries, cafe interiors, and local Rosanna cafe atmosphere.",
-};
 
 interface Image {
   id: number;

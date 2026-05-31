@@ -1,14 +1,6 @@
 "use client";
 import Link from "next/link";
 import { motion, AnimatePresence, Variants } from 'framer-motion';
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title:
-    "Petite Fille Cafe Catering | Fresh Food for Events and Meetings",
-  description:
-    "Petite Fille Cafe offers catering in Rosanna for corporate events, meetings, birthdays, and private functions with fresh breakfast, brunch, pastries, and coffee options.",
-};
 
 interface Package {
   id: number;

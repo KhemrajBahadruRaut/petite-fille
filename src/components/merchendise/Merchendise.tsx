@@ -5,14 +5,6 @@ import { Heart, PackageOpen, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContexts";
 import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
-import { Metadata } from "next";
-
-export const metadata: Metadata = {
-  title:
-    "Petite Fille Cafe Merchandise | Coffee Cups and Cafe Themed Apparel",
-  description:
-    "Shop Petite Fille Cafe merchandise including branded coffee cups, apparel, and cafe inspired products.",
-};
 
 interface Product {
   id: string;
