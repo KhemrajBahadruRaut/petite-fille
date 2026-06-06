@@ -9,7 +9,7 @@ import {
   Pencil,
   Save,
 } from "lucide-react";
-import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
+import { apiUrl, normalizeApiAssetUrl } from "../../../utils/api";
 
 /* ---------------- Types ---------------- */
 interface MerchItem {

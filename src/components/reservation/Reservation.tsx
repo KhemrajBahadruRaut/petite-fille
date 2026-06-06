@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FaCalendarAlt, FaChair, FaClock, FaUser } from "react-icons/fa";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../../utils/api";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import ReservationCarousal from "./Carousail";
 

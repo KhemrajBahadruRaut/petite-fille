@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useState } from "react";
-import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
+import { apiUrl, normalizeApiAssetUrl } from "../../../utils/api";
 
 interface Image {
   id: number;

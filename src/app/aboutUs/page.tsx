@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import "../globals.css";
-import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
+import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
 
 
 const fadeIn = {

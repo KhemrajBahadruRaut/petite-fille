@@ -3,7 +3,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import Marquee from "react-fast-marquee";
 import { motion, AnimatePresence } from "framer-motion";
-import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
+import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
 
 interface Image {
   id: number;

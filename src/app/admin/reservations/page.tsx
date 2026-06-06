@@ -8,7 +8,7 @@ import {
   Filter,
   Users,
 } from "lucide-react";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../../../utils/api";
 
 type ReservationStatus =
   | "pending"

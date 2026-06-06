@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
+import { apiUrl, normalizeApiAssetUrl } from "../../../utils/api";
 
 interface AboutUsData {
   top: {

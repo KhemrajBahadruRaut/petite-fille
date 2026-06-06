@@ -8,7 +8,7 @@ import React, {
   useMemo,
   useState,
 } from "react";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../utils/api";
 
 export interface AuthUser {
   id: number;

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Calendar, Clock3, RefreshCw, Users } from "lucide-react";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../../../utils/api";
 
 type ReservationStatus =
   | "pending"

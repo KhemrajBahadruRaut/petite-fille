@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Heart, PackageOpen, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useCart } from "@/contexts/CartContexts";
-import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
+import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
 
 interface Product {
   id: string;

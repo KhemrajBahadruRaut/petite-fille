@@ -4,7 +4,7 @@ import { Heart, X } from "lucide-react";
 import MenuCarousel from "./MenuCarousel";
 import { useCart } from "@/contexts/CartContexts";
 import Image from "next/image";
-import { apiUrl, normalizeApiAssetUrl } from "@/utils/api";
+import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
 import Link from "next/link";
 
 interface MenuItem {

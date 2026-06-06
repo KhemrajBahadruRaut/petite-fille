@@ -2,7 +2,7 @@
 
 import React, { FormEvent, useMemo, useState } from "react";
 import { ShieldCheck, KeyRound } from "lucide-react";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../../../utils/api";
 import { getAdminSession } from "@/utils/adminAuth";
 
 interface ChangePasswordResponse {

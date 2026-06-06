@@ -50,14 +50,16 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold mb-4 border-b inline py-1">Contacts</h3>
           <ul className="space-y-3 text-sm pt-3">
+            <a target="_blank" href="https://www.google.com/maps/place/Petite+Fille+Cafe/@-37.7449881,145.0686902,17z/data=!3m1!4b1!4m6!3m5!1s0x6ad6479f02ac47a5:0x13fd7578d4bcb97f!8m2!3d-37.7449881!4d145.0712651!16s%2Fg%2F11x2m5ffnf?entry=ttu&g_ep=EgoyMDI2MDUyNy4wIKXMDSoASAFQAw%3D%3D">
+              <li className="flex items-center gap-2 pb-3">
+                <FaPaperPlane /> 2 Station Rd, Rosanna VIC 3084, Australia
+              </li>
+            </a>
             <li className="flex items-center gap-2">
-              <FaPaperPlane /> Lorem ipsum dolor, sit amet, cons adipiscing eli
+              <FaPhoneAlt /> +61 3 9191 9212
             </li>
             <li className="flex items-center gap-2">
-              <FaPhoneAlt /> (123) 456 - 7891
-            </li>
-            <li className="flex items-center gap-2">
-              <FaEnvelope /> support@petitefille.com
+              <FaEnvelope /> petitefillerosanna@gmail.com
             </li>
             {/* <li className="flex items-center gap-2">
               <FaUserFriends /> Join our team

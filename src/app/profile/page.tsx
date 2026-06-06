@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { AlertTriangle, CheckCircle2, X, XCircle } from "lucide-react";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../../utils/api";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { useCart } from "@/contexts/CartContexts";
 

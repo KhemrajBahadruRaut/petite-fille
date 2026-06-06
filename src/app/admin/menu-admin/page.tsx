@@ -11,7 +11,7 @@ import {
   Pencil,
   Save,
 } from "lucide-react";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../../../utils/api";
 
 interface MenuItem {
   id: number;

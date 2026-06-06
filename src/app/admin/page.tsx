@@ -2,7 +2,7 @@
 
 import React, { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../../utils/api";
 import { isAdminAuthenticated, setAdminSession } from "@/utils/adminAuth";
 
 interface LoginResponse {

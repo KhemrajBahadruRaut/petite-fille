@@ -3,7 +3,7 @@ import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Coffee, Heart, Gift } from 'lucide-react';
 import CareersCarousal from './CareersCarousel';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiUrl } from '@/utils/api';
+import { apiUrl } from '../../utils/api';
 
 
 // Types (unchanged)
@@ -508,10 +508,10 @@ export default function CareersPage() {
                         <span className="text-[#EEC27E] font-medium">Don`&apos;`t see any post for you?</span>{' '}
                         Email your resume to{' '}
                         <a
-                            href="mailto:abc@example.com"
+                            href="mailto:petitefillerosanna@gmail.com"
                             className="text-[#EEC27E] hover:text-[#EEC27E] transition-colors underline"
                         >
-                            abc@example.com
+                            petitefillerosanna@gmail.com
                         </a>
                     </p>
                 </motion.div>

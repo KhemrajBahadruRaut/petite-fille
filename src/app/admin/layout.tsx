@@ -11,7 +11,7 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clearAdminSession, isAdminAuthenticated } from "@/utils/adminAuth";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../../utils/api";
 
 interface MenuItem {
   href: string;
@@ -221,8 +221,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             ),
           },
           {
-            href: "/admin/merchendise",
-            label: "Merchendise",
+            href: "/admin/merchandise",
+            label: "Merchandise",
             shortLabel: "Merch",
             icon: (
               <svg

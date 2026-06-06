@@ -10,7 +10,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import { apiUrl } from "@/utils/api";
+import { apiUrl } from "../../../utils/api";
 
 type JobType = "Full-time" | "Part-time" | "Contract";
 
