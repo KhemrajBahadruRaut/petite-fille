@@ -308,6 +308,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </svg>
         ),
       },
+        {
+            href: "/admin/giftCards",
+            label: "Gift Cards",
+            shortLabel: "Gifts",
+            icon: (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M5 8h14l1 12H4L5 8z"
+                />
+                <path
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 8a3 3 0 016 0"
+                />
+              </svg>
+            ),
+          },
       {
         href: "/admin/reservations",
         label: "Reservations",
