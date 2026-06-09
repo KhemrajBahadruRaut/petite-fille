@@ -9,6 +9,25 @@ import { apiUrl } from "../../utils/api";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { useCart } from "@/contexts/CartContexts";
 
+interface UserGiftCard {
+  id: number;
+  code: string;
+  amount: number;
+  status: "active" | "redeemed";
+  created_at: string;
+  redeemed_at: string | null;
+  sender_name?: string;
+  sender_email?: string;
+  recipient?: string;
+  recipient_email?: string;
+  message: string | null;
+}
+
+interface UserGiftCards {
+  received: UserGiftCard[];
+  sent: UserGiftCard[];
+}
+
 interface UserReservation {
   id: number;
   reservation_date: string;
@@ -30,6 +49,12 @@ export default function ProfilePage() {
   const router = useRouter();
   const { user, token, isAuthenticated, isLoading, logout } = useUserAuth();
   const { favorites, removeFromFavorites, isHydrated } = useCart();
+
+  const [giftCards, setGiftCards] = useState<UserGiftCards>({
+    received: [],
+    sent: [],
+  });
+  const [giftCardsError, setGiftCardsError] = useState("");
 
   const [reservations, setReservations] = useState<UserReservation[]>([]);
   const [reservationsError, setReservationsError] = useState("");
@@ -98,22 +123,39 @@ export default function ProfilePage() {
     setLoadingData(true);
     setError("");
     setReservationsError("");
+    setGiftCardsError("");
 
     try {
-      const response = await fetch(apiUrl("reservation/get_user_reservations.php"), {
-        headers: authHeaders,
-        cache: "no-store",
-      });
-      const payload = await response.json().catch(() => null);
-      if (!response.ok || !payload?.success) {
-        throw new Error(payload?.message || "Failed to load reservations.");
-      }
+      const [resResponse, gcResponse] = await Promise.all([
+        fetch(apiUrl("reservation/get_user_reservations.php"), {
+          headers: authHeaders,
+          cache: "no-store",
+        }),
+        fetch(apiUrl("giftCards/get_user_gift_cards.php"), {
+          headers: authHeaders,
+          cache: "no-store",
+        }),
+      ]);
 
+      const resPayload = await resResponse.json().catch(() => null);
+      if (!resResponse.ok || !resPayload?.success) {
+        throw new Error(resPayload?.message || "Failed to load reservations.");
+      }
       setReservations(
-        Array.isArray(payload?.reservations)
-          ? (payload.reservations as UserReservation[])
+        Array.isArray(resPayload?.reservations)
+          ? (resPayload.reservations as UserReservation[])
           : [],
       );
+
+      const gcPayload = await gcResponse.json().catch(() => null);
+      if (!gcResponse.ok || !gcPayload?.success) {
+        setGiftCardsError(gcPayload?.message || "Failed to load gift cards.");
+      } else {
+        setGiftCards({
+          received: gcPayload.received ?? [],
+          sent: gcPayload.sent ?? [],
+        });
+      }
     } catch (fetchError) {
       const text =
         fetchError instanceof Error
@@ -161,11 +203,14 @@ export default function ProfilePage() {
     );
 
     try {
-      const response = await fetch(apiUrl("reservation/cancel_user_reservation.php"), {
-        method: "POST",
-        headers: jsonAuthHeaders,
-        body: JSON.stringify({ id }),
-      });
+      const response = await fetch(
+        apiUrl("reservation/cancel_user_reservation.php"),
+        {
+          method: "POST",
+          headers: jsonAuthHeaders,
+          body: JSON.stringify({ id }),
+        },
+      );
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.success) {
@@ -215,11 +260,14 @@ export default function ProfilePage() {
     );
 
     try {
-      const response = await fetch(apiUrl("reservation/delete_user_reservation.php"), {
-        method: "POST",
-        headers: jsonAuthHeaders,
-        body: JSON.stringify({ id }),
-      });
+      const response = await fetch(
+        apiUrl("reservation/delete_user_reservation.php"),
+        {
+          method: "POST",
+          headers: jsonAuthHeaders,
+          body: JSON.stringify({ id }),
+        },
+      );
 
       const payload = await response.json().catch(() => null);
       if (!response.ok || !payload?.success) {
@@ -296,7 +344,9 @@ export default function ProfilePage() {
     return (
       <div className="min-h-screen bg-gray-50 px-4 py-24">
         <div className="mx-auto max-w-3xl rounded-xl border border-gray-200 bg-white p-8 text-center">
-          <h1 className="text-xl font-semibold text-gray-900">Sign in required</h1>
+          <h1 className="text-xl font-semibold text-gray-900">
+            Sign in required
+          </h1>
           <p className="mt-2 text-sm text-gray-600">
             Please login to manage your reservations and favorites.
           </p>
@@ -319,7 +369,9 @@ export default function ProfilePage() {
         <div className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <h1 className="text-xl font-semibold text-gray-900">My Profile</h1>
+              <h1 className="text-xl font-semibold text-gray-900">
+                My Profile
+              </h1>
               <p className="mt-1 text-sm text-gray-600">
                 {user.name} ({user.email})
               </p>
@@ -448,12 +500,16 @@ export default function ProfilePage() {
         </AnimatePresence>
 
         <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-semibold text-gray-900">My Reservations</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            My Reservations
+          </h2>
           {!!reservationsError && (
             <p className="mt-2 text-xs text-red-600">{reservationsError}</p>
           )}
           {loadingData ? (
-            <p className="mt-4 text-sm text-gray-500">Loading reservations...</p>
+            <p className="mt-4 text-sm text-gray-500">
+              Loading reservations...
+            </p>
           ) : reservations.length === 0 ? (
             <p className="mt-4 text-sm text-gray-500">No reservations found.</p>
           ) : (
@@ -466,43 +522,48 @@ export default function ProfilePage() {
                     key={reservation.id}
                     className="min-w-0 rounded-lg border border-gray-200 p-4"
                   >
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-gray-900">
-                      Reservation #{reservation.id}
-                    </p>
-                    <span className="rounded-full border border-gray-300 px-2 py-1 text-xs capitalize text-gray-700">
-                      {reservation.status}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-xs text-gray-600">
-                    <span className="break-words">
-                      {reservation.reservation_date} at {reservation.reservation_time}
-                    </span>
-                    <span className="text-gray-400">|</span>
-                    <span>{reservation.guests} guest(s)</span>
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {reservation.status !== "cancelled" &&
-                      reservation.status !== "fulfilled" &&
-                      reservation.status !== "no_show" && (
-                        <button
-                          onClick={() => handleReservationCancelClick(reservation)}
-                          disabled={!!pendingAction}
-                          className="rounded border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {pendingAction === "cancel"
-                            ? "Cancelling..."
-                            : "Cancel Reservation"}
-                        </button>
-                      )}
-                    <button
-                      onClick={() => handleReservationDeleteClick(reservation)}
-                      disabled={!!pendingAction}
-                      className="rounded border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
-                    >
-                      {pendingAction === "delete" ? "Deleting..." : "Delete"}
-                    </button>
-                  </div>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                      <p className="text-sm font-semibold text-gray-900">
+                        Reservation #{reservation.id}
+                      </p>
+                      <span className="rounded-full border border-gray-300 px-2 py-1 text-xs capitalize text-gray-700">
+                        {reservation.status}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-xs text-gray-600">
+                      <span className="break-words">
+                        {reservation.reservation_date} at{" "}
+                        {reservation.reservation_time}
+                      </span>
+                      <span className="text-gray-400">|</span>
+                      <span>{reservation.guests} guest(s)</span>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {reservation.status !== "cancelled" &&
+                        reservation.status !== "fulfilled" &&
+                        reservation.status !== "no_show" && (
+                          <button
+                            onClick={() =>
+                              handleReservationCancelClick(reservation)
+                            }
+                            disabled={!!pendingAction}
+                            className="rounded border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {pendingAction === "cancel"
+                              ? "Cancelling..."
+                              : "Cancel Reservation"}
+                          </button>
+                        )}
+                      <button
+                        onClick={() =>
+                          handleReservationDeleteClick(reservation)
+                        }
+                        disabled={!!pendingAction}
+                        className="rounded border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {pendingAction === "delete" ? "Deleting..." : "Delete"}
+                      </button>
+                    </div>
                   </div>
                 );
               })}
@@ -511,11 +572,180 @@ export default function ProfilePage() {
         </section>
 
         <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+          <h2 className="text-lg font-semibold text-gray-900">My Gift Cards</h2>
+          {!!giftCardsError && (
+            <p className="mt-2 text-xs text-red-600">{giftCardsError}</p>
+          )}
+          {loadingData ? (
+            <p className="mt-4 text-sm text-gray-500">Loading gift cards...</p>
+          ) : giftCards.received.length === 0 && giftCards.sent.length === 0 ? (
+            <p className="mt-4 text-sm text-gray-500">No gift cards found.</p>
+          ) : (
+            <div className="mt-4 space-y-6">
+              {/* Received */}
+              {giftCards.received.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                    Received
+                  </h3>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {giftCards.received.map((card) => (
+                      <div
+                        key={card.id}
+                        className={`rounded-xl border-2 p-4 ${
+                          card.status === "active"
+                            ? "border-amber-200 bg-amber-50"
+                            : "border-gray-200 bg-gray-50 opacity-60"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl font-bold text-amber-700">
+                            ${card.amount}
+                          </span>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
+                              card.status === "active"
+                                ? "bg-green-100 text-green-700 border border-green-200"
+                                : "bg-gray-200 text-gray-500"
+                            }`}
+                          >
+                            {card.status}
+                          </span>
+                        </div>
+                        <p className="mt-2 font-mono text-sm font-bold tracking-widest text-amber-800">
+                          {card.code}
+                        </p>
+                        {card.sender_name && (
+                          <p className="mt-1 text-xs text-gray-500">
+                            From{" "}
+                            <span className="font-medium text-gray-700">
+                              {card.sender_name}
+                            </span>
+                          </p>
+                        )}
+                        {card.message && (
+                          <p className="mt-1 text-xs italic text-gray-500 line-clamp-2">
+                            &ldquo;{card.message}&rdquo;
+                          </p>
+                        )}
+                        <div className="mt-3 space-y-0.5 text-xs text-gray-400">
+                          <p>
+                            Issued:{" "}
+                            {new Date(card.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
+                          </p>
+                          {card.redeemed_at && (
+                            <p>
+                              Redeemed:{" "}
+                              {new Date(card.redeemed_at).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                },
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Sent */}
+              {giftCards.sent.length > 0 && (
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-3">
+                    Sent
+                  </h3>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    {giftCards.sent.map((card) => (
+                      <div
+                        key={card.id}
+                        className="rounded-xl border-2 p-4 border-blue-100 bg-blue-50"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-2xl font-bold text-blue-700">
+                            ${card.amount}
+                          </span>
+                          <span
+                            className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
+                              card.status === "active"
+                                ? "bg-green-100 text-green-700 border border-green-200"
+                                : "bg-gray-200 text-gray-500"
+                            }`}
+                          >
+                            {card.status}
+                          </span>
+                        </div>
+                        <div className="mt-2 text-xs text-gray-500">
+                          <p>
+                            To{" "}
+                            <span className="font-medium text-gray-700">
+                              {card.recipient}
+                            </span>
+                          </p>
+                          {card.recipient_email && (
+                            <p className="truncate text-gray-400">
+                              {card.recipient_email}
+                            </p>
+                          )}
+                        </div>
+                        {card.message && (
+                          <p className="mt-1 text-xs italic text-gray-500 line-clamp-2">
+                            &ldquo;{card.message}&rdquo;
+                          </p>
+                        )}
+                        <div className="mt-3 space-y-0.5 text-xs text-gray-400">
+                          <p>
+                            Sent:{" "}
+                            {new Date(card.created_at).toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                year: "numeric",
+                              },
+                            )}
+                          </p>
+                          {card.redeemed_at && (
+                            <p className="text-green-600">
+                              Redeemed:{" "}
+                              {new Date(card.redeemed_at).toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                },
+                              )}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
+        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">My Favorites</h2>
           {!isHydrated ? (
             <p className="mt-4 text-sm text-gray-500">Loading favorites...</p>
           ) : favorites.length === 0 ? (
-            <p className="mt-4 text-sm text-gray-500">No favorite items selected yet.</p>
+            <p className="mt-4 text-sm text-gray-500">
+              No favorite items selected yet.
+            </p>
           ) : (
             <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {favorites.map((favorite) => (
