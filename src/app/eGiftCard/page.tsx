@@ -1,10 +1,12 @@
-import EGiftCard from '@/components/giftCard/eGiftCards/EGiftCard'
 import React from 'react'
+import Stripe_test from './Stripe_test.jsx'
 
-export default function Page() {
+const page = () => {
   return (
     <div>
-      <EGiftCard />
+      <Stripe_test/>
     </div>
   )
 }
+
+export default page
