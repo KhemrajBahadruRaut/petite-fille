@@ -3,25 +3,11 @@ import GiftCard from "@/components/giftCard/GiftCard";
 import MainPage from "@/components/mainpage/MainPage";
 import Welcome from "@/components/welcomePage/welcome";
 import WhatWeOffer from "@/components/whatWeOffer/WhatWeOffer";
+import InstagramFeed from "@/components/instagramFeed/InstagramFeed"
 import "./globals.css";
 
-// async function fetchInstagramPosts() {
-//   const token = process.env.INSTAGRAM_TOKEN;
-//   const res = await fetch(
-//     `https://graph.instagram.com/me/media?fields=id,caption,media_url,permalink&access_token=${token}`
-//   );
-
-//   let posts = [];
-//   if (res.ok) {
-//     const data = await res.json();
-//     posts = data.data ?? [];
-//   }
-
-//   return posts; 
-// }
 
 export default async function Home() {
-  // const posts = await fetchInstagramPosts();
 
   return (
     <div>
@@ -29,7 +15,7 @@ export default async function Home() {
       <Welcome />
       <WhatWeOffer />
       <GiftCard />
-      {/* <InstagramFeed posts={posts} /> */}
+      <InstagramFeed />
     </div>
   );
 }

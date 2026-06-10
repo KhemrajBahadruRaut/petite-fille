@@ -1,10 +1,11 @@
 import React from 'react'
-import Stripe_test from './Stripe_test.jsx'
+// import Stripe_test from './Stripe_test.jsx'
+import InstagramFeed from '../../components/instagramFeed/InstagramFeed.jsx'
 
 const page = () => {
   return (
     <div>
-      <Stripe_test/>
+      <InstagramFeed/>
     </div>
   )
 }
