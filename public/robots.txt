@@ -1,0 +1,16 @@
+# robots.txt for https://www.petitefille.com.au
+
+User-agent: *
+Allow: /
+
+# Block common non-public paths
+Disallow: /admin/
+Disallow: /login/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /private/
+Disallow: /*.json$
+
+# Sitemap location
+Sitemap: https://www.petitefille.com.au/sitemap.xml

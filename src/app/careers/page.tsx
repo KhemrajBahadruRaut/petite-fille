@@ -1,5 +1,5 @@
-import CareersPage from '@/components/careers/careers'
-import React from 'react'
+import React from "react";
+import CareersPage from "@/components/careers/careers";
 
 const page = () => {
   return (
@@ -9,4 +9,4 @@ const page = () => {
   )
 }
 
-export default page
+export default page;

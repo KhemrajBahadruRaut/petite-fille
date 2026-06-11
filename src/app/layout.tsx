@@ -18,14 +18,14 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning={true}>
       <body>
-          <UserAuthProvider>
-            {!isAdmin && <Header />}
-            <main>
-              <CartProvider>{children}</CartProvider>
-            </main>
-            {!isAdmin && <Footer />}
-            <Toaster />
-          </UserAuthProvider>
+        <UserAuthProvider>
+          {!isAdmin && <Header />}
+          <main>
+            <CartProvider>{children}</CartProvider>
+          </main>
+          {!isAdmin && <Footer />}
+          <Toaster />
+        </UserAuthProvider>
       </body>
     </html>
   );
