@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'petitefille.com.au',
+        hostname: 'backend.petitefille.com.au',
         port: '',
         pathname: '/petite-backend/**',
       },
