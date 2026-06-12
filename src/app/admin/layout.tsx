@@ -247,6 +247,25 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             ),
           },
           {
+            href: "/admin/welcome",
+            label: "Welcome Section",
+            shortLabel: "welcomeHome",
+            icon: (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="1em"
+                height="1em"
+                viewBox="0 0 24 24"
+              >
+                <path d="M0 0h24v24H0z" fill="none" />
+                <path
+                  fill="currentColor"
+                  d="M12 2c1.1 0 2 .9 2 2s-.9 2-2 2s-2-.9-2-2s.9-2 2-2m3.9 6.1c-.4-.4-1.1-1.1-2.4-1.1H11C8.2 7 6 4.8 6 2H4c0 3.2 2.1 5.8 5 6.7V22h2v-6h2v6h2V10.1l4 3.9l1.4-1.4z"
+                />
+              </svg>
+            ),
+          },
+          {
             href: "/admin/jobs",
             label: "Jobs",
             shortLabel: "Jobs",
@@ -308,32 +327,32 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </svg>
         ),
       },
-        {
-            href: "/admin/giftCards",
-            label: "Gift Cards",
-            shortLabel: "Gifts",
-            icon: (
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M5 8h14l1 12H4L5 8z"
-                />
-                <path
-                  strokeWidth={2}
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M9 8a3 3 0 016 0"
-                />
-              </svg>
-            ),
-          },
+      {
+        href: "/admin/giftCards",
+        label: "Gift Cards",
+        shortLabel: "Gifts",
+        icon: (
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M5 8h14l1 12H4L5 8z"
+            />
+            <path
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 8a3 3 0 016 0"
+            />
+          </svg>
+        ),
+      },
       {
         href: "/admin/reservations",
         label: "Reservations",
@@ -489,7 +508,8 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         setRealtimeStats((previous) => {
           if (previous) {
             if (nextStats.pendingReservations > previous.pendingReservations) {
-              const diff = nextStats.pendingReservations - previous.pendingReservations;
+              const diff =
+                nextStats.pendingReservations - previous.pendingReservations;
               appendAlert(
                 "reservation",
                 `${diff} new pending reservation${diff > 1 ? "s" : ""}.`,
@@ -1004,7 +1024,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                 <p className="text-sm font-semibold text-slate-800 truncate">
                   Administrator
                 </p>
-                <p className="text-[11px] text-slate-500 truncate">Online now</p>
+                <p className="text-[11px] text-slate-500 truncate">
+                  Online now
+                </p>
               </div>
             </div>
           </div>
@@ -1060,7 +1082,17 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   className="relative p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all duration-300 hover:scale-110 group"
                   aria-label="Admin notifications"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M7.58 4.08L6.15 2.65C3.75 4.48 2.17 7.3 2.03 10.5h2a8.45 8.45 0 0 1 3.55-6.42m12.39 6.42h2c-.15-3.2-1.73-6.02-4.12-7.85l-1.42 1.43a8.5 8.5 0 0 1 3.54 6.42M18 11c0-3.07-1.64-5.64-4.5-6.32V2.5h-3v2.18C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-6 11c.14 0 .27-.01.4-.04c.65-.14 1.18-.58 1.44-1.18q.15-.36.15-.78h-4c.01 1.1.9 2 2.01 2"/></svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      fill="currentColor"
+                      d="M7.58 4.08L6.15 2.65C3.75 4.48 2.17 7.3 2.03 10.5h2a8.45 8.45 0 0 1 3.55-6.42m12.39 6.42h2c-.15-3.2-1.73-6.02-4.12-7.85l-1.42 1.43a8.5 8.5 0 0 1 3.54 6.42M18 11c0-3.07-1.64-5.64-4.5-6.32V2.5h-3v2.18C7.63 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-6 11c.14 0 .27-.01.4-.04c.65-.14 1.18-.58 1.44-1.18q.15-.36.15-.78h-4c.01 1.1.9 2 2.01 2"
+                    />
+                  </svg>
                   {unreadAlerts > 0 && (
                     <div className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-red-500 text-white text-[10px] leading-[18px] text-center rounded-full font-semibold animate-pulse">
                       {unreadAlerts > 9 ? "9+" : unreadAlerts}
@@ -1083,9 +1115,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                         </button>
                       </div>
                       <p className="text-[11px] text-slate-500 mt-1">
-                        Pending reservations: {realtimeStats?.pendingReservations ?? 0} |
-                        {" "}New contacts:{" "}
-                        {realtimeStats?.newContacts ?? 0}
+                        Pending reservations:{" "}
+                        {realtimeStats?.pendingReservations ?? 0} | New
+                        contacts: {realtimeStats?.newContacts ?? 0}
                       </p>
                       <p className="text-[11px] text-slate-500 mt-1">
                         User cancelled reservations:{" "}
@@ -1142,7 +1174,9 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               </div>
 
               <div className="hidden text-[11px] text-slate-500 lg:block">
-                {unreadAlerts > 0 ? `${unreadAlerts} unread alert(s)` : "All alerts read"}
+                {unreadAlerts > 0
+                  ? `${unreadAlerts} unread alert(s)`
+                  : "All alerts read"}
               </div>
 
               <CurrentDateTime />
