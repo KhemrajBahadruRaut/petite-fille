@@ -5,8 +5,8 @@ import Link from "next/link";
 // import Image from "next/image";
 import { PiUserCircle } from "react-icons/pi";
 import { HiMenu, HiX } from "react-icons/hi";
+import { ShoppingCart } from "lucide-react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
-
 
 const navLinks = [
   { href: "/aboutUs", label: "About Us" },
@@ -16,16 +16,23 @@ const navLinks = [
   { href: "/careers", label: "Careers" },
 ];
 
-const mobileNavLinks = [...navLinks, { href: "/menu", label: "Menu" }];
+const mobileNavLinks = [
+  ...navLinks,
+  { href: "/menu", label: "Menu" },
+  { href: "/cart", label: "Cart" },
+];
 
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const { isAuthenticated } = useUserAuth();
-  const profileLink = isAuthenticated ? "/profile" : "/auth/login?next=/profile";
+
+  const profileLink = isAuthenticated
+    ? "/profile"
+    : "/auth/login?next=/profile";
 
   return (
     <header className="w-full absolute z-100">
-      <div className="container mx-auto flex items-center justify-between rounded-full  bg-black/30 px-5  backdrop-blur-md sm:py-3">
+      <div className="container mx-auto flex items-center justify-between rounded-full bg-black/30 px-5 backdrop-blur-md sm:py-3">
         {/* Logo */}
         <Link href="/" className="flex items-center">
           <img
@@ -33,18 +40,20 @@ const Header = () => {
             alt="logo"
             width={50}
             height={50}
-            className="cursor-pointer hover:scale-110 transition-all duration-500"
+            className="cursor-pointer transition-all duration-500 hover:scale-110"
           />
         </Link>
 
         {/* Desktop Nav */}
-        <nav className="hidden gap-8 text-sm font-medium md:flex text-white" >
+        <nav
+          className="hidden gap-8 text-sm font-medium text-white md:flex"
+          style={{ fontFamily: "arial" }}
+        >
           {navLinks.map(({ href, label }) => (
             <Link
               key={href}
               href={href}
-              className="relative group transition-all hover:text-[#d5cfc8] hover:scale-110 "
-              style={{ fontFamily: "arial" }}
+              className="group relative transition-all hover:scale-110 hover:text-[#d5cfc8]"
             >
               {label}
               <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-[#B7AA99] transition-all duration-300 group-hover:w-full"></span>
@@ -52,25 +61,45 @@ const Header = () => {
           ))}
         </nav>
 
-        {/* Icons */}
+        {/* Right Side */}
         <div className="flex items-center gap-4 text-white">
+          {/* Menu Link */}
           <span className="group relative hidden cursor-pointer transition-all hover:scale-105 hover:text-[#d5cfc8] md:block">
             <Link href="/menu" style={{ fontFamily: "arial" }}>
               Menu
             </Link>
             <span className="absolute left-0 -bottom-0.5 h-0.5 w-0 bg-[#B7AA99] transition-all duration-300 group-hover:w-full"></span>
           </span>
-          <Link href={profileLink} aria-label="User Profile">
+
+          {/* Cart */}
+          <Link
+            href="/cart"
+            aria-label="Shopping Cart"
+            className="transition-all hover:scale-110 hover:text-[#d5cfc8]"
+          >
+            <ShoppingCart className="size-6" />
+          </Link>
+
+          {/* Profile */}
+          <Link
+            href={profileLink}
+            aria-label="User Profile"
+            className="transition-all hover:scale-110 hover:text-[#d5cfc8]"
+          >
             <PiUserCircle className="size-8" />
           </Link>
 
           {/* Mobile Hamburger */}
           <div
             aria-label="Toggle Navigation"
-            className="text-[#3f3428] focus:outline-none md:hidden"
+            className="text-white focus:outline-none md:hidden cursor-pointer"
             onClick={() => setIsOpen(!isOpen)}
           >
-            {isOpen ? <HiX className="size-7" /> : <HiMenu className="size-7" />}
+            {isOpen ? (
+              <HiX className="size-7" />
+            ) : (
+              <HiMenu className="size-7" />
+            )}
           </div>
         </div>
       </div>
