@@ -73,7 +73,6 @@ export default function AdminContacts() {
   const fetchContacts = async () => {
     setIsLoading(true);
     try {
-      // const res = await fetch("https://api.gr8.com.np/petite-backend/contact/get_contacts.php");
       const res = await fetch("https://petitefille.com.au/petite-backend/contact/get_contacts.php");
       if (!res.ok) throw new Error("Failed to fetch contacts");
       const data = await res.json();
