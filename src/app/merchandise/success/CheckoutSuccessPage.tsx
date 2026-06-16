@@ -6,6 +6,8 @@ import { useSearchParams } from "next/navigation";
 import { CheckCircle2, Loader2, ShoppingBag, Home } from "lucide-react";
 import { useCartStore } from "@/stores/cartStore";
 
+// added STRIPE_WEBHOOK_SECRET=whsec_AKppD8DU2NekFT72Ow76PcDf0ZAWKuF0 this is the stripe webhook
+
 type OrderStatus = "loading" | "success" | "error";
 
 export default function CheckoutSuccessPage() {
