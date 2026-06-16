@@ -62,7 +62,7 @@ export default function CartPage() {
             quantity:     item.quantity,
             unit_price:   item.price,
           })),
-          fulfillment_method: method,   // ← use the passed-in value, not stale closure
+          fulfillment_method: method,   
           success_url: `${window.location.origin}/merchandise/success`,
           cancel_url:  `${window.location.origin}/cart`,
         }),
