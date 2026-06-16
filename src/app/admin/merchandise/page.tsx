@@ -158,23 +158,38 @@ export default function AdminMerch() {
   }, [fetchCategories, fetchItems]);
 
   /* ---------- Category CRUD ---------- */
-  const addCategory = async () => {
+const addCategory = async () => {
     if (!newCategory.trim())
       return addToast("Category name required", "warning");
 
     const fd = new FormData();
     fd.append("name", newCategory);
 
-    await fetch(apiUrl("merch/categories/add_category.php"), {
-      method: "POST",
-      body: fd,
-    });
+    try {
+      const response = await fetch(apiUrl("merch/categories/add_category.php"), {
+        method: "POST",
+        body: fd,
+      });
 
-    setNewCategory("");
-    fetchCategories();
-    addToast("Category added", "success");
+      if (!response.ok) throw new Error("Failed to add category");
+
+      // Optimistically add to state immediately
+      const data = await response.json().catch(() => null);
+      
+      if (data?.id) {
+        // If server returns the new category with its ID, use it directly
+        setCategories((prev) => [...prev, { id: data.id, name: newCategory.trim() }]);
+      } else {
+        // Fallback: re-fetch from server
+        await fetchCategories();
+      }
+
+      setNewCategory("");
+      addToast("Category added", "success");
+    } catch {
+      addToast("Failed to add category", "error");
+    }
   };
-
   const updateCategory = async (id: number) => {
     const fd = new FormData();
     fd.append("id", id.toString());
