@@ -9,6 +9,9 @@ interface LoginResponse {
   status?: string;
   role?: string;
   message?: string;
+  token?: string;
+  name?: string;
+  expiresAt?: string;
 }
 
 export default function AdminLoginPage() {
@@ -54,9 +57,14 @@ export default function AdminLoginPage() {
         throw new Error("Only admin accounts can access this panel.");
       }
 
+      if (!data.token) {
+        throw new Error("No session token returned. Please contact support.");
+      }
+
       setAdminSession({
         email: email.trim(),
         role: data.role,
+        token: data.token,
         loggedInAt: new Date().toISOString(),
       });
 
