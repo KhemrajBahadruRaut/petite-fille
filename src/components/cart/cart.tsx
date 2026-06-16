@@ -39,8 +39,9 @@ export default function CartPage() {
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [orderError, setOrderError] = useState("");
 
-  // ── Redirect to Stripe Checkout ───────────────────────────────────────────
-  const redirectToStripe = useCallback(async (authToken: string) => {
+  // Redirect to Stripe Checkout
+  // fulfillmentMethod is now included in the dependency array so pickup works correctly
+  const redirectToStripe = useCallback(async (authToken: string, method: FulfillmentMethod) => {
     if (cartItems.length === 0) return;
     setIsRedirecting(true);
     setOrderError("");
@@ -61,7 +62,7 @@ export default function CartPage() {
             quantity:     item.quantity,
             unit_price:   item.price,
           })),
-          fulfillment_method: fulfillmentMethod,
+          fulfillment_method: method,   // ← use the passed-in value, not stale closure
           success_url: `${window.location.origin}/merchandise/success`,
           cancel_url:  `${window.location.origin}/cart`,
         }),
@@ -80,12 +81,18 @@ export default function CartPage() {
         return;
       }
 
+      if (!data.checkout_url) {
+        setOrderError("No checkout URL returned. Please try again.");
+        setIsRedirecting(false);
+        return;
+      }
+
       window.location.href = data.checkout_url;
     } catch {
       setOrderError("Network error. Please check your connection.");
       setIsRedirecting(false);
     }
-  }, [cartItems, fulfillmentMethod, router]);
+  }, [cartItems, router]);   // fulfillmentMethod removed from deps — passed as argument instead
 
   // ── Checkout button handler ───────────────────────────────────────────────
   const handleCheckout = useCallback(() => {
@@ -96,8 +103,8 @@ export default function CartPage() {
       return;
     }
 
-    redirectToStripe(token);
-  }, [authLoading, isAuthenticated, token, redirectToStripe, router]);
+    redirectToStripe(token, fulfillmentMethod);   // ← pass current value directly
+  }, [authLoading, isAuthenticated, token, fulfillmentMethod, redirectToStripe, router]);
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -140,7 +147,7 @@ export default function CartPage() {
               Looks like you haven&apos;t added anything yet.
             </p>
             <Link
-              href="/merchendise"
+              href="/merchandise"
               className="rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-amber-600"
               style={{ fontFamily: "arial" }}
             >
@@ -265,6 +272,13 @@ export default function CartPage() {
                     Pickup
                   </button>
                 </div>
+
+                {/* Fulfillment hint */}
+                <p className="mt-2 text-xs text-gray-400" style={{ fontFamily: "arial" }}>
+                  {fulfillmentMethod === "pickup"
+                    ? "📍 You'll collect your order in-store. No shipping fee."
+                    : "🚚 We'll ship your order to your address."}
+                </p>
               </div>
 
               <div className="space-y-2 border-t border-gray-100 pt-4">
@@ -281,7 +295,7 @@ export default function CartPage() {
               <button
                 type="button"
                 onClick={handleCheckout}
-                disabled={isRedirecting}
+                disabled={isRedirecting || authLoading}
                 className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
                 style={{ fontFamily: "arial" }}
               >
@@ -291,7 +305,7 @@ export default function CartPage() {
                     Redirecting…
                   </>
                 ) : (
-                  "Proceed to Checkout"
+                  `Checkout via ${fulfillmentMethod === "pickup" ? "Pickup" : "Delivery"}`
                 )}
               </button>
             </div>

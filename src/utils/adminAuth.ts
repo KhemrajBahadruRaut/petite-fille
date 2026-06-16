@@ -3,6 +3,7 @@ export const ADMIN_AUTH_STORAGE_KEY = "petite_admin_auth_v1";
 export interface AdminSession {
   email: string;
   role: string;
+  token: string;
   loggedInAt: string;
 }
 
@@ -13,7 +14,7 @@ export function getAdminSession(): AdminSession | null {
 
   try {
     const parsed = JSON.parse(raw) as AdminSession;
-    if (!parsed?.email || !parsed?.role) return null;
+    if (!parsed?.email || !parsed?.role || !parsed?.token) return null;
     return parsed;
   } catch {
     return null;
@@ -22,7 +23,12 @@ export function getAdminSession(): AdminSession | null {
 
 export function isAdminAuthenticated(): boolean {
   const session = getAdminSession();
-  return !!session && session.role === "admin";
+  return !!session && session.role === "admin" && !!session.token;
+}
+
+export function getAdminToken(): string | null {
+  const session = getAdminSession();
+  return session?.token ?? null;
 }
 
 export function setAdminSession(session: AdminSession): void {
@@ -34,4 +40,3 @@ export function clearAdminSession(): void {
   if (typeof window === "undefined") return;
   window.localStorage.removeItem(ADMIN_AUTH_STORAGE_KEY);
 }
-
