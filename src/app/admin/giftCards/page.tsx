@@ -14,7 +14,7 @@ interface GiftCardOrder {
   message: string | null;
   quantity: number;
   gift_card_amount: number;
-  amount_cents: number;
+  amount_cents: number; // The total order amount in cents (Stripe convention) — divide by 100 for display
   currency: string;
   status: string;
   stripe_payment_intent_id: string | null;
@@ -36,17 +36,32 @@ interface GiftCard {
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
+// "redeemed" / "partially_redeemed" are derived client-side (see getDisplayStatus)
+// from the actual gift_cards rows tied to an order — they don't exist on the
+// order itself in the DB.
 const STATUS_STYLES: Record<string, string> = {
-  paid:         "bg-green-100 text-green-700 border border-green-200",
-  completed:    "bg-green-100 text-green-700 border border-green-200",
-  pending:      "bg-yellow-100 text-yellow-700 border border-yellow-200",
-  failed:       "bg-red-100 text-red-700 border border-red-200",
-  email_failed: "bg-orange-100 text-orange-700 border border-orange-200",
+  paid:               "bg-green-100 text-green-700 border border-green-200",
+  completed:          "bg-green-100 text-green-700 border border-green-200",
+  pending:            "bg-yellow-100 text-yellow-700 border border-yellow-200",
+  failed:             "bg-red-100 text-red-700 border border-red-200",
+  email_failed:       "bg-orange-100 text-orange-700 border border-orange-200",
+  redeemed:           "bg-red-100 text-red-700 border border-red-200",
+  partially_redeemed: "bg-purple-100 text-purple-700 border border-purple-200",
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  paid:               "Paid",
+  completed:          "Completed",
+  pending:            "Pending",
+  failed:             "Failed",
+  email_failed:       "Email Failed",
+  redeemed:           "Redeemed",
+  partially_redeemed: "Partially Redeemed",
 };
 
 const CARD_STATUS_STYLES: Record<string, string> = {
   active:   "bg-blue-100 text-blue-700 border border-blue-200",
-  redeemed: "bg-slate-100 text-slate-500 border border-slate-200",
+  redeemed: "bg-red-100 text-red-700 border border-red-200", 
 };
 
 // ─── Redeem Panel ─────────────────────────────────────────────────────────────
@@ -318,6 +333,41 @@ function OrdersTable() {
   const [giftCodes, setGiftCodes]     = useState<Record<number, GiftCard[]>>({});
   const [loadingCodes, setLoadingCodes] = useState<number | null>(null);
 
+  // The order's own `status` only ever reflects payment/processing state
+  // (paid, pending, failed…) — it never gets updated when someone later
+  // redeems the gift card(s) that came out of that order. To show a true
+  // "Redeemed" / "Partially Redeemed" badge we look at the actual codes
+  // tied to the order and derive the status from those instead.
+  const getDisplayStatus = useCallback((order: GiftCardOrder): string => {
+    const codes = giftCodes[order.id];
+    if (!codes || codes.length === 0) return order.status;
+
+    const allRedeemed = codes.every((c) => c.status === "redeemed");
+    if (allRedeemed) return "redeemed";
+
+    const anyRedeemed = codes.some((c) => c.status === "redeemed");
+    if (anyRedeemed) return "partially_redeemed";
+
+    return order.status;
+  }, [giftCodes]);
+
+  // Quietly fetches codes for every paid/completed order in the background
+  // so badges can flip to "Redeemed" without the user needing to click
+  // "Codes" first. Fire-and-forget — doesn't block the table from rendering.
+  const prefetchCodes = useCallback((list: GiftCardOrder[]) => {
+    const relevant = list.filter((o) => ["paid", "completed"].includes(o.status));
+    relevant.forEach((o) => {
+      fetch(apiUrl(`giftCards/getGiftCodes.php?order_id=${o.id}`))
+        .then((res) => res.json())
+        .then((data) => {
+          setGiftCodes((prev) => ({ ...prev, [o.id]: data.codes ?? [] }));
+        })
+        .catch(() => {
+          // silent — badge just falls back to showing the raw order status
+        });
+    });
+  }, []);
+
   const fetchOrders = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -327,13 +377,27 @@ function OrdersTable() {
       });
       if (!res.ok) throw new Error("Failed to fetch orders");
       const data = await res.json();
-      setOrders(data.orders ?? []);
+      const rawOrders: GiftCardOrder[] = data.orders ?? [];
+
+      // PHP/PDO sends numeric DB columns as strings in JSON (e.g.
+      // "amount_cents": "50"). Coerce them to real numbers here so every
+      // calculation below (.toFixed, +, etc.) is safe no matter what the
+      // API returns.
+      const fetchedOrders: GiftCardOrder[] = rawOrders.map((o) => ({
+        ...o,
+        amount_cents: Number(o.amount_cents),
+        gift_card_amount: Number(o.gift_card_amount),
+        quantity: Number(o.quantity),
+      }));
+
+      setOrders(fetchedOrders);
+      prefetchCodes(fetchedOrders);
     } catch {
       setError("Could not load gift card orders.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [prefetchCodes]);
 
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
 
@@ -361,15 +425,20 @@ function OrdersTable() {
       o.sender_name.toLowerCase().includes(search.toLowerCase()) ||
       o.sender_email.toLowerCase().includes(search.toLowerCase()) ||
       o.recipient_email.toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === "all" || o.status === statusFilter;
+    const matchesStatus = statusFilter === "all" || getDisplayStatus(o) === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
-  const totalRevenue = orders
+  // amount_cents is the order total in cents (Stripe's convention), unlike
+  // gift_card_amount which is a plain dollar face value — so this one DOES
+  // need the /100 conversion for display.
+  const totalRevenueCents = orders
     .filter((o) => ["paid", "completed"].includes(o.status))
     .reduce((sum, o) => sum + o.amount_cents, 0);
-  const totalPaid    = orders.filter((o) => ["paid", "completed"].includes(o.status)).length;
-  const totalPending = orders.filter((o) => o.status === "pending").length;
+  const totalRevenue  = totalRevenueCents / 100;
+  const totalPaid     = orders.filter((o) => ["paid", "completed"].includes(o.status)).length;
+  const totalPending  = orders.filter((o) => o.status === "pending").length;
+  const totalRedeemed = orders.filter((o) => getDisplayStatus(o) === "redeemed").length;
 
   return (
     <div className="space-y-5">
@@ -393,10 +462,10 @@ function OrdersTable() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <div className="bg-slate-50 rounded-xl p-4">
           <p className="text-xs text-slate-500 mb-1">Total Revenue</p>
-          <p className="text-xl font-bold text-slate-800">${(totalRevenue / 100).toFixed(2)}</p>
+          <p className="text-xl font-bold text-slate-800">${totalRevenue.toFixed(2)}</p>
         </div>
         <div className="bg-green-50 rounded-xl p-4">
           <p className="text-xs text-slate-500 mb-1">Paid</p>
@@ -405,6 +474,10 @@ function OrdersTable() {
         <div className="bg-yellow-50 rounded-xl p-4">
           <p className="text-xs text-slate-500 mb-1">Pending</p>
           <p className="text-xl font-bold text-yellow-700">{totalPending}</p>
+        </div>
+        <div className="bg-red-50 rounded-xl p-4">
+          <p className="text-xs text-slate-500 mb-1">Redeemed</p>
+          <p className="text-xl font-bold text-red-700">{totalRedeemed}</p>
         </div>
       </div>
 
@@ -429,6 +502,8 @@ function OrdersTable() {
           <option value="completed">Completed</option>
           <option value="pending">Pending</option>
           <option value="failed">Failed</option>
+          <option value="redeemed">Redeemed</option>
+          <option value="partially_redeemed">Partially Redeemed</option>
         </select>
       </div>
 
@@ -447,7 +522,9 @@ function OrdersTable() {
         <div className="text-center py-12 text-slate-400 text-sm">No orders found.</div>
       ) : (
         <div className="space-y-3">
-          {filtered.map((order) => (
+          {filtered.map((order) => {
+            const displayStatus = getDisplayStatus(order);
+            return (
             <div
               key={order.id}
               className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm"
@@ -476,9 +553,9 @@ function OrdersTable() {
                   </p>
                 </div>
 
-                <span className={`px-2.5 py-1 rounded-full text-xs font-medium capitalize
-                  ${STATUS_STYLES[order.status] ?? "bg-slate-100 text-slate-600"}`}>
-                  {order.status}
+                <span className={`px-2.5 py-1 rounded-full text-xs font-medium
+                  ${STATUS_STYLES[displayStatus] ?? "bg-slate-100 text-slate-600"}`}>
+                  {STATUS_LABELS[displayStatus] ?? displayStatus}
                 </span>
 
                 <div className="text-right hidden sm:block">
@@ -561,7 +638,8 @@ function OrdersTable() {
                 </div>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
