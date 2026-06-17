@@ -11,7 +11,8 @@ import { apiUrl } from "../../utils/api";
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 
-const AMOUNT_OPTIONS = [10, 25, 50, 100, 200];
+// $5 to $100 in $5 increments → [5, 10, 15, ... 100]
+const AMOUNT_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 5);
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -383,18 +384,18 @@ const Stripe_test = () => {
             {/* Amount Selection */}
             <div>
               <label className="block text-amber-800 font-medium mb-3">Choose an amount: *</label>
-              <div className="flex flex-wrap justify-center">
+              <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                 {AMOUNT_OPTIONS.map((amount) => (
                   <button
                     key={amount}
                     onClick={() => handleInputChange("amount", amount)}
-                    className={`px-4 py-2 font-medium transition-all ${
+                    className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
                       formData.amount === amount
                         ? "bg-linear-to-r from-amber-600 to-yellow-600 text-white shadow-md"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
-                    ${amount}.00
+                    ${amount}
                   </button>
                 ))}
               </div>
