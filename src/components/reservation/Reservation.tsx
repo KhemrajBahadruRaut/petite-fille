@@ -27,6 +27,7 @@ interface PersonalInfo {
 interface ReservationApiResponse {
   success: boolean;
   message: string;
+  reservationId?: number;
   emailSent?: boolean;
   emailMessage?: string;
   errors?: string[];
@@ -48,6 +49,13 @@ interface OtpVerifyApiResponse {
   errors?: string[];
 }
 
+interface SiteSettings {
+  reservations_enabled: boolean;
+  peak_mode: boolean;
+  payment_url: string;
+  peak_price: number;
+}
+
 const STEPS = ["Reservation", "Information", "Confirmation"];
 
 const SEATING_OPTIONS = [
@@ -58,10 +66,10 @@ const SEATING_OPTIONS = [
 
 const PRICE_PER_PERSON = 20;
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
-const TODAY_BOOKING_CUTOFF_HOUR = 18;
+const TODAY_BOOKING_CUTOFF_HOUR = 14;
 const SLOT_INTERVAL_MINUTES = 30;
-const BOOKING_OPEN_MINUTES = 7 * 60;
-const BOOKING_CLOSE_MINUTES = 18 * 60;
+const BOOKING_OPEN_MINUTES = 9 * 60;
+const BOOKING_CLOSE_MINUTES = 14 * 60;
 
 function formatLocalDate(date: Date): string {
   const year = date.getFullYear();
@@ -95,25 +103,25 @@ function ceilToInterval(totalMinutes: number, interval: number): number {
   return Math.ceil(totalMinutes / interval) * interval;
 }
 
-function parseDateParts(dateValue: string): { year: number; month: number; day: number } | null {
+function parseDateParts(
+  dateValue: string,
+): { year: number; month: number; day: number } | null {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateValue);
   if (!match) return null;
-
   const year = Number(match[1]);
   const month = Number(match[2]);
   const day = Number(match[3]);
-
   if (!year || !month || !day) return null;
   return { year, month, day };
 }
 
-function parseTimeParts(timeValue: string): { hours: number; minutes: number } | null {
+function parseTimeParts(
+  timeValue: string,
+): { hours: number; minutes: number } | null {
   const match = /^(\d{2}):(\d{2})$/.exec(timeValue);
   if (!match) return null;
-
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
-
   if (
     Number.isNaN(hours) ||
     Number.isNaN(minutes) ||
@@ -121,10 +129,8 @@ function parseTimeParts(timeValue: string): { hours: number; minutes: number } |
     hours > 23 ||
     minutes < 0 ||
     minutes > 59
-  ) {
+  )
     return null;
-  }
-
   return { hours, minutes };
 }
 
@@ -138,7 +144,6 @@ function validateReservationDateTime(
   nowOverride?: Date,
 ): string | null {
   if (!dateValue) return null;
-
   const dateParts = parseDateParts(dateValue);
   if (!dateParts) return "Please select a valid reservation date.";
 
@@ -150,13 +155,12 @@ function validateReservationDateTime(
     dateParts.day,
   );
 
-  if (selectedDateStart < todayStart) {
+  if (selectedDateStart < todayStart)
     return "Previous date cannot be selected.";
-  }
 
   const isTodaySelection = selectedDateStart.getTime() === todayStart.getTime();
   if (isTodaySelection && now.getHours() >= TODAY_BOOKING_CUTOFF_HOUR) {
-    return "Today's reservations are closed after 6:00 PM. Please choose another date.";
+    return "Today's reservations are closed after 2:00 PM. Please choose another date.";
   }
 
   const minimumDateTime = new Date(now.getTime() + TWO_HOURS_MS);
@@ -192,48 +196,43 @@ function validateReservationDateTime(
 
   const selectedMinutes = timeParts.hours * 60 + timeParts.minutes;
   if (selectedMinutes > BOOKING_CLOSE_MINUTES) {
-    return "Please choose a time up to 6:00 PM.";
+    return "Please choose a time up to 2:00 PM.";
   }
 
   return null;
 }
 
 const TERMS_PARAGRAPHS = [
-  "If you are unable to fulfil your booking, you are obligated to cancel it as soon as possible using the booking link on your profile section, or by contacting us by phone (thank you).",
-  "You accept that petite fille cafe and its suppliers collect, store and process your personal data and data collected automatically when making this booking. Data is also collected while communicating with and visiting the restaurant.",
-  "This data includes, but is not limited to: name, e-mail address, phone number, food and drink preferences and allergies, location and device specifications.",
-  "Under the European GDPR law you may request a copy of the data we have collected, by sending an e-mail to petitefillerosanna@gmail.com.",
+  "Please note that reservations not confirmed within 30 minutes will be automatically cancelled. If you need any assistance or would like more information, please contact us at petitefillerosanna@gmail.com.",
 ];
 
-const StepIndicator = React.memo(
-  ({ currentStep }: { currentStep: number }) => (
-    <div className="my-6 flex justify-center sm:gap-20">
-      {STEPS.map((label, idx) => (
+const StepIndicator = React.memo(({ currentStep }: { currentStep: number }) => (
+  <div className="my-6 flex justify-center sm:gap-20">
+    {STEPS.map((label, idx) => (
+      <div
+        key={label}
+        className="flex flex-col items-center text-center text-gray-600"
+      >
         <div
-          key={label}
-          className="flex flex-col items-center text-center text-gray-600"
+          className={`flex h-10 w-10 items-center justify-center rounded-full ${
+            currentStep === idx + 1 ? "bg-yellow-400 text-white" : "bg-gray-300"
+          }`}
         >
-          <div
-            className={`flex h-10 w-10 items-center justify-center rounded-full ${
-              currentStep === idx + 1
-                ? "bg-yellow-400 text-white"
-                : "bg-gray-300"
-            }`}
-          >
-            {idx + 1}
-          </div>
-          <p className="mt-2 text-sm">{label}</p>
+          {idx + 1}
         </div>
-      ))}
-    </div>
-  ),
-);
+        <p className="mt-2 text-sm">{label}</p>
+      </div>
+    ))}
+  </div>
+));
 StepIndicator.displayName = "StepIndicator";
 
 const LoadingState = React.memo(() => (
   <div className="min-h-screen w-full bg-white">
     <div className="relative flex h-64 items-center justify-center bg-gray-800">
-      <h1 className="text-4xl font-bold text-white md:text-5xl">Reservations</h1>
+      <h1 className="text-4xl font-bold text-white md:text-5xl">
+        Reservations
+      </h1>
     </div>
     <div className="py-6 text-center">
       <div className="mx-auto h-8 w-8 animate-spin rounded-full border-b-2 border-yellow-500" />
@@ -243,6 +242,39 @@ const LoadingState = React.memo(() => (
 ));
 LoadingState.displayName = "LoadingState";
 
+// ── Reservations Closed Screen ───────────────────────────────────────────────
+const ReservationsClosedScreen = React.memo(() => (
+  <div className="w-full bg-white pb-10">
+    <ReservationCarousal />
+    <div className="mx-auto mt-16 max-w-md rounded-xl border border-red-200 bg-red-50 px-8 py-12 text-center shadow-sm">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+        <svg
+          className="h-7 w-7 text-red-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      </div>
+      <h2 className="text-xl font-semibold text-red-700">
+        Reservations Closed
+      </h2>
+      <p className="mt-2 text-sm text-red-500 leading-relaxed">
+        We are not accepting reservations at the moment. Please check back soon
+        or contact us directly for assistance.
+      </p>
+    </div>
+  </div>
+));
+ReservationsClosedScreen.displayName = "ReservationsClosedScreen";
+
+// ── Main Page ────────────────────────────────────────────────────────────────
 export default function ReservationPage() {
   const { user, token: authToken, isAuthenticated } = useUserAuth();
   const [step, setStep] = useState(1);
@@ -251,11 +283,15 @@ export default function ReservationPage() {
   const [isTermsOpen, setIsTermsOpen] = useState(false);
   const [timeNow, setTimeNow] = useState<Date>(() => new Date());
 
+  // Site settings from admin
+  const [siteSettings, setSiteSettings] = useState<SiteSettings | null>(null);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
   const [reservationData, setReservationData] = useState<ReservationData>({
     adults: 2,
     children: 0,
     date: "",
-    time: "17:30",
+    time: "09:00",
     seating: "Outdoor",
     agreement: false,
     foodPreferences: "",
@@ -296,11 +332,6 @@ export default function ReservationPage() {
     [reservationData.adults, reservationData.children],
   );
 
-  const totalFee = useMemo(
-    () => totalGuests * PRICE_PER_PERSON,
-    [totalGuests],
-  );
-
   const formattedDate = useMemo(
     () =>
       reservationData.date
@@ -312,44 +343,47 @@ export default function ReservationPage() {
   const todayDateString = formatLocalDate(timeNow);
 
   const availableTimeSlots = useMemo(() => {
-    if (!reservationData.date) return [] as Array<{ value: string; label: string }>;
-
+    if (!reservationData.date)
+      return [] as Array<{ value: string; label: string }>;
     const dateParts = parseDateParts(reservationData.date);
     if (!dateParts) return [] as Array<{ value: string; label: string }>;
 
     const now = new Date(timeNow);
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const todayStart = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    );
     const selectedDateStart = new Date(
       dateParts.year,
       dateParts.month - 1,
       dateParts.day,
     );
 
-    if (selectedDateStart < todayStart) return [] as Array<{ value: string; label: string }>;
+    if (selectedDateStart < todayStart)
+      return [] as Array<{ value: string; label: string }>;
 
     let startMinutes = BOOKING_OPEN_MINUTES;
+    const isTodaySelection =
+      selectedDateStart.getTime() === todayStart.getTime();
 
-    const isTodaySelection = selectedDateStart.getTime() === todayStart.getTime();
     if (isTodaySelection) {
-      if (now.getHours() >= TODAY_BOOKING_CUTOFF_HOUR) {
+      if (now.getHours() >= TODAY_BOOKING_CUTOFF_HOUR)
         return [] as Array<{ value: string; label: string }>;
-      }
-
       const minimumDateTime = new Date(now.getTime() + TWO_HOURS_MS);
       if (formatLocalDate(minimumDateTime) !== formatLocalDate(todayStart)) {
         return [] as Array<{ value: string; label: string }>;
       }
-
-      const minimumMinutes = minimumDateTime.getHours() * 60 + minimumDateTime.getMinutes();
+      const minimumMinutes =
+        minimumDateTime.getHours() * 60 + minimumDateTime.getMinutes();
       startMinutes = Math.max(
         BOOKING_OPEN_MINUTES,
         ceilToInterval(minimumMinutes, SLOT_INTERVAL_MINUTES),
       );
     }
 
-    if (startMinutes > BOOKING_CLOSE_MINUTES) {
+    if (startMinutes > BOOKING_CLOSE_MINUTES)
       return [] as Array<{ value: string; label: string }>;
-    }
 
     const slots: Array<{ value: string; label: string }> = [];
     for (
@@ -360,7 +394,6 @@ export default function ReservationPage() {
       const value = minutesToTimeValue(minutes);
       slots.push({ value, label: formatTime12Hour(value) });
     }
-
     return slots;
   }, [reservationData.date, timeNow]);
 
@@ -415,7 +448,6 @@ export default function ReservationPage() {
 
   const sendEmailVerificationCode = useCallback(async () => {
     if (isSendingOtp) return;
-
     const email = personalInfo.email.trim();
     if (!isValidEmail) {
       setEmailVerification((prev) => ({
@@ -425,7 +457,6 @@ export default function ReservationPage() {
       }));
       return;
     }
-
     setIsSendingOtp(true);
     setEmailVerification((prev) => ({
       ...prev,
@@ -435,14 +466,12 @@ export default function ReservationPage() {
       errorMessage: "",
       infoMessage: "",
     }));
-
     try {
       const response = await fetch(apiUrl("reservation/send_email_otp.php"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-
       const raw = await response.text();
       let data: OtpSendApiResponse = {
         success: false,
@@ -451,12 +480,8 @@ export default function ReservationPage() {
       try {
         data = JSON.parse(raw) as OtpSendApiResponse;
       } catch {
-        data = {
-          success: false,
-          message: "Unable to send verification code.",
-        };
+        /* use default */
       }
-
       if (!response.ok || !data.success || !data.otpToken) {
         const apiMessage =
           data.errors && data.errors.length > 0
@@ -464,7 +489,6 @@ export default function ReservationPage() {
             : data.message || "Unable to send verification code.";
         throw new Error(apiMessage);
       }
-
       setEmailOtpCode("");
       setEmailVerification({
         status: "sent",
@@ -492,10 +516,8 @@ export default function ReservationPage() {
 
   const verifyEmailCode = useCallback(async () => {
     if (isVerifyingOtp) return;
-
     const email = personalInfo.email.trim();
     const otpCode = emailOtpCode.trim();
-
     if (emailVerification.otpToken === "") {
       setEmailVerification((prev) => ({
         ...prev,
@@ -504,7 +526,6 @@ export default function ReservationPage() {
       }));
       return;
     }
-
     if (!/^\d{6}$/.test(otpCode)) {
       setEmailVerification((prev) => ({
         ...prev,
@@ -513,14 +534,12 @@ export default function ReservationPage() {
       }));
       return;
     }
-
     setIsVerifyingOtp(true);
     setEmailVerification((prev) => ({
       ...prev,
       errorMessage: "",
       infoMessage: "",
     }));
-
     try {
       const response = await fetch(apiUrl("reservation/verify_email_otp.php"), {
         method: "POST",
@@ -531,7 +550,6 @@ export default function ReservationPage() {
           otpToken: emailVerification.otpToken,
         }),
       });
-
       const raw = await response.text();
       let data: OtpVerifyApiResponse = {
         success: false,
@@ -540,12 +558,8 @@ export default function ReservationPage() {
       try {
         data = JSON.parse(raw) as OtpVerifyApiResponse;
       } catch {
-        data = {
-          success: false,
-          message: "Unable to verify code.",
-        };
+        /* use default */
       }
-
       if (!response.ok || !data.success || !data.verificationToken) {
         const apiMessage =
           data.errors && data.errors.length > 0
@@ -553,7 +567,6 @@ export default function ReservationPage() {
             : data.message || "Invalid verification code.";
         throw new Error(apiMessage);
       }
-
       setEmailVerification((prev) => ({
         ...prev,
         status: "verified",
@@ -595,7 +608,7 @@ export default function ReservationPage() {
       adults: 2,
       children: 0,
       date: "",
-      time: "17:30",
+      time: "09:00",
       seating: "Outdoor",
       agreement: false,
       foodPreferences: "",
@@ -644,6 +657,15 @@ export default function ReservationPage() {
       return;
     }
 
+    // Peak mode: require payment URL to be set
+    if (siteSettings?.peak_mode && !siteSettings.payment_url.trim()) {
+      setFeedback({
+        type: "error",
+        message: "Payment is currently unavailable. Please try again later.",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setFeedback({ type: "idle", message: "" });
 
@@ -675,18 +697,18 @@ export default function ReservationPage() {
       };
 
       const headers: HeadersInit = { "Content-Type": "application/json" };
-      if (authToken) {
-        headers.Authorization = `Bearer ${authToken}`;
-      }
+      if (authToken) headers.Authorization = `Bearer ${authToken}`;
 
-      const response = await fetch(apiUrl("reservation/submit_reservation.php"), {
-        method: "POST",
-        headers,
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        apiUrl("reservation/submit_reservation.php"),
+        {
+          method: "POST",
+          headers,
+          body: JSON.stringify(payload),
+        },
+      );
 
       const data = (await response.json()) as ReservationApiResponse;
-
       if (!response.ok || !data.success) {
         const apiMessage =
           data?.errors && data.errors.length > 0
@@ -695,13 +717,41 @@ export default function ReservationPage() {
         throw new Error(apiMessage);
       }
 
-      setFeedback({
-        type: "success",
-        message:
-          "Reservation submitted successfully. Please check your mail for details",
-      });
+      // Peak mode: redirect to payment after a short delay so customer sees success message
+      if (siteSettings?.peak_mode) {
+  setFeedback({
+    type: "success",
+    message: `Reservation submitted! Preparing your payment page...`,
+  });
 
-      resetForm();
+  const paymentRes = await fetch(apiUrl("reservation/create_payment_session.php"), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ reservationId: data.reservationId }),
+  });
+
+  const paymentData = await paymentRes.json() as { success: boolean; paymentUrl?: string; message?: string };
+
+  if (!paymentData.success || !paymentData.paymentUrl) {
+    setFeedback({
+      type: "error",
+      message: paymentData.message || "Failed to create payment session. Please contact us.",
+    });
+    setIsSubmitting(false);
+    return;
+  }
+
+  resetForm();
+  window.location.href = paymentData.paymentUrl;
+
+      } else {
+        setFeedback({
+          type: "success",
+          message:
+            "Reservation submitted successfully. Please check your mail for details.",
+        });
+        resetForm();
+      }
     } catch (error) {
       setFeedback({
         type: "error",
@@ -722,8 +772,25 @@ export default function ReservationPage() {
     personalInfo,
     reservationData,
     resetForm,
+    siteSettings,
     totalGuests,
   ]);
+
+  // ── Effects ────────────────────────────────────────────────────────────────
+
+  // Fetch site settings on mount
+  // Fetch site settings on mount
+  useEffect(() => {
+    fetch(apiUrl("reservation/reservation-settings/get_settings.php"), {
+      cache: "no-store",
+    })
+      .then((r) => r.json())
+      .then((data: { success: boolean; settings: SiteSettings }) => {
+        if (data.success) setSiteSettings(data.settings);
+      })
+      .catch(() => {})
+      .finally(() => setSettingsLoaded(true));
+  }, []);
 
   useEffect(() => {
     setMounted(true);
@@ -734,10 +801,7 @@ export default function ReservationPage() {
   }, [updateReservationData]);
 
   useEffect(() => {
-    const timer = window.setInterval(() => {
-      setTimeNow(new Date());
-    }, 60_000);
-
+    const timer = window.setInterval(() => setTimeNow(new Date()), 60_000);
     return () => window.clearInterval(timer);
   }, []);
 
@@ -753,44 +817,35 @@ export default function ReservationPage() {
   }, [isAuthenticated, personalInfo.email]);
 
   useEffect(() => {
-    if (!isAuthenticated || !user) {
-      return;
-    }
-
+    if (!isAuthenticated || !user) return;
     setPersonalInfo((prev) => {
       const nextName = prev.fullName.trim() || user.name || "";
       const nextEmail = user.email || prev.email;
-      if (prev.fullName === nextName && prev.email === nextEmail) {
-        return prev;
-      }
-      return {
-        ...prev,
-        fullName: nextName,
-        email: nextEmail,
-      };
+      if (prev.fullName === nextName && prev.email === nextEmail) return prev;
+      return { ...prev, fullName: nextName, email: nextEmail };
     });
   }, [isAuthenticated, user]);
 
   useEffect(() => {
     if (!reservationData.date) return;
-
     const hasCurrentTime = availableTimeSlots.some(
       (slot) => slot.value === reservationData.time,
     );
-
     if (hasCurrentTime) return;
     const fallbackTime = availableTimeSlots[0]?.value || "";
     if (reservationData.time === fallbackTime) return;
-
     updateReservationData({ time: fallbackTime });
-  }, [availableTimeSlots, reservationData.date, reservationData.time, updateReservationData]);
+  }, [
+    availableTimeSlots,
+    reservationData.date,
+    reservationData.time,
+    updateReservationData,
+  ]);
 
   useEffect(() => {
     if (!isTermsOpen) return;
     const onEsc = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsTermsOpen(false);
-      }
+      if (event.key === "Escape") setIsTermsOpen(false);
     };
     window.addEventListener("keydown", onEsc);
     return () => window.removeEventListener("keydown", onEsc);
@@ -814,8 +869,15 @@ export default function ReservationPage() {
     [],
   );
 
-  if (!mounted) return <LoadingState />;
+  // ── Guards ─────────────────────────────────────────────────────────────────
+  if (!mounted || !settingsLoaded) return <LoadingState />;
+  if (siteSettings && !siteSettings.reservations_enabled)
+    return <ReservationsClosedScreen />;
 
+  const isPeakMode = siteSettings?.peak_mode === true;
+  const peakPrice = siteSettings?.peak_price ?? 25;
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="w-full bg-white pb-10">
       <div>
@@ -832,6 +894,16 @@ export default function ReservationPage() {
         </p>
       </section>
 
+      {/* Peak mode banner — visible on all steps */}
+      {isPeakMode && (
+        <div className="mx-auto mb-2 max-w-lg rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-center text-sm text-amber-800 shadow-sm">
+          <span className="font-semibold">🎉 Peak / Festive Period:</span> A
+          non-refundable advance payment of{" "}
+          <span className="font-bold">${peakPrice}</span> is required to secure
+          your reservation. You'll be redirected to pay after confirming.
+        </div>
+      )}
+
       <StepIndicator currentStep={step} />
 
       <main className="mx-auto max-w-lg rounded-lg px-6 py-6 pb-10 shadow-md">
@@ -847,6 +919,7 @@ export default function ReservationPage() {
           </div>
         )}
 
+        {/* ── Step 1: Reservation Details ── */}
         {step === 1 && (
           <section aria-labelledby="reservation-heading">
             <h2
@@ -887,7 +960,9 @@ export default function ReservationPage() {
                     id="children-select"
                     value={reservationData.children}
                     onChange={(e) =>
-                      updateReservationData({ children: Number(e.target.value) })
+                      updateReservationData({
+                        children: Number(e.target.value),
+                      })
                     }
                     className="w-full border-b border-yellow-500 p-2 text-gray-500 focus:border-transparent focus:ring-2 focus:ring-yellow-500"
                   >
@@ -902,7 +977,10 @@ export default function ReservationPage() {
 
               <div className="flex flex-wrap gap-4">
                 <div className="flex flex-1 items-center gap-2">
-                  <FaCalendarAlt className="text-yellow-500" aria-hidden="true" />
+                  <FaCalendarAlt
+                    className="text-yellow-500"
+                    aria-hidden="true"
+                  />
                   <label className="sr-only" htmlFor="date-input">
                     Reservation Date
                   </label>
@@ -910,7 +988,9 @@ export default function ReservationPage() {
                     id="date-input"
                     type="date"
                     value={reservationData.date}
-                    onChange={(e) => updateReservationData({ date: e.target.value })}
+                    onChange={(e) =>
+                      updateReservationData({ date: e.target.value })
+                    }
                     min={todayDateString}
                     className="w-full border-b border-yellow-500 p-2 text-gray-500 focus:outline-none"
                     required
@@ -924,7 +1004,9 @@ export default function ReservationPage() {
                   <select
                     id="time-input"
                     value={reservationData.time}
-                    onChange={(e) => updateReservationData({ time: e.target.value })}
+                    onChange={(e) =>
+                      updateReservationData({ time: e.target.value })
+                    }
                     className="w-full border-b border-yellow-500 p-2 text-gray-500 focus:outline-none focus:ring-2 focus:ring-yellow-500"
                     required
                   >
@@ -942,14 +1024,17 @@ export default function ReservationPage() {
               </div>
 
               {dateTimeValidationError && (
-                <p className="text-xs text-red-600">{dateTimeValidationError}</p>
+                <p className="text-xs text-red-600">
+                  {dateTimeValidationError}
+                </p>
               )}
 
               {!dateTimeValidationError &&
                 reservationData.date === todayDateString &&
                 availableTimeSlots.length > 0 && (
                   <p className="text-xs text-gray-500">
-                    For today, only time slots at least 2 hours from now are shown.
+                    For today, only time slots at least 2 hours from now are
+                    shown.
                   </p>
                 )}
 
@@ -961,7 +1046,9 @@ export default function ReservationPage() {
                 <select
                   id="seating-select"
                   value={reservationData.seating}
-                  onChange={(e) => updateReservationData({ seating: e.target.value })}
+                  onChange={(e) =>
+                    updateReservationData({ seating: e.target.value })
+                  }
                   className="w-full border-b border-yellow-500 p-2 text-gray-500 focus:border-transparent focus:ring-2 focus:ring-yellow-500"
                 >
                   {SEATING_OPTIONS.map((option) => (
@@ -972,12 +1059,33 @@ export default function ReservationPage() {
                 </select>
               </div>
 
-              <div className="mt-3 rounded bg-gray-50 p-3 text-center text-xs text-gray-500">
-                <p>
-                  A fee of ${PRICE_PER_PERSON} per person is required to secure your
-                  booking. Non-refundable if canceled within 6 hours of booking or
-                  no-show.
-                </p>
+              {/* Fee notice — adapts to peak mode */}
+              <div
+                className={`mt-3 rounded p-3 text-center text-xs ${
+                  isPeakMode
+                    ? "border border-amber-200 bg-amber-50 text-amber-800"
+                    : "bg-gray-50 text-gray-500"
+                }`}
+              >
+                {isPeakMode ? (
+                  <>
+                    <p className="font-semibold">
+                      🎉 Peak / Festive Period — Advance Payment Required
+                    </p>
+                    <p className="mt-1">
+                      A non-refundable advance payment of{" "}
+                      <strong>${peakPrice}</strong> per booking is required to
+                      secure your reservation. You will be redirected to
+                      complete payment after confirming.
+                    </p>
+                  </>
+                ) : (
+                  <p>
+                    A fee of ${PRICE_PER_PERSON} per person is required to
+                    secure your booking. Non-refundable if canceled within 6
+                    hours of booking or no-show.
+                  </p>
+                )}
               </div>
 
               <label className="mt-2 flex items-start gap-2 text-sm">
@@ -1025,6 +1133,7 @@ export default function ReservationPage() {
           </section>
         )}
 
+        {/* ── Step 2: Personal Information ── */}
         {step === 2 && (
           <section aria-labelledby="information-heading">
             <h2
@@ -1045,7 +1154,9 @@ export default function ReservationPage() {
                   id="fullname"
                   type="text"
                   value={personalInfo.fullName}
-                  onChange={(e) => updatePersonalInfo({ fullName: e.target.value })}
+                  onChange={(e) =>
+                    updatePersonalInfo({ fullName: e.target.value })
+                  }
                   placeholder="Enter your full name"
                   className="w-full border-b border-yellow-500 p-2 text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   required
@@ -1062,12 +1173,12 @@ export default function ReservationPage() {
                   id="email"
                   type="email"
                   value={personalInfo.email}
-                  onChange={(e) => updatePersonalInfo({ email: e.target.value })}
+                  onChange={(e) =>
+                    updatePersonalInfo({ email: e.target.value })
+                  }
                   placeholder="Enter your email address"
                   readOnly={isAuthenticated}
-                  className={`w-full border-b border-yellow-500 p-2 text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500 ${
-                    isAuthenticated ? "cursor-not-allowed bg-gray-100" : ""
-                  }`}
+                  className={`w-full border-b border-yellow-500 p-2 text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500 ${isAuthenticated ? "cursor-not-allowed bg-gray-100" : ""}`}
                   required
                 />
                 {!isAuthenticated && (
@@ -1087,13 +1198,13 @@ export default function ReservationPage() {
                     )}
                   </div>
                 )}
-
-                {!isAuthenticated && !isValidEmail && personalInfo.email.trim() !== "" && (
-                  <p className="mt-2 text-xs text-red-600">
-                    Please use a valid email address.
-                  </p>
-                )}
-
+                {!isAuthenticated &&
+                  !isValidEmail &&
+                  personalInfo.email.trim() !== "" && (
+                    <p className="mt-2 text-xs text-red-600">
+                      Please use a valid email address.
+                    </p>
+                  )}
                 {!isAuthenticated &&
                   emailVerification.status !== "verified" &&
                   emailVerification.otpToken !== "" && (
@@ -1112,9 +1223,9 @@ export default function ReservationPage() {
                           pattern="[0-9]*"
                           maxLength={6}
                           value={emailOtpCode}
-                          onChange={(event) =>
+                          onChange={(e) =>
                             setEmailOtpCode(
-                              event.target.value.replace(/[^0-9]/g, ""),
+                              e.target.value.replace(/[^0-9]/g, ""),
                             )
                           }
                           className="w-40 rounded border border-blue-300 px-3 py-1.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -1131,13 +1242,11 @@ export default function ReservationPage() {
                       </div>
                     </div>
                   )}
-
                 {isAuthenticated && (
                   <p className="mt-2 text-xs text-green-700">
                     Logged in account verified. OTP is not required.
                   </p>
                 )}
-
                 {emailVerification.infoMessage && (
                   <p className="mt-2 text-xs text-green-700">
                     {emailVerification.infoMessage}
@@ -1160,7 +1269,9 @@ export default function ReservationPage() {
                   id="phone"
                   type="tel"
                   value={personalInfo.phone}
-                  onChange={(e) => updatePersonalInfo({ phone: e.target.value })}
+                  onChange={(e) =>
+                    updatePersonalInfo({ phone: e.target.value })
+                  }
                   placeholder="Enter your phone number"
                   className="w-full border-b border-yellow-500 p-2 text-gray-500 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-yellow-500"
                   required
@@ -1245,6 +1356,7 @@ export default function ReservationPage() {
           </section>
         )}
 
+        {/* ── Step 3: Confirmation ── */}
         {step === 3 && (
           <section aria-labelledby="confirmation-heading">
             <h2
@@ -1303,12 +1415,23 @@ export default function ReservationPage() {
                   {reservationData.allergies || "-"}
                 </span>
               </div>
-              <hr className="my-3 text-gray-400" />
-              {/* <div className="flex justify-between text-lg font-semibold">
-                <span className="text-gray-900">Total Fee:</span>
-                <span className="text-gray-900">${totalFee}</span>
-              </div> */}
+
+              {/* Peak mode payment reminder on confirmation screen */}
+              {isPeakMode && (
+                <>
+                  <hr className="my-3 text-gray-400" />
+                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+                    <p className="font-semibold">Advance Payment Required</p>
+                    <p className="mt-0.5">
+                      After confirming, you'll be redirected to pay{" "}
+                      <strong>${peakPrice}</strong> to secure your booking. This
+                      is non-refundable.
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
+
             <nav className="mt-6 flex justify-between">
               <button
                 onClick={handleBack}
@@ -1327,13 +1450,18 @@ export default function ReservationPage() {
                 {isSubmitting && (
                   <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
                 )}
-                {isSubmitting ? "Processing..." : "Confirm Reservation"}
+                {isSubmitting
+                  ? "Processing..."
+                  : isPeakMode
+                    ? `Confirm & Pay $${peakPrice}`
+                    : "Confirm Reservation"}
               </button>
             </nav>
           </section>
         )}
       </main>
 
+      {/* ── Terms modal ── */}
       {isTermsOpen && (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
@@ -1344,7 +1472,7 @@ export default function ReservationPage() {
             aria-modal="true"
             aria-label="Terms and Conditions"
             className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-lg bg-white p-6 shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-xl font-semibold text-gray-800">
