@@ -54,12 +54,182 @@ const MultiStepCateringForm = () => {
     specialRequests: "",
   });
 
-  const allMenuItems: MenuItem[] = [ { id: "brunch1", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "brunch2", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "brunch3", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "brunch4", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "brunch5", name: "Lorem Ipsum", description: "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup", price: 140, serves: 10, image: "🍳", category: "brunch", }, { id: "bakery1", name: "Croissant Platter", description: "Fresh butter croissants with chocolate and almond varieties", price: 120, serves: 10, image: "🥐", category: "bakery", }, { id: "bakery2", name: "Danish Pastries", description: "Assorted danish pastries with fruit and cream cheese fillings", price: 110, serves: 10, image: "🥐", category: "bakery", }, { id: "bakery3", name: "Muffin Selection", description: "Blueberry, chocolate chip, and banana nut muffins", price: 95, serves: 10, image: "🥐", category: "bakery", }, { id: "salad1", name: "Caesar Salad", description: "Classic caesar with romaine, parmesan, croutons and house dressing", price: 90, serves: 10, image: "🥗", category: "salads", }, { id: "salad2", name: "Greek Salad", description: "Fresh vegetables with feta, olives and olive oil dressing", price: 95, serves: 10, image: "🥗", category: "salads", }, { id: "salad3", name: "Garden Salad", description: "Mixed greens with seasonal vegetables and balsamic vinaigrette", price: 85, serves: 10, image: "🥗", category: "salads", }, { id: "sandwich1", name: "Club Sandwich Platter", description: "Triple-decker sandwiches with turkey, bacon, lettuce and tomato", price: 150, serves: 10, image: "🥪", category: "sandwiches", }, { id: "sandwich2", name: "Wrap Assortment", description: "Variety of wraps including chicken caesar, veggie and tuna", price: 130, serves: 10, image: "🥪", category: "sandwiches", }, { id: "sandwich3", name: "Gourmet Sandwich Selection", description: "Artisan breads with premium meats, cheeses and spreads", price: 145, serves: 10, image: "🥪", category: "sandwiches", }, { id: "beverage1", name: "Fresh Juice Bar", description: "Orange, apple, and tropical fruit juices", price: 80, serves: 10, image: "🥤", category: "beverages", }, { id: "beverage2", name: "Coffee & Tea Station", description: "Premium coffee and selection of teas with milk and sugar", price: 70, serves: 10, image: "🥤", category: "beverages", }, { id: "beverage3", name: "Soft Drinks Package", description: "Assorted sodas, sparkling water, and iced tea", price: 60, serves: 10, image: "🥤", category: "beverages", }, ];
+  const allMenuItems: MenuItem[] = [
+    {
+      id: "brunch1",
+      name: "Lorem Ipsum",
+      description:
+        "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup",
+      price: 140,
+      serves: 10,
+      image: "🍳",
+      category: "brunch",
+    },
+    {
+      id: "brunch2",
+      name: "Lorem Ipsum",
+      description:
+        "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup",
+      price: 140,
+      serves: 10,
+      image: "🍳",
+      category: "brunch",
+    },
+    {
+      id: "brunch3",
+      name: "Lorem Ipsum",
+      description:
+        "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup",
+      price: 140,
+      serves: 10,
+      image: "🍳",
+      category: "brunch",
+    },
+    {
+      id: "brunch4",
+      name: "Lorem Ipsum",
+      description:
+        "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup",
+      price: 140,
+      serves: 10,
+      image: "🍳",
+      category: "brunch",
+    },
+    {
+      id: "brunch5",
+      name: "Lorem Ipsum",
+      description:
+        "Poached pears, chia, coconut, dates and seeds, honey yoghurt, strawberry, granola, pistachio and caramel syrup",
+      price: 140,
+      serves: 10,
+      image: "🍳",
+      category: "brunch",
+    },
+    {
+      id: "bakery1",
+      name: "Croissant Platter",
+      description:
+        "Fresh butter croissants with chocolate and almond varieties",
+      price: 120,
+      serves: 10,
+      image: "🥐",
+      category: "bakery",
+    },
+    {
+      id: "bakery2",
+      name: "Danish Pastries",
+      description:
+        "Assorted danish pastries with fruit and cream cheese fillings",
+      price: 110,
+      serves: 10,
+      image: "🥐",
+      category: "bakery",
+    },
+    {
+      id: "bakery3",
+      name: "Muffin Selection",
+      description: "Blueberry, chocolate chip, and banana nut muffins",
+      price: 95,
+      serves: 10,
+      image: "🥐",
+      category: "bakery",
+    },
+    {
+      id: "salad1",
+      name: "Caesar Salad",
+      description:
+        "Classic caesar with romaine, parmesan, croutons and house dressing",
+      price: 90,
+      serves: 10,
+      image: "🥗",
+      category: "salads",
+    },
+    {
+      id: "salad2",
+      name: "Greek Salad",
+      description: "Fresh vegetables with feta, olives and olive oil dressing",
+      price: 95,
+      serves: 10,
+      image: "🥗",
+      category: "salads",
+    },
+    {
+      id: "salad3",
+      name: "Garden Salad",
+      description:
+        "Mixed greens with seasonal vegetables and balsamic vinaigrette",
+      price: 85,
+      serves: 10,
+      image: "🥗",
+      category: "salads",
+    },
+    {
+      id: "sandwich1",
+      name: "Club Sandwich Platter",
+      description:
+        "Triple-decker sandwiches with turkey, bacon, lettuce and tomato",
+      price: 150,
+      serves: 10,
+      image: "🥪",
+      category: "sandwiches",
+    },
+    {
+      id: "sandwich2",
+      name: "Wrap Assortment",
+      description: "Variety of wraps including chicken caesar, veggie and tuna",
+      price: 130,
+      serves: 10,
+      image: "🥪",
+      category: "sandwiches",
+    },
+    {
+      id: "sandwich3",
+      name: "Gourmet Sandwich Selection",
+      description: "Artisan breads with premium meats, cheeses and spreads",
+      price: 145,
+      serves: 10,
+      image: "🥪",
+      category: "sandwiches",
+    },
+    {
+      id: "beverage1",
+      name: "Fresh Juice Bar",
+      description: "Orange, apple, and tropical fruit juices",
+      price: 80,
+      serves: 10,
+      image: "🥤",
+      category: "beverages",
+    },
+    {
+      id: "beverage2",
+      name: "Coffee & Tea Station",
+      description: "Premium coffee and selection of teas with milk and sugar",
+      price: 70,
+      serves: 10,
+      image: "🥤",
+      category: "beverages",
+    },
+    {
+      id: "beverage3",
+      name: "Soft Drinks Package",
+      description: "Assorted sodas, sparkling water, and iced tea",
+      price: 60,
+      serves: 10,
+      image: "🥤",
+      category: "beverages",
+    },
+  ];
   const nextStep = () => setCurrentStep((prev) => Math.min(prev + 1, 5));
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
-  const updateFormData = useCallback((field: string, value: string | number | boolean | Date | Record<string, number>) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  }, []);
+  const updateFormData = useCallback(
+    (
+      field: string,
+      value: string | number | boolean | Date | Record<string, number>,
+    ) => {
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
 
   // ------------------- STEP 1: EVENT DETAILS -------------------
   const EventDetailsStep = () => {
@@ -80,17 +250,22 @@ const MultiStepCateringForm = () => {
 
     return (
       <div className="space-y-8 ">
+        <h1 className="sr-only">Catering| Petite Fille Cafe Rosanna</h1>
         <h2 className="text-3xl font-serif text-gray-800">Event Details</h2>
         <div className="grid md:grid-cols-2 gap-6">
           <div>
-            <label className="block text-gray-700 font-medium mb-2">Number of Guests</label>
+            <label className="block text-gray-700 font-medium mb-2">
+              Number of Guests
+            </label>
             <div className="relative">
               <User className="absolute left-3 top-3 text-gray-400" size={18} />
               <input
                 type="number"
                 min="1"
                 value={formData.numberOfGuests}
-                onChange={(e) => updateFormData("numberOfGuests", e.target.value)}
+                onChange={(e) =>
+                  updateFormData("numberOfGuests", e.target.value)
+                }
                 className="pl-10 pr-4 py-2 w-full border text-gray-800 border-gray-300 rounded-lg focus:ring-2 focus:ring-gray-700"
                 placeholder="Enter guest count"
               />
@@ -98,9 +273,14 @@ const MultiStepCateringForm = () => {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">Event Date</label>
+            <label className="block text-gray-700 font-medium mb-2">
+              Event Date
+            </label>
             <div className="relative">
-              <Calendar className="absolute left-3 top-3 text-gray-400" size={18} />
+              <Calendar
+                className="absolute left-3 top-3 text-gray-400"
+                size={18}
+              />
               <input
                 type="date"
                 min={today}
@@ -112,9 +292,14 @@ const MultiStepCateringForm = () => {
           </div>
 
           <div>
-            <label className="block text-gray-700 font-medium mb-2">Event Time</label>
+            <label className="block text-gray-700 font-medium mb-2">
+              Event Time
+            </label>
             <div className="relative">
-              <Clock className="absolute left-3 top-3 text-gray-400" size={18} />
+              <Clock
+                className="absolute left-3 top-3 text-gray-400"
+                size={18}
+              />
               <input
                 type="time"
                 value={formData.eventTime}
@@ -126,7 +311,9 @@ const MultiStepCateringForm = () => {
 
           {!formData.pickupMyself && (
             <div>
-              <label className="block text-gray-700 font-medium mb-2">Delivery Address</label>
+              <label className="block text-gray-700 font-medium mb-2">
+                Delivery Address
+              </label>
               <input
                 ref={deliveryRef}
                 type="text"
@@ -146,12 +333,17 @@ const MultiStepCateringForm = () => {
               onChange={(e) => updateFormData("pickupMyself", e.target.checked)}
               className="w-5 h-5 text-gray-700 rounded"
             />
-            <label htmlFor="pickupMyself" className="text-gray-700 font-medium">I&apos;ll pick up myself</label>
+            <label htmlFor="pickupMyself" className="text-gray-700 font-medium">
+              I&apos;ll pick up myself
+            </label>
           </div>
         </div>
 
         <div className="flex justify-end mt-10">
-          <button onClick={nextStep} className="px-8 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition">
+          <button
+            onClick={nextStep}
+            className="px-8 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 transition"
+          >
             Next
           </button>
         </div>
@@ -165,7 +357,10 @@ const MultiStepCateringForm = () => {
   const addItem = (itemId: string) => {
     setFormData((prev) => ({
       ...prev,
-      selectedItems: { ...prev.selectedItems, [itemId]: (prev.selectedItems[itemId] || 0) + 1 },
+      selectedItems: {
+        ...prev.selectedItems,
+        [itemId]: (prev.selectedItems[itemId] || 0) + 1,
+      },
     }));
   };
 
@@ -190,11 +385,15 @@ const MultiStepCateringForm = () => {
       { id: "beverages", name: "Beverages", emoji: "🥤" },
     ];
 
-    const menuItems = allMenuItems.filter((item) => item.category === selectedCategory);
+    const menuItems = allMenuItems.filter(
+      (item) => item.category === selectedCategory,
+    );
 
     return (
       <div className="space-y-8 ">
-        <h1 className="text-3xl font-bold text-gray-900 mb-3">Build Your Menu</h1>
+        <h1 className="text-3xl font-bold text-gray-900 mb-3">
+          Build Your Menu
+        </h1>
         <div className="flex gap-4 overflow-x-auto pb-2">
           {categories.map((cat) => (
             <button
@@ -202,7 +401,9 @@ const MultiStepCateringForm = () => {
               type="button"
               onClick={() => setSelectedCategory(cat.id)}
               className={`px-4 py-2 rounded-full font-medium whitespace-nowrap ${
-                selectedCategory === cat.id ? "bg-amber-700 text-white" : "bg-gray-200 text-gray-700"
+                selectedCategory === cat.id
+                  ? "bg-amber-700 text-white"
+                  : "bg-gray-200 text-gray-700"
               }`}
             >
               {cat.emoji} {cat.name}
@@ -210,17 +411,27 @@ const MultiStepCateringForm = () => {
           ))}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6 max-h-125 overflow-y-auto pr-4" style={{ scrollBehavior: 'auto' }}>
+        <div
+          className="grid md:grid-cols-2 gap-6 max-h-125 overflow-y-auto pr-4"
+          style={{ scrollBehavior: "auto" }}
+        >
           {menuItems.map((item) => (
-            <div key={item.id} className="border p-4 rounded-lg flex justify-between items-start gap-4">
+            <div
+              key={item.id}
+              className="border p-4 rounded-lg flex justify-between items-start gap-4"
+            >
               <div className="space-y-2 flex-1">
                 <div className="text-2xl">{item.image}</div>
                 <h3 className="font-semibold text-gray-800">{item.name}</h3>
                 <p className="text-sm text-gray-500">{item.description}</p>
-                <p className="text-xs text-gray-400">Serves {item.serves} people</p>
+                <p className="text-xs text-gray-400">
+                  Serves {item.serves} people
+                </p>
               </div>
               <div className="flex flex-col gap-2 items-end">
-                <span className="font-semibold text-gray-900">${item.price}</span>
+                <span className="font-semibold text-gray-900">
+                  ${item.price}
+                </span>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
@@ -270,7 +481,9 @@ const MultiStepCateringForm = () => {
 
       <div className="space-y-6">
         <div className="flex items-start gap-8">
-          <div className="font-medium text-gray-800 whitespace-nowrap pt-1">Serving supplies:</div>
+          <div className="font-medium text-gray-800 whitespace-nowrap pt-1">
+            Serving supplies:
+          </div>
           <div className="flex-1 space-y-3">
             <p className="text-gray-700">Need plates, napkins, and utensils?</p>
             <div className="flex gap-8">
@@ -278,7 +491,9 @@ const MultiStepCateringForm = () => {
                 <input
                   type="checkbox"
                   checked={formData.servingSupplies}
-                  onChange={(e) => updateFormData("servingSupplies", e.target.checked)}
+                  onChange={(e) =>
+                    updateFormData("servingSupplies", e.target.checked)
+                  }
                   className="w-5 h-5 border-2 border-gray-400"
                 />
                 <span className="text-gray-800">Yes</span>
@@ -287,7 +502,9 @@ const MultiStepCateringForm = () => {
                 <input
                   type="checkbox"
                   checked={!formData.servingSupplies}
-                  onChange={(e) => updateFormData("servingSupplies", !e.target.checked)}
+                  onChange={(e) =>
+                    updateFormData("servingSupplies", !e.target.checked)
+                  }
                   className="w-5 h-5 border-2 border-gray-400"
                 />
                 <span className="text-gray-800">No</span>
@@ -297,17 +514,24 @@ const MultiStepCateringForm = () => {
         </div>
 
         <div className="flex items-start gap-8">
-          <div className="font-medium text-gray-800 whitespace-nowrap pt-1">Staffing Add-on:</div>
+          <div className="font-medium text-gray-800 whitespace-nowrap pt-1">
+            Staffing Add-on:
+          </div>
           <div className="flex-1 space-y-3">
             <p className="text-gray-700">
-              Lorem ipsum dolor sit amet, consec tetur adipiscing elit? <span className="text-gray-500">(Leave empty if not necessary)</span>
+              Lorem ipsum dolor sit amet, consec tetur adipiscing elit?{" "}
+              <span className="text-gray-500">
+                (Leave empty if not necessary)
+              </span>
             </p>
             <div className="flex items-center gap-4">
               <span className="text-gray-800">If yes,</span>
               <User className="w-5 h-5 text-gray-600" />
               <select
                 value={formData.staffingAddOn1Hours}
-                onChange={(e) => updateFormData("staffingAddOn1Hours", e.target.value)}
+                onChange={(e) =>
+                  updateFormData("staffingAddOn1Hours", e.target.value)
+                }
                 className="px-3 py-2 border-b-2 border-gray-300 bg-transparent focus:border-amber-700 focus:outline-none text-gray-800"
               >
                 {[...Array(20)].map((_, i) => (
@@ -322,17 +546,24 @@ const MultiStepCateringForm = () => {
         </div>
 
         <div className="flex items-start gap-8">
-          <div className="font-medium text-gray-800 whitespace-nowrap pt-1">Staffing Add-on:</div>
+          <div className="font-medium text-gray-800 whitespace-nowrap pt-1">
+            Staffing Add-on:
+          </div>
           <div className="flex-1 space-y-3">
             <p className="text-gray-700">
-              Lorem ipsum dolor sit amet, consec tetur adipiscing elit? <span className="text-gray-500">(Leave empty if not necessary)</span>
+              Lorem ipsum dolor sit amet, consec tetur adipiscing elit?{" "}
+              <span className="text-gray-500">
+                (Leave empty if not necessary)
+              </span>
             </p>
             <div className="flex items-center gap-4">
               <span className="text-gray-800">If yes,</span>
               <User className="w-5 h-5 text-gray-600" />
               <select
                 value={formData.staffingAddOn2Hours}
-                onChange={(e) => updateFormData("staffingAddOn2Hours", e.target.value)}
+                onChange={(e) =>
+                  updateFormData("staffingAddOn2Hours", e.target.value)
+                }
                 className="px-3 py-2 border-b-2 border-gray-300 bg-transparent focus:border-amber-700 focus:outline-none text-gray-800"
               >
                 {[...Array(20)].map((_, i) => (
@@ -371,7 +602,9 @@ const MultiStepCateringForm = () => {
       <h1 className="text-3xl font-bold text-gray-900">Contact information</h1>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Full Name</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Full Name
+        </label>
         <p className="text-xs text-gray-500">For reservation</p>
         <input
           type="text"
@@ -383,8 +616,12 @@ const MultiStepCateringForm = () => {
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Email address</label>
-        <p className="text-xs text-gray-500">You will get a confirmation email</p>
+        <label className="block text-sm font-medium text-gray-700">
+          Email address
+        </label>
+        <p className="text-xs text-gray-500">
+          You will get a confirmation email
+        </p>
         <input
           type="email"
           value={formData.email}
@@ -395,7 +632,9 @@ const MultiStepCateringForm = () => {
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Phone number</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Phone number
+        </label>
         <p className="text-xs text-gray-500">Your number</p>
         <input
           type="tel"
@@ -407,7 +646,9 @@ const MultiStepCateringForm = () => {
       </div>
 
       <div className="space-y-2">
-        <label className="block text-sm font-medium text-gray-700">Any specific requests? (optional)</label>
+        <label className="block text-sm font-medium text-gray-700">
+          Any specific requests? (optional)
+        </label>
         <textarea
           value={formData.specialRequests}
           onChange={(e) => updateFormData("specialRequests", e.target.value)}
@@ -440,7 +681,9 @@ const MultiStepCateringForm = () => {
   const ReviewOrderStep = () => {
     const [agreeToPolicy, setAgreeToPolicy] = useState(false);
 
-    const selectedMenuItems = allMenuItems.filter((item) => (formData.selectedItems[item.id] || 0) > 0);
+    const selectedMenuItems = allMenuItems.filter(
+      (item) => (formData.selectedItems[item.id] || 0) > 0,
+    );
 
     const subtotal = selectedMenuItems.reduce((sum, item) => {
       const qty = formData.selectedItems[item.id] || 0;
@@ -448,7 +691,10 @@ const MultiStepCateringForm = () => {
     }, 0);
 
     const updateQuantity = (itemId: string, delta: number) => {
-      const newQuantity = Math.max(0, (formData.selectedItems[itemId] || 0) + delta);
+      const newQuantity = Math.max(
+        0,
+        (formData.selectedItems[itemId] || 0) + delta,
+      );
       const newSelectedItems = { ...formData.selectedItems };
       if (newQuantity === 0) {
         delete newSelectedItems[itemId];
@@ -471,27 +717,40 @@ const MultiStepCateringForm = () => {
 
     return (
       <div className="space-y-8">
-        <h1 className="text-3xl font-serif text-gray-800 text-center">Review your order</h1>
+        <h1 className="text-3xl font-serif text-gray-800 text-center">
+          Review your order
+        </h1>
 
         <div className="border-2 border-gray-300 rounded-xl p-8 space-y-6">
           {selectedMenuItems.length > 0 ? (
             <>
               <div className="grid grid-cols-[1fr_auto_auto] gap-8 items-start pb-6 border-b border-gray-200">
                 <div className="font-medium text-gray-800">Items</div>
-                <div className="font-medium text-gray-800 text-center">Quantity</div>
+                <div className="font-medium text-gray-800 text-center">
+                  Quantity
+                </div>
                 <div className="font-medium text-gray-800">Price</div>
               </div>
 
               {selectedMenuItems.map((item) => (
-                <div key={item.id} className="grid grid-cols-[1fr_auto_auto] gap-8 items-start pb-6 border-b border-gray-200">
+                <div
+                  key={item.id}
+                  className="grid grid-cols-[1fr_auto_auto] gap-8 items-start pb-6 border-b border-gray-200"
+                >
                   <div className="flex gap-4">
                     <div className="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center text-4xl shrink-0">
                       {item.image}
                     </div>
                     <div className="space-y-2">
-                      <h3 className="font-semibold text-gray-900">{item.name}</h3>
-                      <p className="text-sm text-gray-500 leading-relaxed">{item.description}</p>
-                      <p className="text-xs text-gray-400">Serves {item.serves} people</p>
+                      <h3 className="font-semibold text-gray-900">
+                        {item.name}
+                      </h3>
+                      <p className="text-sm text-gray-500 leading-relaxed">
+                        {item.description}
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Serves {item.serves} people
+                      </p>
                     </div>
                   </div>
 
@@ -506,7 +765,9 @@ const MultiStepCateringForm = () => {
                     <input
                       type="number"
                       value={formData.selectedItems[item.id] || 0}
-                      onChange={(e) => setQuantity(item.id, parseInt(e.target.value, 10) || 0)}
+                      onChange={(e) =>
+                        setQuantity(item.id, parseInt(e.target.value, 10) || 0)
+                      }
                       className="w-16 h-8 text-center border border-gray-400 rounded text-gray-900"
                     />
                     <button
@@ -519,7 +780,11 @@ const MultiStepCateringForm = () => {
                   </div>
 
                   <div className="text-gray-900 font-medium text-right whitespace-nowrap">
-                    ${((item.price * (formData.selectedItems[item.id] || 0)) || 0).toFixed(2)} AUD
+                    $
+                    {(
+                      item.price * (formData.selectedItems[item.id] || 0) || 0
+                    ).toFixed(2)}{" "}
+                    AUD
                   </div>
                 </div>
               ))}
@@ -536,7 +801,9 @@ const MultiStepCateringForm = () => {
               <span className="text-gray-800">Catering Date</span>
               <span className="font-semibold text-gray-900">
                 {formData.eventDate
-                  ? new Date(formData.eventDate + "T00:00:00").toLocaleDateString("en-US", {
+                  ? new Date(
+                      formData.eventDate + "T00:00:00",
+                    ).toLocaleDateString("en-US", {
                       day: "numeric",
                       month: "short",
                       year: "2-digit",
@@ -547,14 +814,18 @@ const MultiStepCateringForm = () => {
 
             <div className="flex justify-between items-center">
               <span className="text-gray-800">Subtotal</span>
-              <span className="text-gray-900 font-semibold">${subtotal.toFixed(2)}</span>
+              <span className="text-gray-900 font-semibold">
+                ${subtotal.toFixed(2)}
+              </span>
             </div>
 
             <div className="flex justify-between items-center">
               <span className="text-gray-800">Catering Time</span>
               <span className="font-semibold text-gray-900">
                 {formData.eventTime
-                  ? new Date(`2000-01-01T${formData.eventTime}`).toLocaleTimeString("en-US", {
+                  ? new Date(
+                      `2000-01-01T${formData.eventTime}`,
+                    ).toLocaleTimeString("en-US", {
                       hour: "numeric",
                       minute: "2-digit",
                       hour12: true,
@@ -565,13 +836,17 @@ const MultiStepCateringForm = () => {
 
             <div className="flex justify-between items-center">
               <span className="text-gray-800">Number of Guests</span>
-              <span className="text-gray-900 font-semibold">{formData.numberOfGuests}</span>
+              <span className="text-gray-900 font-semibold">
+                {formData.numberOfGuests}
+              </span>
             </div>
           </div>
 
           <div className="pt-4 space-y-4">
             <p className="text-sm text-gray-700 leading-relaxed">
-              This is an estimated quote. Final price may adjust slightly based on final guest count. You will need to pay 20% advanced to confirm this catering order.
+              This is an estimated quote. Final price may adjust slightly based
+              on final guest count. You will need to pay 20% advanced to confirm
+              this catering order.
             </p>
 
             <label className="flex items-start gap-3 cursor-pointer">
@@ -581,7 +856,9 @@ const MultiStepCateringForm = () => {
                 onChange={(e) => setAgreeToPolicy(e.target.checked)}
                 className="w-5 h-5 border-2 border-gray-400 mt-0.5 shrink-0"
               />
-              <span className="text-sm text-gray-700">I agree to the terms and conditions and cancellation policy</span>
+              <span className="text-sm text-gray-700">
+                I agree to the terms and conditions and cancellation policy
+              </span>
             </label>
           </div>
         </div>
@@ -611,8 +888,13 @@ const MultiStepCateringForm = () => {
   const ProgressIndicator = () => (
     <div className="flex justify-between items-start mb-12 px-4">
       {[1, 2, 3, 4, 5].map((num) => (
-        <div key={num} className="flex flex-col items-center gap-2 relative flex-1">
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold text-lg transition-colors ${currentStep >= num ? "bg-amber-600 text-white" : "bg-gray-400 text-white"}`}>
+        <div
+          key={num}
+          className="flex flex-col items-center gap-2 relative flex-1"
+        >
+          <div
+            className={`w-12 h-12 rounded-full flex items-center justify-center font-semibold text-lg transition-colors ${currentStep >= num ? "bg-amber-600 text-white" : "bg-gray-400 text-white"}`}
+          >
             {num}
           </div>
         </div>
@@ -622,12 +904,18 @@ const MultiStepCateringForm = () => {
 
   const renderCurrentStep = () => {
     switch (currentStep) {
-      case 1: return <EventDetailsStep />;
-      case 2: return <BuildMenuStep />;
-      case 3: return <SuppliesStep />;
-      case 4: return <ContactInfoStep />;
-      case 5: return <ReviewOrderStep />;
-      default: return <EventDetailsStep />;
+      case 1:
+        return <EventDetailsStep />;
+      case 2:
+        return <BuildMenuStep />;
+      case 3:
+        return <SuppliesStep />;
+      case 4:
+        return <ContactInfoStep />;
+      case 5:
+        return <ReviewOrderStep />;
+      default:
+        return <EventDetailsStep />;
     }
   };
 
@@ -635,7 +923,9 @@ const MultiStepCateringForm = () => {
     <div className="min-h-screen bg-[#f5f1e8] py-12 px-4 pt-25">
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-serif text-gray-800 mb-6">Build your own Catering</h1>
+          <h1 className="text-5xl font-serif text-gray-800 mb-6">
+            Build your own Catering
+          </h1>
         </div>
         <div className="bg-white rounded-2xl shadow-xl p-8 md:p-12">
           <ProgressIndicator />

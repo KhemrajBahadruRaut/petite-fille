@@ -880,6 +880,9 @@ export default function ReservationPage() {
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="w-full bg-white pb-10">
+       <h1 className="sr-only">
+      Reservation | Petite Fille Cafe Rosanna
+    </h1>
       <div>
         <ReservationCarousal />
       </div>

@@ -18,8 +18,8 @@ const Footer = () => {
         <div>
           <h2 className="text-2xl font-bold mb-3">Petite Fille</h2>
           <p className="text-sm leading-relaxed mb-6">
-            Lorem ipsum dolor, sit amet, cons adipiscing eli Lorem ipsum dolor,
-            sit amet, cons adipiscing eli
+            Rosanna&apos;s neighbourhood breakfast & brunch cafe. Good coffee,
+            fresh food, and a space worth returning to.
           </p>
           <div className="flex space-x-4 text-xl">
             <a
@@ -50,7 +50,10 @@ const Footer = () => {
         <div>
           <h3 className="font-semibold mb-4 border-b inline py-1">Contacts</h3>
           <ul className="space-y-3 text-sm pt-3">
-            <a target="_blank" href="https://www.google.com/maps/place/Petite+Fille+Cafe/@-37.7449881,145.0686902,17z/data=!3m1!4b1!4m6!3m5!1s0x6ad6479f02ac47a5:0x13fd7578d4bcb97f!8m2!3d-37.7449881!4d145.0712651!16s%2Fg%2F11x2m5ffnf?entry=ttu&g_ep=EgoyMDI2MDUyNy4wIKXMDSoASAFQAw%3D%3D">
+            <a
+              target="_blank"
+              href="https://www.google.com/maps/place/Petite+Fille+Cafe/@-37.7449881,145.0686902,17z/data=!3m1!4b1!4m6!3m5!1s0x6ad6479f02ac47a5:0x13fd7578d4bcb97f!8m2!3d-37.7449881!4d145.0712651!16s%2Fg%2F11x2m5ffnf?entry=ttu&g_ep=EgoyMDI2MDUyNy4wIKXMDSoASAFQAw%3D%3D"
+            >
               <li className="flex items-center gap-2 pb-3">
                 <FaPaperPlane /> 2 Station Rd, Rosanna VIC 3084, Australia
               </li>

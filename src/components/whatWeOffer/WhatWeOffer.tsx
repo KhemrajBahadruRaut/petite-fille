@@ -1,4 +1,4 @@
-"use client"
+"use client";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
@@ -27,40 +27,43 @@ const WhatWeOffer = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Fallback items in case fetch fails
-  const fallbackItems = useMemo(() => [
-    {
-      id: 1,
-      name: "Fresh Daily Special",
-      price: 21,
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-      image: "/whatweoffer/offer3.webp",
-    },
-    {
-      id: 2,
-      name: "Chef's Choice",
-      price: 21,
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-      image: "/whatweoffer/offer2.webp",
-    },
-    {
-      id: 3,
-      name: "Seasonal Favorite",
-      price: 21,
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-      image: "/whatweoffer/offer1.webp",
-    },
-    {
-      id: 4,
-      name: "House Special",
-      price: 21,
-      description:
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-      image: "/whatweoffer/offer4.webp",
-    },
-  ], []);
+  const fallbackItems = useMemo(
+    () => [
+      {
+        id: 1,
+        name: "Fresh Daily Special",
+        price: 21,
+        description:
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
+        image: "/whatweoffer/offer3.webp",
+      },
+      {
+        id: 2,
+        name: "Chef's Choice",
+        price: 21,
+        description:
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
+        image: "/whatweoffer/offer2.webp",
+      },
+      {
+        id: 3,
+        name: "Seasonal Favorite",
+        price: 21,
+        description:
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
+        image: "/whatweoffer/offer1.webp",
+      },
+      {
+        id: 4,
+        name: "House Special",
+        price: 21,
+        description:
+          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
+        image: "/whatweoffer/offer4.webp",
+      },
+    ],
+    [],
+  );
 
   useEffect(() => {
     const fetchRandomItems = async () => {
@@ -68,10 +71,9 @@ const WhatWeOffer = () => {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
 
-        const res = await fetch(
-          apiUrl("menu/get_menu_item.php"),
-          { signal: controller.signal },
-        );
+        const res = await fetch(apiUrl("menu/get_menu_item.php"), {
+          signal: controller.signal,
+        });
         clearTimeout(timeoutId);
 
         if (!res.ok) {
@@ -138,9 +140,8 @@ const WhatWeOffer = () => {
             viewport={{ once: true, amount: 0.3 }}
             style={{ fontFamily: "arial" }}
           >
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor. ipsum dolor sit amet, piscin elit, sed do eiusmod
-            tempor incididunt
+            From slow cooked lamb to perfectly toasted favourites, every dish is
+            made with care using quality seasonal ingredients.
           </motion.p>
         </div>
 

@@ -2,10 +2,23 @@
 
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Heart, PackageOpen, X, ShoppingCart, Minus, Plus, Trash2, CheckCircle2 } from "lucide-react";
+import {
+  Heart,
+  PackageOpen,
+  X,
+  ShoppingCart,
+  Minus,
+  Plus,
+  Trash2,
+  CheckCircle2,
+} from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useCart } from "@/contexts/CartContexts";
-import { useCartStore, useCartTotalItems, type CartItem } from "@/stores/cartStore";
+import {
+  useCartStore,
+  useCartTotalItems,
+  type CartItem,
+} from "@/stores/cartStore";
 import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
 import Link from "next/link";
 
@@ -72,7 +85,13 @@ const transformProduct = (item: BackendProduct): Product => {
 
 // ─── Added to Cart Toast ──────────────────────────────────────────────────────
 
-function AddedToCartToast({ product, onDismiss }: { product: Product; onDismiss: () => void }) {
+function AddedToCartToast({
+  product,
+  onDismiss,
+}: {
+  product: Product;
+  onDismiss: () => void;
+}) {
   return (
     <motion.div
       className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-3 rounded-xl bg-gray-900 px-5 py-3.5 text-white shadow-2xl"
@@ -89,8 +108,13 @@ function AddedToCartToast({ product, onDismiss }: { product: Product; onDismiss:
         />
       )}
       <div className="flex flex-col leading-tight">
-        <span className="text-xs text-gray-400" style={{ fontFamily: "arial" }}>Added to cart</span>
-        <span className="text-sm font-medium max-w-[180px] truncate" style={{ fontFamily: "fairplay" }}>
+        <span className="text-xs text-gray-400" style={{ fontFamily: "arial" }}>
+          Added to cart
+        </span>
+        <span
+          className="text-sm font-medium max-w-[180px] truncate"
+          style={{ fontFamily: "fairplay" }}
+        >
           {product.title}
         </span>
       </div>
@@ -131,10 +155,7 @@ function CartDrawer({
   }, []);
 
   return (
-    <div
-      className="fixed inset-0 z-100 flex justify-end"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-100 flex justify-end" onClick={onClose}>
       {/* Backdrop */}
       <div className="absolute inset-0 bg-black/50" />
 
@@ -148,7 +169,10 @@ function CartDrawer({
       >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-100 px-6 py-4">
-          <h2 className="text-lg font-semibold text-gray-800" style={{ fontFamily: "fairplaybold" }}>
+          <h2
+            className="text-lg font-semibold text-gray-800"
+            style={{ fontFamily: "fairplaybold" }}
+          >
             Your Cart ({totalItems})
           </h2>
           <button
@@ -166,7 +190,9 @@ function CartDrawer({
           {cartItems.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-center text-gray-400">
               <ShoppingCart className="mb-3 h-12 w-12 opacity-30" />
-              <p className="text-sm" style={{ fontFamily: "arial" }}>Your cart is empty.</p>
+              <p className="text-sm" style={{ fontFamily: "arial" }}>
+                Your cart is empty.
+              </p>
             </div>
           ) : (
             <ul className="space-y-4">
@@ -190,7 +216,10 @@ function CartDrawer({
                   {/* Details */}
                   <div className="flex flex-1 flex-col justify-between">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="line-clamp-2 text-sm font-medium text-gray-800" style={{ fontFamily: "fairplay" }}>
+                      <p
+                        className="line-clamp-2 text-sm font-medium text-gray-800"
+                        style={{ fontFamily: "fairplay" }}
+                      >
                         {item.title}
                       </p>
                       <button
@@ -208,7 +237,9 @@ function CartDrawer({
                       <div className="flex items-center gap-2 rounded-lg border border-gray-200 px-2 py-1">
                         <button
                           type="button"
-                          onClick={() => onUpdateQty(item.id, item.quantity - 1)}
+                          onClick={() =>
+                            onUpdateQty(item.id, item.quantity - 1)
+                          }
                           disabled={item.quantity <= 1}
                           className="text-gray-500 hover:text-gray-800 disabled:opacity-30"
                           aria-label="Decrease quantity"
@@ -220,7 +251,9 @@ function CartDrawer({
                         </span>
                         <button
                           type="button"
-                          onClick={() => onUpdateQty(item.id, item.quantity + 1)}
+                          onClick={() =>
+                            onUpdateQty(item.id, item.quantity + 1)
+                          }
                           className="text-gray-500 hover:text-gray-800"
                           aria-label="Increase quantity"
                         >
@@ -228,7 +261,10 @@ function CartDrawer({
                         </button>
                       </div>
 
-                      <span className="text-sm font-medium text-gray-600" style={{ fontFamily: "arial" }}>
+                      <span
+                        className="text-sm font-medium text-gray-600"
+                        style={{ fontFamily: "arial" }}
+                      >
                         ${(item.price * item.quantity).toFixed(2)} AUD
                       </span>
                     </div>
@@ -238,16 +274,16 @@ function CartDrawer({
             </ul>
           )}
         </div>
-       
-<div className="flex justify-center pb-5">
-  <Link
-    href="/cart"
-    className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg"
-  >
-    <ShoppingCart size={18} />
-    <span>Go to Cart</span>
-  </Link>
-</div>
+
+        <div className="flex justify-center pb-5">
+          <Link
+            href="/cart"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-black text-white rounded-full transition-all duration-300 hover:scale-105 hover:shadow-lg"
+          >
+            <ShoppingCart size={18} />
+            <span>Go to Cart</span>
+          </Link>
+        </div>
       </motion.aside>
     </div>
   );
@@ -317,7 +353,9 @@ const ProductCard = React.memo(function ProductCard({
                   />
                 </svg>
               </div>
-              <p className="text-xs text-gray-500 font-medium">{product.title}</p>
+              <p className="text-xs text-gray-500 font-medium">
+                {product.title}
+              </p>
             </div>
           </div>
         )}
@@ -326,7 +364,9 @@ const ProductCard = React.memo(function ProductCard({
         <button
           onClick={handleToggleFavorite}
           className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/90 shadow-md backdrop-blur-sm opacity-100 transition-all duration-300 hover:bg-white md:opacity-0 md:group-hover:opacity-100"
-          aria-label={isItemFavorite ? "Remove from favorites" : "Add to favorites"}
+          aria-label={
+            isItemFavorite ? "Remove from favorites" : "Add to favorites"
+          }
         >
           <Heart
             className={`w-4 h-4 transition-all duration-300 ${
@@ -370,7 +410,10 @@ const ProductCard = React.memo(function ProductCard({
         >
           {product.title}
         </h3>
-        <p className="line-clamp-2 text-sm text-gray-700" style={{ fontFamily: "arial" }}>
+        <p
+          className="line-clamp-2 text-sm text-gray-700"
+          style={{ fontFamily: "arial" }}
+        >
           {product.description}
         </p>
         <span
@@ -432,7 +475,9 @@ function ProductGrid({
 export default function Merchendise() {
   const router = useRouter();
 
-  const [categorySections, setCategorySections] = useState<CategorySection[]>([]);
+  const [categorySections, setCategorySections] = useState<CategorySection[]>(
+    [],
+  );
   const [isLoading, setIsLoading] = useState(true);
 
   // Cart state (Zustand, persisted to localStorage)
@@ -455,11 +500,16 @@ export default function Merchendise() {
       setIsLoading(true);
       try {
         const [categoriesResponse, productsResponse] = await Promise.all([
-          fetch(apiUrl("merch/categories/get_categories.php"), { signal: controller.signal }),
-          fetch(apiUrl("merch/get_merch_items.php"), { signal: controller.signal }),
+          fetch(apiUrl("merch/categories/get_categories.php"), {
+            signal: controller.signal,
+          }),
+          fetch(apiUrl("merch/get_merch_items.php"), {
+            signal: controller.signal,
+          }),
         ]);
 
-        if (!categoriesResponse.ok) throw new Error("Failed to fetch categories");
+        if (!categoriesResponse.ok)
+          throw new Error("Failed to fetch categories");
         if (!productsResponse.ok) throw new Error("Failed to fetch products");
 
         const categories: MerchCategory[] = await categoriesResponse.json();
@@ -478,13 +528,15 @@ export default function Merchendise() {
           .map((category) => ({
             categoryName: category.name,
             displayName: formatCategoryName(category.name),
-            products: groupedProducts.get(normalizeCategoryKey(category.name)) || [],
+            products:
+              groupedProducts.get(normalizeCategoryKey(category.name)) || [],
           }))
           .filter((section) => section.products.length > 0);
 
         if (isMounted) setCategorySections(sections);
       } catch (error) {
-        if ((error as Error).name !== "AbortError") console.error("Error fetching merch data:", error);
+        if ((error as Error).name !== "AbortError")
+          console.error("Error fetching merch data:", error);
         if (isMounted) setCategorySections([]);
       } finally {
         if (isMounted) setIsLoading(false);
@@ -492,23 +544,29 @@ export default function Merchendise() {
     };
 
     fetchData();
-    return () => { isMounted = false; controller.abort(); };
+    return () => {
+      isMounted = false;
+      controller.abort();
+    };
   }, []);
 
   // ── Buy Now / Add to Cart handler ─────────────────────────────────────────
-  const handleBuyNow = useCallback((product: Product) => {
-    addToCart(product);
-    // Show toast, auto-dismiss after 3 s
-    setToastProduct(product);
-    const timer = setTimeout(() => setToastProduct(null), 3000);
-    return () => clearTimeout(timer);
-  }, [addToCart]);
+  const handleBuyNow = useCallback(
+    (product: Product) => {
+      addToCart(product);
+      // Show toast, auto-dismiss after 3 s
+      setToastProduct(product);
+      const timer = setTimeout(() => setToastProduct(null), 3000);
+      return () => clearTimeout(timer);
+    },
+    [addToCart],
+  );
 
   // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="bg-white pt-25">
-
+      <h1 className="sr-only">Merchandise | Petite Fille Cafe Rosanna</h1>
       {/* ── Floating Cart Button ── */}
       {totalItems > 0 && (
         <button
@@ -566,7 +624,9 @@ export default function Merchendise() {
               whileHover={{ x: 5 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
               onClick={() => {
-                const firstSection = document.querySelector("section[data-category-section]");
+                const firstSection = document.querySelector(
+                  "section[data-category-section]",
+                );
                 firstSection?.scrollIntoView({ behavior: "smooth" });
               }}
             >
@@ -582,21 +642,97 @@ export default function Merchendise() {
           transition={{ duration: 0.7, ease: "easeOut" }}
           viewport={{ once: true, amount: 0.3 }}
         >
-          <motion.div className="absolute top-14 left-14 w-40 h-48 border-2 border-amber-400" initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5, duration: 0.5 }} viewport={{ once: true }} />
-          <motion.div className="absolute bottom-28 right-14 w-40 h-48 border-2 border-amber-400" initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, duration: 0.5 }} viewport={{ once: true }} />
-          <motion.div className="absolute bottom-20 left-5 w-32 h-24 border-2 border-amber-400" initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: 0.7, duration: 0.5 }} viewport={{ once: true }} />
-          <motion.div className="absolute top-0 right-12 w-28 h-24 border-2 border-amber-400" initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8, duration: 0.5 }} viewport={{ once: true }} />
-          <motion.div className="absolute -top-3 left-1/2 -translate-x-1/2 w-40 h-48" initial={{ opacity: 0, y: -20, rotate: -5 }} whileInView={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 0.9, duration: 0.6 }} viewport={{ once: true }} whileHover={{ y: -5, rotate: -2, transition: { duration: 0.3 } }}>
-            <img src="/merchendise/merch1.webp" alt="T-Shirts" loading="lazy" decoding="async" className="w-full h-full object-cover shadow-md" />
+          <motion.div
+            className="absolute top-14 left-14 w-40 h-48 border-2 border-amber-400"
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            viewport={{ once: true }}
+          />
+          <motion.div
+            className="absolute bottom-28 right-14 w-40 h-48 border-2 border-amber-400"
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.6, duration: 0.5 }}
+            viewport={{ once: true }}
+          />
+          <motion.div
+            className="absolute bottom-20 left-5 w-32 h-24 border-2 border-amber-400"
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.7, duration: 0.5 }}
+            viewport={{ once: true }}
+          />
+          <motion.div
+            className="absolute top-0 right-12 w-28 h-24 border-2 border-amber-400"
+            initial={{ opacity: 0, scale: 0.8 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.8, duration: 0.5 }}
+            viewport={{ once: true }}
+          />
+          <motion.div
+            className="absolute -top-3 left-1/2 -translate-x-1/2 w-40 h-48"
+            initial={{ opacity: 0, y: -20, rotate: -5 }}
+            whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+            transition={{ delay: 0.9, duration: 0.6 }}
+            viewport={{ once: true }}
+            whileHover={{ y: -5, rotate: -2, transition: { duration: 0.3 } }}
+          >
+            <img
+              src="/merchendise/merch1.webp"
+              alt="T-Shirts"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover shadow-md"
+            />
           </motion.div>
-          <motion.div className="absolute top-28 left-0 w-40 h-48" initial={{ opacity: 0, x: -20, rotate: 5 }} whileInView={{ opacity: 1, x: 0, rotate: 0 }} transition={{ delay: 1, duration: 0.6 }} viewport={{ once: true }} whileHover={{ y: -5, rotate: 2, transition: { duration: 0.3 } }}>
-            <img src="/merchendise/coffee.webp" alt="Coffee Bag" loading="lazy" decoding="async" className="w-full h-full object-cover shadow-md" />
+          <motion.div
+            className="absolute top-28 left-0 w-40 h-48"
+            initial={{ opacity: 0, x: -20, rotate: 5 }}
+            whileInView={{ opacity: 1, x: 0, rotate: 0 }}
+            transition={{ delay: 1, duration: 0.6 }}
+            viewport={{ once: true }}
+            whileHover={{ y: -5, rotate: 2, transition: { duration: 0.3 } }}
+          >
+            <img
+              src="/merchendise/coffee.webp"
+              alt="Coffee Bag"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover shadow-md"
+            />
           </motion.div>
-          <motion.div className="absolute top-61 left-1/2 -translate-x-1/2 w-40 h-48" initial={{ opacity: 0, y: 20, rotate: 5 }} whileInView={{ opacity: 1, y: 0, rotate: 0 }} transition={{ delay: 1.1, duration: 0.6 }} viewport={{ once: true }} whileHover={{ y: -5, rotate: -2, transition: { duration: 0.3 } }}>
-            <img src="/merchendise/bag1.webp" alt="Tote Bag" loading="lazy" decoding="async" className="w-full h-full object-cover shadow-md" />
+          <motion.div
+            className="absolute top-61 left-1/2 -translate-x-1/2 w-40 h-48"
+            initial={{ opacity: 0, y: 20, rotate: 5 }}
+            whileInView={{ opacity: 1, y: 0, rotate: 0 }}
+            transition={{ delay: 1.1, duration: 0.6 }}
+            viewport={{ once: true }}
+            whileHover={{ y: -5, rotate: -2, transition: { duration: 0.3 } }}
+          >
+            <img
+              src="/merchendise/bag1.webp"
+              alt="Tote Bag"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover shadow-md"
+            />
           </motion.div>
-          <motion.div className="absolute top-18 right-0 w-40 h-48" initial={{ opacity: 0, x: 20, rotate: -5 }} whileInView={{ opacity: 1, x: 0, rotate: 0 }} transition={{ delay: 1.2, duration: 0.6 }} viewport={{ once: true }} whileHover={{ y: -5, rotate: 2, transition: { duration: 0.3 } }}>
-            <img src="/merchendise/cup2.webp" alt="Mugs" loading="lazy" decoding="async" className="w-full h-full object-cover shadow-md" />
+          <motion.div
+            className="absolute top-18 right-0 w-40 h-48"
+            initial={{ opacity: 0, x: 20, rotate: -5 }}
+            whileInView={{ opacity: 1, x: 0, rotate: 0 }}
+            transition={{ delay: 1.2, duration: 0.6 }}
+            viewport={{ once: true }}
+            whileHover={{ y: -5, rotate: 2, transition: { duration: 0.3 } }}
+          >
+            <img
+              src="/merchendise/cup2.webp"
+              alt="Mugs"
+              loading="lazy"
+              decoding="async"
+              className="w-full h-full object-cover shadow-md"
+            />
           </motion.div>
         </motion.div>
       </section>
@@ -634,7 +770,10 @@ export default function Merchendise() {
             <div className="w-20 h-20 mx-auto mb-6 bg-gray-200 rounded-full flex items-center justify-center">
               <PackageOpen className="h-10 w-10 text-gray-400" />
             </div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-3" style={{ fontFamily: "fairplaybold" }}>
+            <h3
+              className="text-2xl font-semibold text-gray-800 mb-3"
+              style={{ fontFamily: "fairplaybold" }}
+            >
               No Products Available
             </h3>
             <p className="text-gray-500 text-lg mb-2">

@@ -86,6 +86,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
             transition: "opacity 0.45s ease, transform 0.45s ease",
           }}
         >
+          <h1 className="sr-only">Menu | Petite Fille Cafe Rosanna</h1>
           <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-gray-200 shadow-md sm:mb-4">
             {!imageError ? (
               <Image
@@ -234,6 +235,9 @@ const RestaurantMenu: React.FC = () => {
         transition: "opacity 0.35s ease",
       }}
     >
+       <h1 className="sr-only">
+      Menu | Petite Fille Cafe Rosanna
+    </h1>
       <div className="relative isolate">
         <MenuCarousel />
       </div>

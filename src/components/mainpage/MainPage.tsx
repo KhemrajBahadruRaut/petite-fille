@@ -13,7 +13,6 @@ const orderOnlineBtn =
   // "bg-[#B7AA99] text-white hover:rounded-bl-3xl hover:rounded-tr-3xl rounded-tl-3xl rounded-br-3xl";
   "bg-[#B7AA99] text-white border border-[#B7AA99] text-[#B7AA99] rounded-tr-3xl rounded-bl-3xl hover:rounded-tl-3xl hover:rounded-br-3xl hover:rounded-tr-none hover:rounded-bl-none transition-all duration-300 ease-in-out px-6 py-2";
 
-
 const fadeSlide = {
   hidden: { x: 200, opacity: 0 },
   visible: { x: 0, opacity: 1, transition: { duration: 1 } },
@@ -23,7 +22,6 @@ const fadeSlideDelayed = {
   hidden: { x: 210, opacity: 0 },
   visible: { x: 0, opacity: 1, transition: { duration: 1.5 } },
 };
-
 
 const rotateScale: Variants = {
   hidden: { scale: 0.2, rotate: -90, opacity: 0 },
@@ -35,10 +33,10 @@ const rotateScale: Variants = {
   },
 };
 
-
 export default function MainPage() {
   return (
     <div className="bg-white pb-14 pt-20">
+      <h1 className="sr-only">Petite Fille Cafe Rosanna</h1>
       <div className="w-full grid grid-cols-1 md:grid-cols-2 container mx-auto">
         {/* Left Section */}
         <div className="flex flex-col gap-5  items-center p-6">
@@ -70,9 +68,11 @@ export default function MainPage() {
             viewport={{ once: true, amount: 0.3 }}
             className="hidden md:flex flex-wrap gap-14 justify-center w-full py-6"
             style={{ fontFamily: "fairplay" }}
-
           >
-            <Link href="/reservation" className={`${buttonBase} ${bookTableBtn}`}>
+            <Link
+              href="/reservation"
+              className={`${buttonBase} ${bookTableBtn}`}
+            >
               Book A Table
             </Link>
             <Link href="/menu" className={`${buttonBase} ${orderOnlineBtn}`}>
@@ -102,16 +102,12 @@ export default function MainPage() {
           </motion.div>
         </div>
 
-
         {/* Mobile Buttons */}
         <div className="flex flex-wrap md:hidden gap-5 justify-center w-full py-6">
           <Link href="/reservation" className={`${buttonBase} ${bookTableBtn}`}>
             Book A Table
           </Link>
-          <Link
-            href="/menu"
-            className={`${buttonBase} ${orderOnlineBtn}`}
-          >
+          <Link href="/menu" className={`${buttonBase} ${orderOnlineBtn}`}>
             See Menu
           </Link>
         </div>
