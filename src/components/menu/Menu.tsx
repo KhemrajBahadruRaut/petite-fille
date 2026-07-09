@@ -60,6 +60,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
     const { addToFavorites, removeFromFavorites, isFavorite } = useCart();
     const isItemFavorite = isFavorite(item.id);
     const normalizedImage = normalizeApiAssetUrl(item.image);
+    const hasVisibleImage = !!normalizedImage;
 
     // Staggered entrance when card mounts
     useEffect(() => {
@@ -79,7 +80,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
     return (
       <>
         <div
-          className="group transition-all duration-500 hover:scale-[1.02]"
+          className="group relative transition-all duration-500 hover:scale-[1.02]"
           style={{
             opacity: visible ? 1 : 0,
             transform: visible ? "translateY(0)" : "translateY(18px)",
@@ -87,42 +88,48 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
           }}
         >
           <h1 className="sr-only">Menu | Petite Fille Cafe Rosanna</h1>
-          <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-gray-200 shadow-md sm:mb-4">
-            {!imageError ? (
-              <Image
-                src={normalizedImage}
-                alt={item.alt || item.name}
-                fill
-                className="cursor-zoom-in object-cover w-full h-full transition-all duration-300 group-hover:brightness-75"
-                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-                onError={() => setImageError(true)}
-                onClick={() => setIsPreviewOpen(true)}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <p className="text-xs text-gray-500 font-medium">{item.name}</p>
-              </div>
-            )}
+          {hasVisibleImage && (
+            <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-gray-200 shadow-md sm:mb-4">
+              {!imageError ? (
+                <Image
+                  src={normalizedImage}
+                  alt={item.alt || item.name}
+                  fill
+                  className="cursor-zoom-in object-cover w-full h-full transition-all duration-300 group-hover:brightness-75"
+                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+                  onError={() => setImageError(true)}
+                  onClick={() => setIsPreviewOpen(true)}
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gray-100">
+                  <p className="text-xs text-gray-500 font-medium">{item.name}</p>
+                </div>
+              )}
+              {!imageError && (
+                <div className="absolute inset-0 hidden items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:flex">
+                  <button
+                    type="button"
+                    onClick={() => setIsPreviewOpen(true)}
+                    className="rounded-full border border-white/60 bg-white/90 px-4 py-2 text-xs font-semibold text-gray-800"
+                  >
+                    View Image
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
             <button
               onClick={handleToggleFavorite}
-              className="absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm opacity-100 transition-all duration-300 hover:scale-110 md:opacity-0 md:group-hover:opacity-100"
+              className={`z-10 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm transition-all duration-300 hover:scale-110 ${
+                hasVisibleImage
+                  ? "absolute top-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                  : "mb-3 ml-auto"
+              }`}
             >
               <Heart
                 className={`w-4 h-4 transition-all duration-300 ${isItemFavorite ? "text-red-500 fill-red-500" : "text-gray-600 hover:text-red-500"}`}
               />
             </button>
-            {!imageError && (
-              <div className="absolute inset-0 hidden items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:flex">
-                <button
-                  type="button"
-                  onClick={() => setIsPreviewOpen(true)}
-                  className="rounded-full border border-white/60 bg-white/90 px-4 py-2 text-xs font-semibold text-gray-800"
-                >
-                  View Image
-                </button>
-              </div>
-            )}
-          </div>
 
           <div className="space-y-2">
             <div className="flex justify-between items-start">
@@ -139,7 +146,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
           </div>
         </div>
 
-        {isPreviewOpen && (
+        {isPreviewOpen && hasVisibleImage && (
           <div
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
             onClick={() => setIsPreviewOpen(false)}

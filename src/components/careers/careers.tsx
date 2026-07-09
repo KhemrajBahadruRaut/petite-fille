@@ -40,13 +40,15 @@ const WHY_WORK_WITH_US: WhyWorkWithUsItem[] = [
     icon: Heart,
     title: "Work-Life Balance",
     description:
-"We run a structured roster with reasonable hours — no late nights, no chaos. We respect your time outside of work."  },
+      "We run a structured roster with reasonable hours — no late nights, no chaos. We respect your time outside of work.",
+  },
   {
     id: "3",
     icon: Coffee,
     title: "Amazing Culture",
     description:
-"We're a small, tight team that takes pride in what we do without taking ourselves too seriously. Good vibes, high standards."  },
+      "We're a small, tight team that takes pride in what we do without taking ourselves too seriously. Good vibes, high standards.",
+  },
 ];
 
 interface JobsApiRecord {
@@ -383,10 +385,17 @@ export default function CareersPage() {
             transition={{ delay: 0.2 }}
             className="text-gray-600 text-sm sm:text-base leading-relaxed mb-6"
           >
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim
-            ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
-            aliquip ex ea commodo.
+            At Petite Fille Rosanna, we're more than just a café—we're a team of
+            passionate people who genuinely enjoy creating memorable experiences
+            for our community.
+            <br />
+            <br />
+             We believe great hospitality starts with great
+            people. That's why we're committed to building a workplace where
+            everyone feels welcomed, supported, and encouraged to grow. Whether
+            you're an experienced hospitality professional or just beginning
+            your journey, we value a positive attitude, kindness, reliability,
+            and a genuine passion for looking after others.
           </motion.p>
           <motion.p
             initial={{ opacity: 0, y: 10 }}
@@ -394,9 +403,21 @@ export default function CareersPage() {
             transition={{ delay: 0.3 }}
             className="text-gray-600 text-sm sm:text-base leading-relaxed mb-12"
           >
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua. Lorem
-            ipsum dolor sit amet, consectetur adipiscing elit, sed do
+            Working with us means being part of a close-knit team that takes
+            pride in delivering exceptional coffee, delicious food, and warm,
+            friendly service every day. We love celebrating individuality,
+            supporting each other's development, and creating an environment
+            where hard work is recognised and every team member can thrive.
+            <br />
+            <br />
+            If you're someone who enjoys working in a fast-paced environment,
+            loves connecting with people, and wants to be part of a café that
+            truly cares about its team and customers, we'd love to hear from
+            you.
+            <br />
+            <br />
+            Explore our current opportunities below and become part of the
+            Petite Fille family.
           </motion.p>
 
           <motion.h1

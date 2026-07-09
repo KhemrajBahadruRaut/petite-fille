@@ -84,16 +84,16 @@ const WhatWeOffer = () => {
         // Flatten all items from all categories
         const allItems: MenuItem[] = data.flatMap(
           (category: { items: MenuItem[] }) =>
-            (category.items || []).map((item: MenuItem) => ({
-              id: item.id,
-              name: item.name,
-              price: item.price,
-              description:
-                item.description || "Delicious fresh item made with love",
-              image: item.image
-                ? normalizeApiAssetUrl(item.image)
-                : "/whatweoffer/offer1.webp",
-            })),
+            (category.items || [])
+              .filter((item: MenuItem) => !!item.image)
+              .map((item: MenuItem) => ({
+                id: item.id,
+                name: item.name,
+                price: item.price,
+                description:
+                  item.description || "Delicious fresh item made with love",
+                image: normalizeApiAssetUrl(item.image),
+              })),
         );
 
         const randomFour = pickRandomItems(allItems, 4);

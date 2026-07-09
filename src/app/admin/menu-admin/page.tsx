@@ -7,6 +7,8 @@ import {
   Trash2,
   Plus,
   Edit2,
+  Eye,
+  EyeOff,
   Utensils,
   Pencil,
   Save,
@@ -19,6 +21,7 @@ interface MenuItem {
   price: number;
   description?: string;
   image?: string;
+  hide_item?: number | string | boolean;
   category: string;
 }
 
@@ -110,6 +113,9 @@ export default function AdminMenu() {
   const [editingItemId, setEditingItemId] = useState<number | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState("");
+  const [pendingItemVisibility, setPendingItemVisibility] = useState<
+    Record<number, boolean>
+  >({});
 
   const [form, setForm] = useState<MenuForm>({
     name: "",
@@ -131,7 +137,12 @@ export default function AdminMenu() {
   const fetchItems = async () => {
     setIsLoading(true);
     try {
-      const res = await fetch(apiUrl("menu/get_menu_item.php"));
+      const res = await fetch(
+        apiUrl(`menu/get_menu_item.php?include_hidden=1&t=${Date.now()}`),
+        {
+          cache: "no-store",
+        },
+      );
       const data = await res.json();
       interface CategoryData {
         items: MenuItem[];
@@ -215,7 +226,13 @@ export default function AdminMenu() {
             : `${form.name} added successfully`,
           "success",
         );
-        setForm({ name: "", price: "", description: "", image: null, category: "" });
+        setForm({
+          name: "",
+          price: "",
+          description: "",
+          image: null,
+          category: "",
+        });
         setEditingItemId(null);
         fetchItems();
       } else {
@@ -252,6 +269,68 @@ export default function AdminMenu() {
     } catch (error) {
       console.error(error);
       addToast("Error deleting item. Try again.", "error");
+    }
+  };
+
+  /** Hide/show item on the public menu */
+  const toggleItemVisibility = async (
+    item: MenuItem,
+    nextHidden: boolean,
+  ) => {
+    const confirmed = window.confirm(
+      nextHidden
+        ? `Hide "${item.name}" from the website menu?`
+        : `Show "${item.name}" on the website menu?`,
+    );
+    if (!confirmed || pendingItemVisibility[item.id]) return;
+
+    const formData = new FormData();
+    formData.append("id", item.id.toString());
+    formData.append("hide_item", nextHidden ? "1" : "0");
+
+    setPendingItemVisibility((prev) => ({ ...prev, [item.id]: true }));
+    setItems((prev) =>
+      prev.map((current) =>
+        current.id === item.id
+          ? { ...current, hide_item: nextHidden ? 1 : 0 }
+          : current,
+      ),
+    );
+
+    try {
+      const res = await fetch(apiUrl("menu/toggle_menu_item_visibility.php"), {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data?.success) {
+        addToast(
+          nextHidden
+            ? `${item.name} hidden from menu`
+            : `${item.name} shown on menu`,
+          "success",
+        );
+        fetchItems();
+      } else {
+        throw new Error(data?.message || "Failed to update image visibility");
+      }
+    } catch (error) {
+      console.error(error);
+      setItems((prev) =>
+        prev.map((current) =>
+          current.id === item.id
+            ? { ...current, hide_item: nextHidden ? 0 : 1 }
+            : current,
+        ),
+      );
+      addToast("Error updating item visibility. Try again.", "error");
+    } finally {
+      setPendingItemVisibility((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
     }
   };
 
@@ -586,8 +665,19 @@ export default function AdminMenu() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {mainItems.length > 0 ? (
-                mainItems.map((item) => (
-                  <tr key={item.id} className="hover:bg-gray-50 transition-colors">
+                mainItems.map((item) => {
+                  const isItemHidden =
+                    item.hide_item === true ||
+                    item.hide_item === 1 ||
+                    item.hide_item === "1";
+
+                  return (
+                  <tr
+                    key={item.id}
+                    className={`hover:bg-gray-50 transition-colors ${
+                      isItemHidden ? "bg-gray-50 opacity-70" : ""
+                    }`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
                         {item.image && (
@@ -600,6 +690,11 @@ export default function AdminMenu() {
                         <div>
                           <div className="font-medium text-gray-900">{item.name}</div>
                           <div className="text-sm text-gray-500">ID: {item.id}</div>
+                          {isItemHidden && (
+                            <div className="text-xs font-medium text-amber-700">
+                              Item hidden
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -625,6 +720,27 @@ export default function AdminMenu() {
                           <Edit2 className="w-4 h-4" /> Edit
                         </button>
                         <button
+                          onClick={() => toggleItemVisibility(item, !isItemHidden)}
+                          disabled={!!pendingItemVisibility[item.id]}
+                          className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                            isItemHidden
+                              ? "text-green-700 hover:bg-green-50 hover:text-green-800"
+                              : "text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                          } disabled:cursor-not-allowed disabled:opacity-60`}
+                        >
+                          {pendingItemVisibility[item.id] ? (
+                            "Updating..."
+                          ) : isItemHidden ? (
+                            <>
+                              <Eye className="w-4 h-4" /> Show Item
+                            </>
+                          ) : (
+                            <>
+                              <EyeOff className="w-4 h-4" /> Hide Item
+                            </>
+                          )}
+                        </button>
+                        <button
                           onClick={() => deleteItem(item.id, item.name)}
                           className="flex items-center gap-1 text-red-600 hover:text-red-800 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors"
                         >
@@ -633,7 +749,8 @@ export default function AdminMenu() {
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               ) : (
                 <tr>
                   <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
