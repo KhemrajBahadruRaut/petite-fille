@@ -9,7 +9,9 @@ import {
 } from "@stripe/react-stripe-js";
 import { apiUrl } from "../../utils/api";
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
+);
 
 // $5 to $100 in $5 increments → [5, 10, 15, ... 100]
 const AMOUNT_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 5);
@@ -43,14 +45,14 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          recipient:      formData.recipient,
+          recipient: formData.recipient,
           recipientEmail: formData.recipientEmail,
-          message:        formData.message,
-          senderName:     formData.senderName,
-          senderEmail:    formData.senderEmail,
-          quantity:       formData.quantity,
+          message: formData.message,
+          senderName: formData.senderName,
+          senderEmail: formData.senderEmail,
+          quantity: formData.quantity,
           giftCardAmount: formData.amount,
-          currency:       "usd",
+          currency: "usd",
         }),
       });
 
@@ -64,15 +66,18 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
       if (!cardElement) throw new Error("Card element not found.");
 
       // Step 2 — confirm card payment with Stripe (card is charged here)
-      const { error, paymentIntent } = await stripe.confirmCardPayment(clientSecret, {
-        payment_method: {
-          card: cardElement,
-          billing_details: {
-            name:  formData.senderName,
-            email: formData.senderEmail,
+      const { error, paymentIntent } = await stripe.confirmCardPayment(
+        clientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: formData.senderName,
+              email: formData.senderEmail,
+            },
           },
         },
-      });
+      );
 
       if (error) {
         setCardError(error.message || "Payment failed. Please try again.");
@@ -86,20 +91,23 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             paymentIntentId: paymentIntent.id,
-            recipient:       formData.recipient,
-            recipientEmail:  formData.recipientEmail,
-            senderName:      formData.senderName,
-            senderEmail:     formData.senderEmail,
-            message:         formData.message,
-            giftCardAmount:  formData.amount,
-            quantity:        formData.quantity,
+            recipient: formData.recipient,
+            recipientEmail: formData.recipientEmail,
+            senderName: formData.senderName,
+            senderEmail: formData.senderEmail,
+            message: formData.message,
+            giftCardAmount: formData.amount,
+            quantity: formData.quantity,
           }),
         });
 
         if (!mailRes.ok) {
           // Payment succeeded but email failed — still show success to user,
           // error is logged server-side so you can resend manually
-          console.error("Gift card email failed:", await mailRes.json().catch(() => ({})));
+          console.error(
+            "Gift card email failed:",
+            await mailRes.json().catch(() => ({})),
+          );
         }
 
         onSuccess();
@@ -116,7 +124,9 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
       <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
         <div className="mb-6">
           <h2 className="text-2xl font-bold text-gray-800 mb-1">Payment</h2>
-          <p className="text-gray-500 text-sm">Complete your eGift card purchase</p>
+          <p className="text-gray-500 text-sm">
+            Complete your eGift card purchase
+          </p>
         </div>
 
         {/* Order summary */}
@@ -127,11 +137,15 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Recipient email</span>
-            <span className="font-medium truncate max-w-[60%]">{formData.recipientEmail}</span>
+            <span className="font-medium truncate max-w-[60%]">
+              {formData.recipientEmail}
+            </span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Amount × Qty</span>
-            <span className="font-medium">${formData.amount} × {formData.quantity}</span>
+            <span className="font-medium">
+              ${formData.amount} × {formData.quantity}
+            </span>
           </div>
           {formData.message && (
             <div className="flex justify-between">
@@ -149,7 +163,9 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
 
         {/* Stripe Card Element */}
         <div className="mb-6">
-          <label className="block text-gray-700 font-medium mb-2 text-sm">Card details</label>
+          <label className="block text-gray-700 font-medium mb-2 text-sm">
+            Card details
+          </label>
           <div
             className={`border-2 rounded-xl px-4 py-3 transition-colors ${
               cardError
@@ -157,11 +173,18 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
                 : "border-gray-200 focus-within:border-amber-400 bg-white"
             }`}
           >
-            <CardElement options={CARD_ELEMENT_OPTIONS} onChange={() => setCardError(null)} />
+            <CardElement
+              options={CARD_ELEMENT_OPTIONS}
+              onChange={() => setCardError(null)}
+            />
           </div>
           {cardError && (
             <p className="mt-2 text-sm text-red-600 flex items-center gap-1">
-              <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <svg
+                className="w-4 h-4 shrink-0"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
                 <path
                   fillRule="evenodd"
                   d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
@@ -195,9 +218,25 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
           >
             {isProcessing ? (
               <>
-                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                <svg
+                  className="animate-spin h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </svg>
                 Processing…
               </>
@@ -227,7 +266,7 @@ const Stripe_test = () => {
 
   const totalPrice = useMemo(
     () => formData.amount * formData.quantity,
-    [formData.amount, formData.quantity]
+    [formData.amount, formData.quantity],
   );
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -266,7 +305,7 @@ const Stripe_test = () => {
         setErrors((prev) => ({ ...prev, [field]: undefined }));
       }
     },
-    [errors]
+    [errors],
   );
 
   const handleQuantityChange = useCallback((delta) => {
@@ -304,14 +343,26 @@ const Stripe_test = () => {
       <div className="min-h-screen bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center">
           <div className="w-20 h-20 bg-linear-to-r from-amber-400 to-yellow-500 rounded-full flex items-center justify-center mx-auto mb-6">
-            <svg className="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            <svg
+              className="w-10 h-10 text-white"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-3">Gift Card Sent!</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-3">
+            Gift Card Sent!
+          </h2>
           <p className="text-gray-600 mb-2">
-            Your eGift card worth <strong>${totalPrice}</strong> has been sent to{" "}
-            <strong>{formData.recipient}</strong> at{" "}
+            Your eGift card worth <strong>${totalPrice}</strong> has been sent
+            to <strong>{formData.recipient}</strong> at{" "}
             <strong>{formData.recipientEmail}</strong>.
           </p>
           <p className="text-gray-500 text-sm mb-6">
@@ -352,16 +403,30 @@ const Stripe_test = () => {
             <p className="text-gray-600 flex justify-center">
               Get a voucher for yourself or gift one to a friend
             </p>
-            <div className="relative flex justify-center">
-              <div className="w-64 h-40 bg-linear-to-br from-amber-200 to-yellow-300 rounded-2xl shadow-lg relative overflow-hidden">
-                <div className="absolute inset-0 bg-linear-to-br from-white/20 to-transparent"></div>
-                <div className="absolute top-4 right-4">
-                  <div className="w-8 h-8 bg-linear-to-br from-amber-400 to-yellow-500 rounded-full opacity-20"></div>
-                </div>
-                <div className="absolute bottom-4 left-4">
-                  <div className="text-amber-800 font-bold text-lg">${formData.amount}</div>
-                </div>
+            <div className="relative mx-auto w-full max-w-3xl overflow-hidden rounded-xl shadow-lg">
+              <img
+                src="/giftcard/gift-card-template.png"
+                alt="Petite Fille Gift Card"
+                className="w-full h-auto"
+              />
+
+              <div className="absolute left-[42%] top-[30%] text-[#8b7b67] text-sm sm:text-lg italic font-semibold">
+                {formData.amount}
               </div>
+
+              <div className="absolute left-[42%] top-[45%] text-[#8b7b67] text-sm sm:text-lg italic">
+                 {formData.recipient || "Recipient Name"}
+              </div>
+
+              <div className="absolute left-[42%] top-[61%] text-[#8b7b67] text-sm sm:text-lg italic">
+                 {formData.senderName || "Your Name"}
+              </div>
+
+              {formData.message && (
+                <div className="absolute left-[39%] top-[76%] max-w-[45%] text-[#8b7b67] text-xs sm:text-sm italic line-clamp-2 ">
+                  “{formData.message}”
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -374,16 +439,19 @@ const Stripe_test = () => {
               Special note before making a purchase:
             </h3>
             <p className="text-gray-600 text-sm leading-relaxed">
-              Our eGift cards are perfect for any occasion. They can be used immediately after
-              purchase and never expire. The recipient will receive a beautifully designed digital
-              card with your personalized message.
+              Our eGift cards are perfect for any occasion. They can be used
+              immediately after purchase and never expire. The recipient will
+              receive a beautifully designed digital card with your personalized
+              message.
             </p>
           </div>
 
           <div className="space-y-6">
             {/* Amount Selection */}
             <div>
-              <label className="block text-amber-800 font-medium mb-3">Choose an amount: *</label>
+              <label className="block text-amber-800 font-medium mb-3">
+                Choose an amount: *
+              </label>
               <div className="grid grid-cols-4 sm:grid-cols-5 gap-2">
                 {AMOUNT_OPTIONS.map((amount) => (
                   <button
@@ -407,14 +475,19 @@ const Stripe_test = () => {
               <div className="space-y-4">
                 {/* Recipient Name */}
                 <div className="flex items-center flex-wrap">
-                  <label htmlFor="recipient" className="block text-gray-700 font-medium w-20">
+                  <label
+                    htmlFor="recipient"
+                    className="block text-gray-700 font-medium w-20"
+                  >
                     To:
                   </label>
                   <input
                     id="recipient"
                     type="text"
                     value={formData.recipient}
-                    onChange={(e) => handleInputChange("recipient", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("recipient", e.target.value)
+                    }
                     className={`w-full px-0 py-2 border-0 border-b-2 bg-transparent sm:ml-2 text-gray-600 focus:outline-none transition-colors ${
                       errors.recipient
                         ? "border-red-500 focus:border-red-500"
@@ -423,20 +496,27 @@ const Stripe_test = () => {
                     placeholder="Recipient's name"
                   />
                   {errors.recipient && (
-                    <p className="mt-1 text-sm text-red-600 w-full">{errors.recipient}</p>
+                    <p className="mt-1 text-sm text-red-600 w-full">
+                      {errors.recipient}
+                    </p>
                   )}
                 </div>
 
                 {/* Recipient Email */}
                 <div className="flex items-center flex-wrap">
-                  <label htmlFor="recipientEmail" className="block text-gray-700 font-medium w-20">
+                  <label
+                    htmlFor="recipientEmail"
+                    className="block text-gray-700 font-medium w-20"
+                  >
                     Email:
                   </label>
                   <input
                     id="recipientEmail"
                     type="email"
                     value={formData.recipientEmail}
-                    onChange={(e) => handleInputChange("recipientEmail", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("recipientEmail", e.target.value)
+                    }
                     className={`w-full px-0 py-2 border-0 border-b-2 bg-transparent sm:ml-2 text-gray-600 focus:outline-none transition-colors ${
                       errors.recipientEmail
                         ? "border-red-500 focus:border-red-500"
@@ -445,19 +525,26 @@ const Stripe_test = () => {
                     placeholder="Recipient's email address"
                   />
                   {errors.recipientEmail && (
-                    <p className="mt-1 text-sm text-red-600 w-full">{errors.recipientEmail}</p>
+                    <p className="mt-1 text-sm text-red-600 w-full">
+                      {errors.recipientEmail}
+                    </p>
                   )}
                 </div>
 
                 {/* Message */}
                 <div className="flex items-center flex-wrap">
-                  <label htmlFor="message" className="block text-gray-700 font-medium w-20">
+                  <label
+                    htmlFor="message"
+                    className="block text-gray-700 font-medium w-20"
+                  >
                     Message:
                   </label>
                   <input
                     id="message"
                     value={formData.message}
-                    onChange={(e) => handleInputChange("message", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("message", e.target.value)
+                    }
                     className={`w-full px-0 py-2 border-0 border-b-2 bg-transparent sm:ml-2 text-gray-600 focus:outline-none resize-none transition-colors ${
                       errors.message
                         ? "border-red-500 focus:border-red-500"
@@ -470,7 +557,9 @@ const Stripe_test = () => {
                     {errors.message && (
                       <p className="text-sm text-red-600">{errors.message}</p>
                     )}
-                    <p className="text-xs text-gray-500 ml-auto">{formData.message.length}/200</p>
+                    <p className="text-xs text-gray-500 ml-auto">
+                      {formData.message.length}/200
+                    </p>
                   </div>
                 </div>
               </div>
@@ -478,7 +567,9 @@ const Stripe_test = () => {
 
             {/* Quantity */}
             <div className="flex items-center flex-wrap">
-              <label className="block text-amber-800 font-medium">Quantity: *</label>
+              <label className="block text-amber-800 font-medium">
+                Quantity: *
+              </label>
               <div className="flex items-center sm:ml-10">
                 <button
                   onClick={() => handleQuantityChange(-1)}
@@ -490,7 +581,9 @@ const Stripe_test = () => {
                 <input
                   type="number"
                   value={formData.quantity}
-                  onChange={(e) => handleInputChange("quantity", parseInt(e.target.value) || 1)}
+                  onChange={(e) =>
+                    handleInputChange("quantity", parseInt(e.target.value) || 1)
+                  }
                   min="1"
                   max="10"
                   className="w-16 h-10 text-center border border-gray-300 rounded-lg text-gray-600 focus:outline-none focus:border-amber-500"
@@ -502,7 +595,9 @@ const Stripe_test = () => {
                 >
                   <span className="text-lg font-medium text-gray-600">+</span>
                 </button>
-                <span className="text-sm text-gray-600 ml-4">Total: ${totalPrice}.00</span>
+                <span className="text-sm text-gray-600 ml-4">
+                  Total: ${totalPrice}.00
+                </span>
               </div>
               {errors.quantity && (
                 <p className="mt-1 text-sm text-red-600">{errors.quantity}</p>
@@ -514,12 +609,19 @@ const Stripe_test = () => {
               <h3 className="text-amber-800 font-medium mb-4">Your details:</h3>
               <div className="space-y-4">
                 <div className="flex items-center flex-wrap">
-                  <label htmlFor="senderName" className="text-gray-700 font-medium">From:*</label>
+                  <label
+                    htmlFor="senderName"
+                    className="text-gray-700 font-medium"
+                  >
+                    From:*
+                  </label>
                   <input
                     id="senderName"
                     type="text"
                     value={formData.senderName}
-                    onChange={(e) => handleInputChange("senderName", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("senderName", e.target.value)
+                    }
                     className={`w-full px-0 py-2 border-0 border-b-2 sm:ml-10 bg-transparent text-black focus:outline-none transition-colors ${
                       errors.senderName
                         ? "border-red-500 focus:border-red-500"
@@ -528,19 +630,26 @@ const Stripe_test = () => {
                     placeholder="Your name"
                   />
                   {errors.senderName && (
-                    <p className="mt-1 text-sm text-red-600">{errors.senderName}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.senderName}
+                    </p>
                   )}
                 </div>
 
                 <div className="flex items-center flex-wrap">
-                  <label htmlFor="senderEmail" className="block text-gray-700 font-medium">
+                  <label
+                    htmlFor="senderEmail"
+                    className="block text-gray-700 font-medium"
+                  >
                     Email:*
                   </label>
                   <input
                     id="senderEmail"
                     type="email"
                     value={formData.senderEmail}
-                    onChange={(e) => handleInputChange("senderEmail", e.target.value)}
+                    onChange={(e) =>
+                      handleInputChange("senderEmail", e.target.value)
+                    }
                     className={`w-full px-0 py-2 border-0 border-b-2 sm:ml-10 bg-transparent text-black focus:outline-none transition-colors ${
                       errors.senderEmail
                         ? "border-red-500 focus:border-red-500"
@@ -549,7 +658,9 @@ const Stripe_test = () => {
                     placeholder="your@email.com"
                   />
                   {errors.senderEmail && (
-                    <p className="mt-1 text-sm text-red-600">{errors.senderEmail}</p>
+                    <p className="mt-1 text-sm text-red-600">
+                      {errors.senderEmail}
+                    </p>
                   )}
                 </div>
               </div>

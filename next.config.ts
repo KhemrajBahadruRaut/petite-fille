@@ -3,10 +3,10 @@
 // const nextConfig: NextConfig = {
 //   /* config options here */
 
-//     output: 'export', // Enable static export mode
-//     outputFileTracingRoot: __dirname, // ensures Next.js uses this folder as root
+//     output: 'export', 
+//     outputFileTracingRoot: __dirname, 
 //     images: {
-//       unoptimized: true, // Required for static export
+//       unoptimized: true, 
 //       remotePatterns: [
 //         {
 //           protocol: 'http',
@@ -18,7 +18,6 @@
 //     },
 
 // };
-
 // export default nextConfig;
 
 import type { NextConfig } from "next";
