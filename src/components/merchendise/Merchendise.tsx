@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useCallback } from "react";
-import { useRouter } from "next/navigation";
 import {
   Heart,
   PackageOpen,
@@ -294,9 +293,13 @@ function CartDrawer({
 const ProductCard = React.memo(function ProductCard({
   product,
   onBuyNow,
+  canPurchase,
+  showStorePrompt,
 }: {
   product: Product;
   onBuyNow: (product: Product) => void;
+  canPurchase: boolean;
+  showStorePrompt: boolean;
 }) {
   const [imageError, setImageError] = useState(false);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
@@ -387,17 +390,19 @@ const ProductCard = React.memo(function ProductCard({
             >
               View Image
             </button>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onBuyNow(product);
-              }}
-              className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-amber-600 active:scale-95"
-              style={{ fontFamily: "arial" }}
-            >
-              Add to Cart
-            </button>
+            {canPurchase && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onBuyNow(product);
+                }}
+                className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-amber-600 active:scale-95"
+                style={{ fontFamily: "arial" }}
+              >
+                Add to Cart
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -417,11 +422,20 @@ const ProductCard = React.memo(function ProductCard({
           {product.description}
         </p>
         <span
-          className="text-base font-medium text-gray-500"
+          className="text-base font-medium text-gray-500 pr-5"
           style={{ fontFamily: "arial" }}
         >
           {product.priceDisplay}
         </span>
+        {showStorePrompt && (
+          <Link
+            href="/contacts"
+            className="mx-auto mt-2 inline-flex rounded-full bg-black px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+            style={{ fontFamily: "arial" }}
+          >
+            Go to store
+          </Link>
+        )}
       </div>
 
       {/* ── Image Preview Modal ── */}
@@ -452,33 +466,43 @@ const ProductCard = React.memo(function ProductCard({
   );
 });
 
-// ─── Product Grid ─────────────────────────────────────────────────────────────
+// ─── Product Grid 
 
 function ProductGrid({
   items,
   onBuyNow,
+  canPurchase,
+  showStorePrompt,
 }: {
   items: Product[];
   onBuyNow: (product: Product) => void;
+  canPurchase: boolean;
+  showStorePrompt: boolean;
 }) {
   return (
     <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
       {items.map((product) => (
-        <ProductCard key={product.id} product={product} onBuyNow={onBuyNow} />
+        <ProductCard
+          key={product.id}
+          product={product}
+          onBuyNow={onBuyNow}
+          canPurchase={canPurchase}
+          showStorePrompt={showStorePrompt}
+        />
       ))}
     </div>
   );
 }
 
-// ─── Main Page ────────────────────────────────────────────────────────────────
+// ─── Main Page 
 
 export default function Merchendise() {
-  const router = useRouter();
-
   const [categorySections, setCategorySections] = useState<CategorySection[]>(
     [],
   );
   const [isLoading, setIsLoading] = useState(true);
+  const [onlinePurchaseEnabled, setOnlinePurchaseEnabled] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
 
   // Cart state (Zustand, persisted to localStorage)
   const cartItems = useCartStore((state) => state.items);
@@ -491,7 +515,44 @@ export default function Merchendise() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [toastProduct, setToastProduct] = useState<Product | null>(null);
 
-  // ── Fetch products ────────────────────────────────────────────────────────
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch(apiUrl("merch/get_settings.php"), {
+          cache: "no-store",
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Failed to fetch merch settings");
+        }
+
+        if (isMounted) {
+          setOnlinePurchaseEnabled(
+            data.settings?.online_purchase_enabled !== false,
+          );
+        }
+      } catch {
+        if (isMounted) {
+          setOnlinePurchaseEnabled(true);
+        }
+      } finally {
+        if (isMounted) {
+          setSettingsLoading(false);
+        }
+      }
+    };
+
+    fetchSettings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // ── Fetch products 
   useEffect(() => {
     let isMounted = true;
     const controller = new AbortController();
@@ -550,25 +611,33 @@ export default function Merchendise() {
     };
   }, []);
 
-  // ── Buy Now / Add to Cart handler ─────────────────────────────────────────
+  // ── Buy Now / Add to Cart handler 
+  const canPurchase = !settingsLoading && onlinePurchaseEnabled;
+  const showStorePrompt = !settingsLoading && !onlinePurchaseEnabled;
+
+  useEffect(() => {
+    if (!canPurchase) {
+      setIsCartOpen(false);
+    }
+  }, [canPurchase]);
+
   const handleBuyNow = useCallback(
     (product: Product) => {
+      if (!canPurchase) return;
       addToCart(product);
       // Show toast, auto-dismiss after 3 s
       setToastProduct(product);
       const timer = setTimeout(() => setToastProduct(null), 3000);
       return () => clearTimeout(timer);
     },
-    [addToCart],
+    [addToCart, canPurchase],
   );
-
-  // ─────────────────────────────────────────────────────────────────────────
 
   return (
     <div className="bg-white pt-25">
       <h1 className="sr-only">Merchandise | Petite Fille Cafe Rosanna</h1>
       {/* ── Floating Cart Button ── */}
-      {totalItems > 0 && (
+      {canPurchase && totalItems > 0 && (
         <button
           type="button"
           onClick={() => setIsCartOpen(true)}
@@ -759,7 +828,12 @@ export default function Merchendise() {
             >
               {section.displayName}
             </h2>
-            <ProductGrid items={section.products} onBuyNow={handleBuyNow} />
+            <ProductGrid
+              items={section.products}
+              onBuyNow={handleBuyNow}
+              canPurchase={canPurchase}
+              showStorePrompt={showStorePrompt}
+            />
           </section>
         ))}
 
@@ -798,7 +872,7 @@ export default function Merchendise() {
 
       {/* ── Cart Drawer ── */}
       <AnimatePresence>
-        {isCartOpen && (
+        {canPurchase && isCartOpen && (
           <CartDrawer
             cartItems={cartItems}
             totalItems={totalItems}

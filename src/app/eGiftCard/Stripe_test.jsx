@@ -1,5 +1,5 @@
 "use client";
-import { useState, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -263,6 +263,45 @@ const Stripe_test = () => {
 
   const [errors, setErrors] = useState({});
   const [step, setStep] = useState("form");
+  const [onlinePurchaseEnabled, setOnlinePurchaseEnabled] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchGiftCardSettings = async () => {
+      try {
+        const res = await fetch(apiUrl("giftCards/get_settings.php"), {
+          cache: "no-store",
+        });
+        const data = await res.json();
+
+        if (!res.ok || !data.success) {
+          throw new Error(data.message || "Failed to load gift card settings.");
+        }
+
+        if (isMounted) {
+          setOnlinePurchaseEnabled(
+            data.settings?.online_purchase_enabled !== false,
+          );
+        }
+      } catch {
+        if (isMounted) {
+          setOnlinePurchaseEnabled(true);
+        }
+      } finally {
+        if (isMounted) {
+          setSettingsLoading(false);
+        }
+      }
+    };
+
+    fetchGiftCardSettings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const totalPrice = useMemo(
     () => formData.amount * formData.quantity,
@@ -316,6 +355,8 @@ const Stripe_test = () => {
   }, []);
 
   const handleContinue = () => {
+    if (!onlinePurchaseEnabled) return;
+
     const formErrors = validateForm();
     if (Object.keys(formErrors).length > 0) {
       setErrors(formErrors);
@@ -410,24 +451,38 @@ const Stripe_test = () => {
                 className="w-full h-auto"
               />
 
-              <div className="absolute left-[42%] top-[30%] text-[#8b7b67] text-sm sm:text-lg italic font-semibold">
-                {formData.amount}
-              </div>
+              {onlinePurchaseEnabled && (
+                <>
+                  <div className="absolute left-[42%] top-[30%] text-[#8b7b67] text-sm sm:text-lg italic font-semibold">
+                    {formData.amount}
+                  </div>
 
-              <div className="absolute left-[42%] top-[45%] text-[#8b7b67] text-sm sm:text-lg italic">
-                 {formData.recipient || "Recipient Name"}
-              </div>
+                  <div className="absolute left-[42%] top-[45%] text-[#8b7b67] text-sm sm:text-lg italic">
+                    {formData.recipient || "Recipient Name"}
+                  </div>
 
-              <div className="absolute left-[42%] top-[61%] text-[#8b7b67] text-sm sm:text-lg italic">
-                 {formData.senderName || "Your Name"}
-              </div>
+                  <div className="absolute left-[42%] top-[61%] text-[#8b7b67] text-sm sm:text-lg italic">
+                    {formData.senderName || "Your Name"}
+                  </div>
 
-              {formData.message && (
-                <div className="absolute left-[39%] top-[76%] max-w-[45%] text-[#8b7b67] text-xs sm:text-sm italic line-clamp-2 ">
-                  “{formData.message}”
-                </div>
+                  {formData.message && (
+                    <div className="absolute left-[39%] top-[76%] max-w-[45%] text-[#8b7b67] text-xs sm:text-sm italic line-clamp-2 ">
+                      “{formData.message}”
+                    </div>
+                  )}
+                </>
               )}
             </div>
+            {!settingsLoading && !onlinePurchaseEnabled && (
+              <div className="flex justify-center">
+                <a
+                  href="/contacts"
+                  className="rounded-xl bg-linear-to-r from-amber-600 to-yellow-600 px-8 py-3 font-medium text-white shadow-lg transition-all hover:from-amber-700 hover:to-yellow-700"
+                >
+                  Purchase in store
+                </a>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -446,6 +501,20 @@ const Stripe_test = () => {
             </p>
           </div>
 
+          {settingsLoading ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+              Checking gift card purchase availability...
+            </div>
+          ) : !onlinePurchaseEnabled ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 text-center">
+              <h4 className="font-semibold text-amber-900">
+                Online purchase is currently unavailable
+              </h4>
+              <p className="mt-2 text-sm text-gray-600">
+                Please visit Petite Fille Cafe to purchase a gift card in store.
+              </p>
+            </div>
+          ) : (
           <div className="space-y-6">
             {/* Amount Selection */}
             <div>
@@ -674,6 +743,7 @@ const Stripe_test = () => {
               Continue — ${totalPrice}.00
             </button>
           </div>
+          )}
         </div>
       </div>
     </>

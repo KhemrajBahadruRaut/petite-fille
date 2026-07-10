@@ -34,6 +34,10 @@ interface GiftCard {
   sender_email?: string;
 }
 
+interface GiftCardSettings {
+  online_purchase_enabled: boolean;
+}
+
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 // "redeemed" / "partially_redeemed" are derived client-side (see getDisplayStatus)
@@ -65,6 +69,128 @@ const CARD_STATUS_STYLES: Record<string, string> = {
 };
 
 // ─── Redeem Panel ─────────────────────────────────────────────────────────────
+
+function GiftCardSettingsPanel() {
+  const [settings, setSettings] = useState<GiftCardSettings>({
+    online_purchase_enabled: true,
+  });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchSettings = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const res = await fetch(apiUrl("giftCards/get_settings.php"), {
+        cache: "no-store",
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to load gift card settings.");
+      }
+
+      setSettings({
+        online_purchase_enabled:
+          data.settings?.online_purchase_enabled !== false,
+      });
+    } catch {
+      setError("Could not load gift card purchase settings.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { fetchSettings(); }, [fetchSettings]);
+
+  const updatePurchaseSetting = async (nextEnabled: boolean) => {
+    const confirmed = window.confirm(
+      nextEnabled
+        ? "Enable online eGift card purchases?"
+        : "Disable online eGift card purchases? Customers will be asked to purchase in store.",
+    );
+
+    if (!confirmed) return;
+
+    const previousSettings = settings;
+    setSaving(true);
+    setError(null);
+    setSettings({ online_purchase_enabled: nextEnabled });
+
+    try {
+      const res = await fetch(apiUrl("giftCards/update_settings.php"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ online_purchase_enabled: nextEnabled }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || "Failed to update gift card settings.");
+      }
+
+      setSettings({
+        online_purchase_enabled:
+          data.settings?.online_purchase_enabled !== false,
+      });
+    } catch {
+      setSettings(previousSettings);
+      setError("Could not save gift card purchase settings.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const purchaseEnabled = settings.online_purchase_enabled;
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h3 className="text-base font-bold text-slate-800">
+            Online Gift Card Purchase
+          </h3>
+          <p className="mt-1 text-sm text-slate-500">
+            {purchaseEnabled
+              ? "Customers can buy eGift cards online."
+              : "Customers will see a Purchase in store button instead of the online form."}
+          </p>
+          {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-semibold ${
+              purchaseEnabled
+                ? "bg-green-100 text-green-700"
+                : "bg-red-100 text-red-700"
+            }`}
+          >
+            {purchaseEnabled ? "Enabled" : "Disabled"}
+          </span>
+          <button
+            type="button"
+            onClick={() => updatePurchaseSetting(!purchaseEnabled)}
+            disabled={loading || saving}
+            className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              purchaseEnabled
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
+            {saving
+              ? "Saving..."
+              : purchaseEnabled
+                ? "Disable Purchase"
+                : "Enable Purchase"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function RedeemPanel() {
   const [code, setCode]           = useState("");
@@ -147,7 +273,7 @@ function RedeemPanel() {
       <div className="bg-gradient-to-r from-amber-500 to-yellow-500 px-6 py-4">
         <h3 className="text-white font-bold text-lg">Verify & Redeem Gift Card</h3>
         <p className="text-amber-100 text-sm mt-0.5">
-          Enter the customer's gift card code to verify and redeem it
+          Enter the customer&apos;s gift card code to verify and redeem it
         </p>
       </div>
 
@@ -660,6 +786,8 @@ export default function GiftCardsAdminPage() {
           Verify customer codes or browse purchase history
         </p>
       </div>
+
+      <GiftCardSettingsPanel />
 
       {/* Tabs */}
       <div className="flex gap-1 bg-slate-100 p-1 rounded-xl w-fit">

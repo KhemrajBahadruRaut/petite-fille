@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 // import Image from "next/image";
 import { PiUserCircle } from "react-icons/pi";
 import { HiMenu, HiX } from "react-icons/hi";
 import { ShoppingCart } from "lucide-react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
+import { apiUrl } from "@/utils/api";
 
 const navLinks = [
   { href: "/aboutUs", label: "About Us" },
@@ -16,19 +17,54 @@ const navLinks = [
   { href: "/careers", label: "Careers" },
 ];
 
-const mobileNavLinks = [
-  ...navLinks,
-  { href: "/menu", label: "Menu" },
-  { href: "/cart", label: "Cart" },
-];
-
 const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [showCart, setShowCart] = useState(false);
   const { isAuthenticated } = useUserAuth();
 
   const profileLink = isAuthenticated
     ? "/profile"
     : "/auth/login?next=/profile";
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchMerchSettings = async () => {
+      try {
+        const response = await fetch(apiUrl("merch/get_settings.php"), {
+          cache: "no-store",
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Failed to fetch merch settings");
+        }
+
+        if (isMounted) {
+          setShowCart(data.settings?.online_purchase_enabled !== false);
+        }
+      } catch {
+        if (isMounted) {
+          setShowCart(true);
+        }
+      }
+    };
+
+    fetchMerchSettings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const mobileNavLinks = useMemo(
+    () => [
+      ...navLinks,
+      { href: "/menu", label: "Menu" },
+      ...(showCart ? [{ href: "/cart", label: "Cart" }] : []),
+    ],
+    [showCart],
+  );
 
   return (
     <header className="w-full absolute z-100">
@@ -72,13 +108,15 @@ const Header = () => {
           </span>
 
           {/* Cart */}
-          <Link
-            href="/cart"
-            aria-label="Shopping Cart"
-            className="transition-all hover:scale-110 hover:text-[#d5cfc8]"
-          >
-            <ShoppingCart className="size-6" />
-          </Link>
+          {showCart && (
+            <Link
+              href="/cart"
+              aria-label="Shopping Cart"
+              className="transition-all hover:scale-110 hover:text-[#d5cfc8]"
+            >
+              <ShoppingCart className="size-6" />
+            </Link>
+          )}
 
           {/* Profile */}
           <Link

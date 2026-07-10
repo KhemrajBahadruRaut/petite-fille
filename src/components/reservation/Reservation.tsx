@@ -246,10 +246,10 @@ LoadingState.displayName = "LoadingState";
 const ReservationsClosedScreen = React.memo(() => (
   <div className="w-full bg-white pb-10">
     <ReservationCarousal />
-    <div className="mx-auto mt-16 max-w-md rounded-xl border border-red-200 bg-red-50 px-8 py-12 text-center shadow-sm">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-100">
+    <div className="mx-auto mt-16 max-w-lg rounded-xl border border-yellow-200 bg-yellow-50 px-8 py-12 text-center shadow-sm">
+      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-yellow-100">
         <svg
-          className="h-7 w-7 text-red-500"
+          className="h-7 w-7 text-yellow-600"
           fill="none"
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -262,13 +262,25 @@ const ReservationsClosedScreen = React.memo(() => (
           />
         </svg>
       </div>
-      <h2 className="text-xl font-semibold text-red-700">
-        Reservations Closed
+      <h2 className="text-2xl font-semibold text-gray-900">
+        Book Your Table
       </h2>
-      <p className="mt-2 text-sm text-red-500 leading-relaxed">
-        We are not accepting reservations at the moment. Please check back soon
-        or contact us directly for assistance.
+      <p className="mt-3 text-sm leading-relaxed text-gray-600">
+        Table bookings are currently handled through our online booking partner.
+        Choose your preferred date, time, and party size to reserve your spot at
+        Petite Fille Cafe.
       </p>
+      <p className="mt-3 text-xs font-medium uppercase tracking-wide text-yellow-700">
+        Quick booking | Instant request | Easy changes
+      </p>
+      <a
+        href="https://petite-file-cafe.resos.com/"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="mt-6 inline-flex items-center justify-center rounded-full bg-yellow-500 px-8 py-3 text-sm font-semibold text-white transition hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2"
+      >
+        Book Now
+      </a>
     </div>
   </div>
 ));

@@ -40,6 +40,10 @@ interface MerchCategory {
   name: string;
 }
 
+interface MerchSettings {
+  online_purchase_enabled: boolean;
+}
+
 /* ---------------- Toast ---------------- */
 const ToastNotification = ({
   toast,
@@ -120,6 +124,11 @@ export default function AdminMerch() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [toasts, setToasts] = useState<Toast[]>([]);
+  const [settings, setSettings] = useState<MerchSettings>({
+    online_purchase_enabled: true,
+  });
+  const [settingsLoading, setSettingsLoading] = useState(true);
+  const [settingsSaving, setSettingsSaving] = useState(false);
 
   /* ---------- Toast helpers ---------- */
   const addToast = useCallback((message: string, type: Toast["type"]) =>
@@ -152,10 +161,77 @@ export default function AdminMerch() {
     }
   }, [addToast]);
 
+  const fetchSettings = useCallback(async () => {
+    setSettingsLoading(true);
+    try {
+      const r = await fetch(apiUrl("merch/get_settings.php"), {
+        cache: "no-store",
+      });
+      const data = await r.json();
+
+      if (!r.ok || !data.success) {
+        throw new Error(data.message || "Failed to fetch settings");
+      }
+
+      setSettings({
+        online_purchase_enabled:
+          data.settings?.online_purchase_enabled !== false,
+      });
+    } catch {
+      addToast("Failed to load merchandise purchase settings", "error");
+    } finally {
+      setSettingsLoading(false);
+    }
+  }, [addToast]);
+
   useEffect(() => {
     fetchCategories();
     fetchItems();
-  }, [fetchCategories, fetchItems]);
+    fetchSettings();
+  }, [fetchCategories, fetchItems, fetchSettings]);
+
+  const updatePurchaseSetting = async (nextEnabled: boolean) => {
+    const confirmed = window.confirm(
+      nextEnabled
+        ? "Enable online merchandise purchases?"
+        : "Disable online merchandise purchases? Customers will be asked to go to the store.",
+    );
+
+    if (!confirmed) return;
+
+    const previousSettings = settings;
+    setSettingsSaving(true);
+    setSettings({ online_purchase_enabled: nextEnabled });
+
+    try {
+      const r = await fetch(apiUrl("merch/update_settings.php"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ online_purchase_enabled: nextEnabled }),
+      });
+      const data = await r.json();
+
+      if (!r.ok || !data.success) {
+        throw new Error(data.message || "Failed to update settings");
+      }
+
+      setSettings({
+        online_purchase_enabled:
+          data.settings?.online_purchase_enabled !== false,
+      });
+      addToast(
+        nextEnabled
+          ? "Online merchandise purchases enabled"
+          : "Online merchandise purchases disabled",
+        "success",
+      );
+    } catch {
+      setSettings(previousSettings);
+      addToast("Failed to save merchandise purchase settings", "error");
+    } finally {
+      setSettingsSaving(false);
+    }
+  };
 
   /* ---------- Category CRUD ---------- */
 const addCategory = async () => {
@@ -299,6 +375,51 @@ const addCategory = async () => {
             onClose={() => removeToast(t.id)}
           />
         ))}
+      </div>
+
+      <div className="mb-6 rounded-xl border bg-white p-4 shadow-sm sm:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Online Merchandise Purchase
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              {settings.online_purchase_enabled
+                ? "Customers can add merchandise to cart and checkout online."
+                : "Customers will see Go to store instead of Add to Cart."}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                settings.online_purchase_enabled
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              {settings.online_purchase_enabled ? "Enabled" : "Disabled"}
+            </span>
+            <button
+              type="button"
+              onClick={() =>
+                updatePurchaseSetting(!settings.online_purchase_enabled)
+              }
+              disabled={settingsLoading || settingsSaving}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                settings.online_purchase_enabled
+                  ? "bg-red-600 hover:bg-red-700"
+                  : "bg-green-600 hover:bg-green-700"
+              }`}
+            >
+              {settingsSaving
+                ? "Saving..."
+                : settings.online_purchase_enabled
+                  ? "Disable Purchase"
+                  : "Enable Purchase"}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* CATEGORY MANAGER */}

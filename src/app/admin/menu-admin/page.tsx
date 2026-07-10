@@ -121,6 +121,9 @@ export default function AdminMenu() {
   const [pendingImageVisibility, setPendingImageVisibility] = useState<
     Record<number, boolean>
   >({});
+  const [pendingAllImageVisibility, setPendingAllImageVisibility] = useState<
+    "hide" | "show" | null
+  >(null);
 
   const [form, setForm] = useState<MenuForm>({
     name: "",
@@ -401,6 +404,80 @@ export default function AdminMenu() {
     }
   };
 
+  /** Hide/show every main menu item image on the public menu */
+  const toggleAllMainImagesVisibility = async (nextHidden: boolean) => {
+    const affectedItems = mainItemsWithImages;
+    if (affectedItems.length === 0) {
+      addToast("No main menu images found to update.", "warning");
+      return;
+    }
+    if (nextHidden && allMainImagesHidden) {
+      addToast("All main menu images are already hidden.", "warning");
+      return;
+    }
+    if (!nextHidden && allMainImagesShown) {
+      addToast("All main menu images are already shown.", "warning");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      nextHidden
+        ? `Hide all ${affectedItems.length} main menu pictures on the website menu?`
+        : `Show all ${affectedItems.length} main menu pictures on the website menu?`,
+    );
+    if (!confirmed || pendingAllImageVisibility) return;
+
+    const previousValues = new Map(
+      affectedItems.map((item) => [item.id, item.hide_image]),
+    );
+    const affectedIds = new Set(affectedItems.map((item) => item.id));
+    const action = nextHidden ? "hide" : "show";
+
+    setPendingAllImageVisibility(action);
+    setItems((prev) =>
+      prev.map((item) =>
+        affectedIds.has(item.id)
+          ? { ...item, hide_image: nextHidden ? 1 : 0 }
+          : item,
+      ),
+    );
+
+    const formData = new FormData();
+    formData.append("hide_image", nextHidden ? "1" : "0");
+
+    try {
+      const res = await fetch(apiUrl("menu/toggle_menu_images.php"), {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data?.success) {
+        addToast(
+          nextHidden
+            ? "All main menu pictures hidden from menu"
+            : "All main menu pictures shown on menu",
+          "success",
+        );
+        fetchItems();
+      } else {
+        throw new Error(data?.message || "Failed to update menu images");
+      }
+    } catch (error) {
+      console.error(error);
+      setItems((prev) =>
+        prev.map((item) =>
+          previousValues.has(item.id)
+            ? { ...item, hide_image: previousValues.get(item.id) }
+            : item,
+        ),
+      );
+      addToast("Error updating all image visibility. Try again.", "error");
+    } finally {
+      setPendingAllImageVisibility(null);
+    }
+  };
+
   /** Edit item */
   const editItem = (item: MenuItem) => {
     setEditingItemId(item.id);
@@ -515,6 +592,25 @@ export default function AdminMenu() {
   const mainItems = items.filter(
     (i) => (i.category || "").toLowerCase() !== "sides",
   );
+  const mainItemsWithImages = mainItems.filter(
+    (item) => item.image_path || item.image,
+  );
+  const allMainImagesHidden =
+    mainItemsWithImages.length > 0 &&
+    mainItemsWithImages.every(
+      (item) =>
+        item.hide_image === true ||
+        item.hide_image === 1 ||
+        item.hide_image === "1",
+    );
+  const allMainImagesShown =
+    mainItemsWithImages.length > 0 &&
+    mainItemsWithImages.every(
+      (item) =>
+        item.hide_image !== true &&
+        item.hide_image !== 1 &&
+        item.hide_image !== "1",
+    );
   const sideItems = items.filter(
     (i) => (i.category || "").toLowerCase() === "sides",
   );
@@ -712,11 +808,47 @@ export default function AdminMenu() {
 
       {/* Main Menu Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-        <div className="border-b border-gray-200 px-4 py-4 sm:px-6">
-          <h2 className="text-lg font-semibold text-gray-900">Main Menu Items</h2>
-          <p className="text-sm text-gray-600 mt-1">
-            Manage breakfast, lunch, pastry, and coffee items
-          </p>
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Main Menu Items
+            </h2>
+            <p className="text-sm text-gray-600 mt-1">
+              Manage breakfast, lunch, pastry, and coffee items
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={() => toggleAllMainImagesVisibility(false)}
+              disabled={
+                pendingAllImageVisibility !== null ||
+                mainItemsWithImages.length === 0 ||
+                allMainImagesShown
+              }
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-sky-700 transition-colors hover:bg-sky-50 hover:text-sky-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <Eye className="h-4 w-4" />
+              {pendingAllImageVisibility === "show"
+                ? "Updating..."
+                : "Show All Images"}
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleAllMainImagesVisibility(true)}
+              disabled={
+                pendingAllImageVisibility !== null ||
+                mainItemsWithImages.length === 0 ||
+                allMainImagesHidden
+              }
+              className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-50 hover:text-purple-800 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <EyeOff className="h-4 w-4" />
+              {pendingAllImageVisibility === "hide"
+                ? "Updating..."
+                : "Hide All Images"}
+            </button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">

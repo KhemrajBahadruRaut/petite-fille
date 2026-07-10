@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -38,6 +38,45 @@ export default function CartPage() {
   const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod>("delivery");
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [orderError, setOrderError] = useState("");
+  const [onlinePurchaseEnabled, setOnlinePurchaseEnabled] = useState(true);
+  const [settingsLoading, setSettingsLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchMerchSettings = async () => {
+      try {
+        const response = await fetch(apiUrl("merch/get_settings.php"), {
+          cache: "no-store",
+        });
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.message || "Failed to fetch merch settings");
+        }
+
+        if (isMounted) {
+          setOnlinePurchaseEnabled(
+            data.settings?.online_purchase_enabled !== false,
+          );
+        }
+      } catch {
+        if (isMounted) {
+          setOnlinePurchaseEnabled(true);
+        }
+      } finally {
+        if (isMounted) {
+          setSettingsLoading(false);
+        }
+      }
+    };
+
+    fetchMerchSettings();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Redirect to Stripe Checkout
   // fulfillmentMethod is now included in the dependency array so pickup works correctly
@@ -97,6 +136,10 @@ export default function CartPage() {
   // ── Checkout button handler ───────────────────────────────────────────────
   const handleCheckout = useCallback(() => {
     if (authLoading) return;
+    if (!onlinePurchaseEnabled) {
+      setOrderError("Online merchandise purchases are currently disabled. Please visit us in store.");
+      return;
+    }
 
     if (!isAuthenticated || !token) {
       router.push(`/auth/login?next=${encodeURIComponent("/cart")}`);
@@ -104,7 +147,7 @@ export default function CartPage() {
     }
 
     redirectToStripe(token, fulfillmentMethod);   // ← pass current value directly
-  }, [authLoading, isAuthenticated, token, fulfillmentMethod, redirectToStripe, router]);
+  }, [authLoading, isAuthenticated, token, fulfillmentMethod, onlinePurchaseEnabled, redirectToStripe, router]);
 
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -292,22 +335,38 @@ export default function CartPage() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={handleCheckout}
-                disabled={isRedirecting || authLoading}
-                className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
-                style={{ fontFamily: "arial" }}
-              >
-                {isRedirecting ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Redirecting…
-                  </>
-                ) : (
-                  `Checkout via ${fulfillmentMethod === "pickup" ? "Pickup" : "Delivery"}`
-                )}
-              </button>
+              {!settingsLoading && !onlinePurchaseEnabled ? (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-center">
+                  <Store className="mx-auto mb-2 h-5 w-5 text-amber-700" />
+                  <p className="text-sm font-medium text-amber-900" style={{ fontFamily: "arial" }}>
+                    Merchandise checkout is available in store.
+                  </p>
+                  <Link
+                    href="/contacts"
+                    className="mt-3 inline-flex rounded-full bg-black px-5 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
+                    style={{ fontFamily: "arial" }}
+                  >
+                    Go to store
+                  </Link>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={settingsLoading || isRedirecting || authLoading}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-amber-500 px-6 py-3 text-sm font-semibold text-white transition hover:bg-amber-600 disabled:opacity-60"
+                  style={{ fontFamily: "arial" }}
+                >
+                  {isRedirecting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Redirecting…
+                    </>
+                  ) : (
+                    `Checkout via ${fulfillmentMethod === "pickup" ? "Pickup" : "Delivery"}`
+                  )}
+                </button>
+              )}
             </div>
           </div>
         )}
