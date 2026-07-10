@@ -22,6 +22,8 @@ interface MenuItem {
   description?: string;
   image?: string;
   hide_item?: number | string | boolean;
+  hide_image?: number | string | boolean;
+  image_path?: string;
   category: string;
 }
 
@@ -114,6 +116,9 @@ export default function AdminMenu() {
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [pendingItemVisibility, setPendingItemVisibility] = useState<
+    Record<number, boolean>
+  >({});
+  const [pendingImageVisibility, setPendingImageVisibility] = useState<
     Record<number, boolean>
   >({});
 
@@ -327,6 +332,68 @@ export default function AdminMenu() {
       addToast("Error updating item visibility. Try again.", "error");
     } finally {
       setPendingItemVisibility((prev) => {
+        const next = { ...prev };
+        delete next[item.id];
+        return next;
+      });
+    }
+  };
+
+  /** Hide/show item image on the public menu */
+  const toggleItemImageVisibility = async (
+    item: MenuItem,
+    nextHidden: boolean,
+  ) => {
+    const confirmed = window.confirm(
+      nextHidden
+        ? `Hide the picture for "${item.name}" on the website menu?`
+        : `Show the picture for "${item.name}" on the website menu?`,
+    );
+    if (!confirmed || pendingImageVisibility[item.id]) return;
+
+    const formData = new FormData();
+    formData.append("id", item.id.toString());
+    formData.append("hide_image", nextHidden ? "1" : "0");
+
+    setPendingImageVisibility((prev) => ({ ...prev, [item.id]: true }));
+    setItems((prev) =>
+      prev.map((current) =>
+        current.id === item.id
+          ? { ...current, hide_image: nextHidden ? 1 : 0 }
+          : current,
+      ),
+    );
+
+    try {
+      const res = await fetch(apiUrl("menu/toggle_menu_item_image.php"), {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json().catch(() => null);
+
+      if (res.ok && data?.success) {
+        addToast(
+          nextHidden
+            ? `${item.name} picture hidden from menu`
+            : `${item.name} picture shown on menu`,
+          "success",
+        );
+        fetchItems();
+      } else {
+        throw new Error(data?.message || "Failed to update image visibility");
+      }
+    } catch (error) {
+      console.error(error);
+      setItems((prev) =>
+        prev.map((current) =>
+          current.id === item.id
+            ? { ...current, hide_image: nextHidden ? 0 : 1 }
+            : current,
+        ),
+      );
+      addToast("Error updating image visibility. Try again.", "error");
+    } finally {
+      setPendingImageVisibility((prev) => {
         const next = { ...prev };
         delete next[item.id];
         return next;
@@ -666,10 +733,15 @@ export default function AdminMenu() {
             <tbody className="divide-y divide-gray-200">
               {mainItems.length > 0 ? (
                 mainItems.map((item) => {
+                  const imagePath = item.image_path || item.image;
                   const isItemHidden =
                     item.hide_item === true ||
                     item.hide_item === 1 ||
                     item.hide_item === "1";
+                  const isImageHidden =
+                    item.hide_image === true ||
+                    item.hide_image === 1 ||
+                    item.hide_image === "1";
 
                   return (
                   <tr
@@ -680,16 +752,23 @@ export default function AdminMenu() {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-3">
-                        {item.image && (
+                        {imagePath && (
                           <img
-                            src={apiUrl(item.image)}
+                            src={apiUrl(imagePath)}
                             alt={item.name}
-                            className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                            className={`w-12 h-12 rounded-lg object-cover border border-gray-200 ${
+                              isImageHidden ? "opacity-40 grayscale" : ""
+                            }`}
                           />
                         )}
                         <div>
                           <div className="font-medium text-gray-900">{item.name}</div>
                           <div className="text-sm text-gray-500">ID: {item.id}</div>
+                          {isImageHidden && (
+                            <div className="text-xs font-medium text-sky-700">
+                              Image hidden
+                            </div>
+                          )}
                           {isItemHidden && (
                             <div className="text-xs font-medium text-amber-700">
                               Item hidden
@@ -719,6 +798,31 @@ export default function AdminMenu() {
                         >
                           <Edit2 className="w-4 h-4" /> Edit
                         </button>
+                        {imagePath && (
+                          <button
+                            onClick={() =>
+                              toggleItemImageVisibility(item, !isImageHidden)
+                            }
+                            disabled={!!pendingImageVisibility[item.id]}
+                            className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                              isImageHidden
+                                ? "text-sky-700 hover:bg-sky-50 hover:text-sky-800"
+                                : "text-purple-700 hover:bg-purple-50 hover:text-purple-800"
+                            } disabled:cursor-not-allowed disabled:opacity-60`}
+                          >
+                            {pendingImageVisibility[item.id] ? (
+                              "Updating..."
+                            ) : isImageHidden ? (
+                              <>
+                                <Eye className="w-4 h-4" /> Show Image
+                              </>
+                            ) : (
+                              <>
+                                <EyeOff className="w-4 h-4" /> Hide Image
+                              </>
+                            )}
+                          </button>
+                        )}
                         <button
                           onClick={() => toggleItemVisibility(item, !isItemHidden)}
                           disabled={!!pendingItemVisibility[item.id]}
