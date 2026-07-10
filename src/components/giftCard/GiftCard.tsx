@@ -6,7 +6,7 @@ import React from "react";
 const GiftCard = () => {
   return (
     <div className="bg-white overflow-hidden ">
-      <div className="flex flex-col md:flex-row items-center justify-center px-4 md:px-16 bg-white relative container mx-auto">
+      <div className="flex flex-col md:flex-row items-center justify-center px-4 md:px-16 bg-white relative container mx-auto pb-10">
         {/* Image */}
         <div className="md:w-1/2 flex justify-center md:mb-0 overflow-hidden">
           <motion.img
@@ -14,7 +14,7 @@ const GiftCard = () => {
             whileInView={{ x: 0, y: 0, opacity: 1 }}
             transition={{ duration: 1 }}
             viewport={{ once: true, amount: 0.3 }}
-            src="/giftcard/giftcard.webp"
+            src="/giftcard/gift-card-template.png"
             alt="eGift Card"
             className="h-auto rounded-lg pt-15"
           />
