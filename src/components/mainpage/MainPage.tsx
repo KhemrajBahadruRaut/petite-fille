@@ -70,7 +70,8 @@ export default function MainPage() {
             style={{ fontFamily: "fairplay" }}
           >
             <Link
-              href="/reservation"
+              href="https://petite-file-cafe.resos.com/booking"
+              target="_blank"
               className={`${buttonBase} ${bookTableBtn}`}
             >
               Book A Table

@@ -479,7 +479,7 @@ const Stripe_test = () => {
                   href="/contacts"
                   className="rounded-xl bg-linear-to-r from-amber-600 to-yellow-600 px-8 py-3 font-medium text-white shadow-lg transition-all hover:from-amber-700 hover:to-yellow-700"
                 >
-                  Purchase in store
+                  Buy In Store
                 </a>
               </div>
             )}
@@ -489,7 +489,7 @@ const Stripe_test = () => {
 
       <div className="bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 flex items-center justify-center p-1 sm:p-4">
         <div className="p-8 max-w-2xl w-full">
-          <div className="mb-6">
+          {/* <div className="mb-6">
             <h3 className="text-lg font-medium text-amber-800 mb-3">
               Special note before making a purchase:
             </h3>
@@ -499,7 +499,7 @@ const Stripe_test = () => {
               receive a beautifully designed digital card with your personalized
               message.
             </p>
-          </div>
+          </div> */}
 
           {settingsLoading ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">

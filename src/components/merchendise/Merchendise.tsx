@@ -381,7 +381,7 @@ const ProductCard = React.memo(function ProductCard({
           />
         </button>
 
-        {/* Hover overlay: View Image + Add to Cart */}
+        {/* Hover overlay: View Image + purchase action */}
         {!imageError && product.image && (
           <div className="absolute inset-0 hidden flex-col items-center justify-center gap-3 bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100 md:flex">
             <button
@@ -391,19 +391,28 @@ const ProductCard = React.memo(function ProductCard({
             >
               View Image
             </button>
-            {canPurchase && (
+            {canPurchase ? (
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   onBuyNow(product);
                 }}
-                className="rounded-lg bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-amber-600 active:scale-95"
+                className="rounded-full bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-amber-600 active:scale-95"
                 style={{ fontFamily: "arial" }}
               >
                 Add to Cart
               </button>
-            )}
+            ) : showStorePrompt ? (
+              <Link
+                href="/contacts"
+                onClick={(e) => e.stopPropagation()}
+                className="rounded-full bg-amber-500 px-4 py-2 text-xs font-semibold text-white transition-colors duration-200 hover:bg-amber-600 active:scale-95"
+                style={{ fontFamily: "arial" }}
+              >
+                Buy in Store
+              </Link>
+            ) : null}
           </div>
         )}
       </div>
@@ -428,15 +437,6 @@ const ProductCard = React.memo(function ProductCard({
         >
           {product.priceDisplay}
         </span>
-        {showStorePrompt && (
-          <Link
-            href="/contacts"
-            className="mx-auto mt-2 inline-flex rounded-full bg-black px-3 py-2 text-sm font-medium text-white transition hover:bg-gray-800"
-            style={{ fontFamily: "arial" }}
-          >
-            Go to store
-          </Link>
-        )}
       </div>
 
       {/* ── Image Preview Modal ── */}
@@ -658,8 +658,7 @@ export default function Merchendise() {
             transition={{ delay: 0.3, duration: 0.6 }}
             viewport={{ once: true }}
           >
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-            eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            Bring a little piece of Petite Fille home with you. Explore our exclusive collection of branded merchandise, thoughtfully designed for those who love great coffee, good food, and the welcoming spirit of our café. Whether you're treating yourself or looking for the perfect gift, there's something for every Petite Fille fan.
           </motion.p>
           <motion.div
             className="flex justify-center md:justify-start"

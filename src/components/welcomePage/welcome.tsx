@@ -78,7 +78,7 @@ const Welcome = () => {
               </p>
             </div>
             <div className="pt-10 flex-col px-1 space-y-4" style={{ fontFamily: "arial" }}>
-              <p className="text-gray-700 text-center">{content.paragraph_one}</p>
+              <p className="text-gray-700 text-justify">{content.paragraph_one}</p>
               <p className="text-gray-700 text-justify">{content.paragraph_two}</p>
             </div>
           </div>
