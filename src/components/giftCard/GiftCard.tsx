@@ -36,8 +36,7 @@ const GiftCard = () => {
               eGift cards Available
             </h2>
             <p className="text-gray-600 mb-6" style={{ fontFamily: "arial" }}>
-              Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
-              eiusmod tempor incididunt ut labore et dolore magna aliqua.
+              Give the gift of great coffee, delicious food, and memorable moments. Whether it's for a birthday, celebration, thank you, or just because, a Petite Fille eGift Card is the perfect way to treat someone special. Available instantly and easy to redeem in-store.
             </p>
             <Link href="/eGiftCard" style={{ fontFamily: "arial" }} className="">
               <button className="px-6 py-2 border border-gray-800 text-gray-800 cursor-pointer rounded hover:bg-gray-100 transition">
