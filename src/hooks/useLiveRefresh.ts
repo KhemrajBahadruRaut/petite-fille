@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 
-const DEFAULT_REFRESH_INTERVAL_MS = 5_000;
+const DEFAULT_REFRESH_INTERVAL_MS = 2_000;
 
 type RefreshCallback = (signal: AbortSignal) => void | Promise<void>;
 
