@@ -3,7 +3,6 @@ import GiftCard from "@/components/giftCard/GiftCard";
 import MainPage from "@/components/mainpage/MainPage";
 import Welcome from "@/components/welcomePage/welcome";
 import WhatWeOffer from "@/components/whatWeOffer/WhatWeOffer";
-import InstagramFeed from "@/components/instagramFeed/InstagramFeed";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -44,7 +43,6 @@ export default async function Home() {
       <Welcome />
       <WhatWeOffer />
       <GiftCard />
-      <InstagramFeed />
     </div>
   );
 }

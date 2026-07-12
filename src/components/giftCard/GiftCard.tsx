@@ -29,26 +29,21 @@ const GiftCard = () => {
             transition={{ duration: 1 }}
             viewport={{ once: true, amount: 0.3 }}
           >
-            <h2 className="text-3xl md:text-5xl font-semibold text-gray-800 mb-4"
-            style={{fontFamily: 'fairplaybold'}}
+            <h2
+              className="text-3xl md:text-5xl font-semibold text-gray-800 mb-4"
+              style={{ fontFamily: "fairplaybold" }}
             >
               eGift cards Available
             </h2>
-            <p className="text-gray-600 mb-6"
-                        style={{fontFamily: 'arial'}}
-
-            >
+            <p className="text-gray-600 mb-6" style={{ fontFamily: "arial" }}>
               Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do
               eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
-            <button className="px-6 py-2 border border-gray-800 text-gray-800 rounded hover:bg-gray-100 transition">
-              <Link href="/eGiftCard"
-                          style={{fontFamily: 'arial'}}
-
-              >
-              Purchase now &rarr;
-              </Link>
-            </button>
+            <Link href="/eGiftCard" style={{ fontFamily: "arial" }} className="">
+              <button className="px-6 py-2 border border-gray-800 text-gray-800 cursor-pointer rounded hover:bg-gray-100 transition">
+                Purchase now &rarr;
+              </button>
+            </Link>
           </motion.div>
         </div>
       </div>
