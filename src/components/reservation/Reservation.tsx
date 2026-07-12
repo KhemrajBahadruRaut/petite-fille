@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { FaCalendarAlt, FaChair, FaClock, FaUser } from "react-icons/fa";
 import { apiUrl } from "../../utils/api";
 import { useUserAuth } from "@/contexts/UserAuthContext";
+import { useLiveRefresh } from "@/hooks/useLiveRefresh";
 import ReservationCarousal from "./Carousail";
 
 interface ReservationData {
@@ -790,19 +791,30 @@ export default function ReservationPage() {
 
   // ── Effects ────────────────────────────────────────────────────────────────
 
-  // Fetch site settings on mount
-  // Fetch site settings on mount
-  useEffect(() => {
-    fetch(apiUrl("reservation/reservation-settings/get_settings.php"), {
-      cache: "no-store",
-    })
-      .then((r) => r.json())
-      .then((data: { success: boolean; settings: SiteSettings }) => {
-        if (data.success) setSiteSettings(data.settings);
-      })
-      .catch(() => {})
-      .finally(() => setSettingsLoaded(true));
+  const fetchSiteSettings = useCallback(async (signal: AbortSignal) => {
+    try {
+      const response = await fetch(
+        apiUrl("reservation/reservation-settings/get_settings.php"),
+        { cache: "no-store", signal },
+      );
+      const data: { success: boolean; settings: SiteSettings } =
+        await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error("Failed to fetch reservation settings");
+      }
+
+      setSiteSettings(data.settings);
+    } catch (error) {
+      if (!(error instanceof Error && error.name === "AbortError")) {
+        console.error("Failed to refresh reservation settings:", error);
+      }
+    } finally {
+      if (!signal.aborted) setSettingsLoaded(true);
+    }
   }, []);
+
+  useLiveRefresh(fetchSiteSettings);
 
   useEffect(() => {
     setMounted(true);
@@ -915,7 +927,7 @@ export default function ReservationPage() {
           <span className="font-semibold">🎉 Peak / Festive Period:</span> A
           non-refundable advance payment of{" "}
           <span className="font-bold">${peakPrice}</span> is required to secure
-          your reservation. You'll be redirected to pay after confirming.
+          your reservation. You&apos;ll be redirected to pay after confirming.
         </div>
       )}
 
@@ -1438,7 +1450,7 @@ export default function ReservationPage() {
                   <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
                     <p className="font-semibold">Advance Payment Required</p>
                     <p className="mt-0.5">
-                      After confirming, you'll be redirected to pay{" "}
+                      After confirming, you&apos;ll be redirected to pay{" "}
                       <strong>${peakPrice}</strong> to secure your booking. This
                       is non-refundable.
                     </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import Link from "next/link";
 // import Image from "next/image";
 import { PiUserCircle } from "react-icons/pi";
@@ -8,6 +8,7 @@ import { HiMenu, HiX } from "react-icons/hi";
 import { ShoppingCart } from "lucide-react";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { apiUrl } from "@/utils/api";
+import { useLiveRefresh } from "@/hooks/useLiveRefresh";
 
 const navLinks = [
   { href: "/aboutUs", label: "About Us" },
@@ -26,36 +27,21 @@ const Header = () => {
     ? "/profile"
     : "/auth/login?next=/profile";
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchMerchSettings = useCallback(async (signal: AbortSignal) => {
+    const response = await fetch(apiUrl("merch/get_settings.php"), {
+      cache: "no-store",
+      signal,
+    });
+    const data = await response.json();
 
-    const fetchMerchSettings = async () => {
-      try {
-        const response = await fetch(apiUrl("merch/get_settings.php"), {
-          cache: "no-store",
-        });
-        const data = await response.json();
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || "Failed to fetch merch settings");
+    }
 
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || "Failed to fetch merch settings");
-        }
-
-        if (isMounted) {
-          setShowCart(data.settings?.online_purchase_enabled !== false);
-        }
-      } catch {
-        if (isMounted) {
-          setShowCart(true);
-        }
-      }
-    };
-
-    fetchMerchSettings();
-
-    return () => {
-      isMounted = false;
-    };
+    setShowCart(data.settings?.online_purchase_enabled !== false);
   }, []);
+
+  useLiveRefresh(fetchMerchSettings);
 
   const mobileNavLinks = useMemo(
     () => [

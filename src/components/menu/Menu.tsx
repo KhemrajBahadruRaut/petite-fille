@@ -1,10 +1,11 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import { Heart, X } from "lucide-react";
 import MenuCarousel from "./MenuCarousel";
 import { useCart } from "@/contexts/CartContexts";
 import Image from "next/image";
 import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
+import { useLiveRefresh } from "@/hooks/useLiveRefresh";
 import Link from "next/link";
 
 interface MenuItem {
@@ -203,10 +204,12 @@ const RestaurantMenu: React.FC = () => {
     return () => clearTimeout(t);
   }, []);
 
-  useEffect(() => {
-    const fetchCategories = async () => {
+  const fetchCategories = useCallback(async (signal: AbortSignal) => {
       try {
-        const res = await fetch(apiUrl("menu/get_menu_item.php"));
+        const res = await fetch(apiUrl("menu/get_menu_item.php"), {
+          cache: "no-store",
+          signal,
+        });
         if (!res.ok) throw new Error("Failed to fetch menu categories");
         const data: Category[] = await res.json();
 
@@ -225,14 +228,15 @@ const RestaurantMenu: React.FC = () => {
           normalizedData.filter((cat) => cat.items && cat.items.length > 0),
         );
       } catch (error) {
-        console.error("Error fetching categories:", error);
+        if (!(error instanceof Error && error.name === "AbortError")) {
+          console.error("Error fetching categories:", error);
+        }
       } finally {
-        setLoading(false);
+        if (!signal.aborted) setLoading(false);
       }
-    };
-
-    fetchCategories();
   }, []);
+
+  useLiveRefresh(fetchCategories);
 
   return (
     <div

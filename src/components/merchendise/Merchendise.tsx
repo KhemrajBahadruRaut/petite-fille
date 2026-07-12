@@ -19,6 +19,7 @@ import {
   type CartItem,
 } from "@/stores/cartStore";
 import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
+import { useLiveRefresh } from "@/hooks/useLiveRefresh";
 import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -515,57 +516,43 @@ export default function Merchendise() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [toastProduct, setToastProduct] = useState<Product | null>(null);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchSettings = useCallback(async (signal: AbortSignal) => {
+    try {
+      const response = await fetch(apiUrl("merch/get_settings.php"), {
+        cache: "no-store",
+        signal,
+      });
+      const data = await response.json();
 
-    const fetchSettings = async () => {
-      try {
-        const response = await fetch(apiUrl("merch/get_settings.php"), {
-          cache: "no-store",
-        });
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || "Failed to fetch merch settings");
-        }
-
-        if (isMounted) {
-          setOnlinePurchaseEnabled(
-            data.settings?.online_purchase_enabled !== false,
-          );
-        }
-      } catch {
-        if (isMounted) {
-          setOnlinePurchaseEnabled(true);
-        }
-      } finally {
-        if (isMounted) {
-          setSettingsLoading(false);
-        }
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to fetch merch settings");
       }
-    };
 
-    fetchSettings();
-
-    return () => {
-      isMounted = false;
-    };
+      setOnlinePurchaseEnabled(
+        data.settings?.online_purchase_enabled !== false,
+      );
+    } catch (error) {
+      if (!(error instanceof Error && error.name === "AbortError")) {
+        console.error("Failed to refresh merchandise settings:", error);
+      }
+    } finally {
+      if (!signal.aborted) setSettingsLoading(false);
+    }
   }, []);
 
-  // ── Fetch products 
-  useEffect(() => {
-    let isMounted = true;
-    const controller = new AbortController();
+  useLiveRefresh(fetchSettings);
 
-    const fetchData = async () => {
-      setIsLoading(true);
+  // ── Fetch products 
+  const fetchData = useCallback(async (signal: AbortSignal) => {
       try {
         const [categoriesResponse, productsResponse] = await Promise.all([
           fetch(apiUrl("merch/categories/get_categories.php"), {
-            signal: controller.signal,
+            cache: "no-store",
+            signal,
           }),
           fetch(apiUrl("merch/get_merch_items.php"), {
-            signal: controller.signal,
+            cache: "no-store",
+            signal,
           }),
         ]);
 
@@ -594,22 +581,16 @@ export default function Merchendise() {
           }))
           .filter((section) => section.products.length > 0);
 
-        if (isMounted) setCategorySections(sections);
+        setCategorySections(sections);
       } catch (error) {
         if ((error as Error).name !== "AbortError")
           console.error("Error fetching merch data:", error);
-        if (isMounted) setCategorySections([]);
       } finally {
-        if (isMounted) setIsLoading(false);
+        if (!signal.aborted) setIsLoading(false);
       }
-    };
-
-    fetchData();
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
   }, []);
+
+  useLiveRefresh(fetchData);
 
   // ── Buy Now / Add to Cart handler 
   const canPurchase = !settingsLoading && onlinePurchaseEnabled;

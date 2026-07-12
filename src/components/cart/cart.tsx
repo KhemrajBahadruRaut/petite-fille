@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,6 +21,7 @@ import { useCartStore, useCartTotalItems, useCartTotalPrice } from "@/stores/car
 import { useCartHydrated } from "@/stores/useCartHydrated";
 import { useUserAuth } from "@/contexts/UserAuthContext";
 import { apiUrl } from "../../utils/api";
+import { useLiveRefresh } from "@/hooks/useLiveRefresh";
 
 type FulfillmentMethod = "delivery" | "pickup";
 
@@ -41,42 +42,31 @@ export default function CartPage() {
   const [onlinePurchaseEnabled, setOnlinePurchaseEnabled] = useState(true);
   const [settingsLoading, setSettingsLoading] = useState(true);
 
-  useEffect(() => {
-    let isMounted = true;
+  const fetchMerchSettings = useCallback(async (signal: AbortSignal) => {
+    try {
+      const response = await fetch(apiUrl("merch/get_settings.php"), {
+        cache: "no-store",
+        signal,
+      });
+      const data = await response.json();
 
-    const fetchMerchSettings = async () => {
-      try {
-        const response = await fetch(apiUrl("merch/get_settings.php"), {
-          cache: "no-store",
-        });
-        const data = await response.json();
-
-        if (!response.ok || !data.success) {
-          throw new Error(data.message || "Failed to fetch merch settings");
-        }
-
-        if (isMounted) {
-          setOnlinePurchaseEnabled(
-            data.settings?.online_purchase_enabled !== false,
-          );
-        }
-      } catch {
-        if (isMounted) {
-          setOnlinePurchaseEnabled(true);
-        }
-      } finally {
-        if (isMounted) {
-          setSettingsLoading(false);
-        }
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to fetch merch settings");
       }
-    };
 
-    fetchMerchSettings();
-
-    return () => {
-      isMounted = false;
-    };
+      setOnlinePurchaseEnabled(
+        data.settings?.online_purchase_enabled !== false,
+      );
+    } catch (error) {
+      if (!(error instanceof Error && error.name === "AbortError")) {
+        console.error("Failed to refresh cart settings:", error);
+      }
+    } finally {
+      if (!signal.aborted) setSettingsLoading(false);
+    }
   }, []);
+
+  useLiveRefresh(fetchMerchSettings);
 
   // Redirect to Stripe Checkout
   // fulfillmentMethod is now included in the dependency array so pickup works correctly
