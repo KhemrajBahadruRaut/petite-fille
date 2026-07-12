@@ -30,6 +30,40 @@ interface AboutContent {
   bottom: AboutSection;
 }
 
+function AboutUsLoading() {
+  return (
+    <div className="min-h-screen bg-white pt-24" aria-busy="true">
+      <span className="sr-only">Loading About Us content</span>
+      <section className="mx-auto max-w-6xl animate-pulse px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mb-12 flex flex-col items-center gap-4">
+          <div className="h-9 w-40 rounded-md bg-stone-200" />
+          <div className="h-4 w-full max-w-md rounded bg-stone-100" />
+        </div>
+
+        <div className="grid grid-cols-1 items-center gap-10 md:grid-cols-2">
+          <div className="space-y-4">
+            <div className="h-4 rounded bg-stone-200" />
+            <div className="h-4 rounded bg-stone-200" />
+            <div className="h-4 w-5/6 rounded bg-stone-200" />
+            <div className="h-4 w-2/3 rounded bg-stone-100" />
+          </div>
+          <div className="mx-auto h-72 w-full max-w-sm rounded-3xl bg-stone-100 sm:h-80" />
+        </div>
+
+        <div className="mt-12 hidden grid-cols-2 items-center gap-10 md:grid">
+          <div className="mx-auto h-72 w-full max-w-sm rounded-3xl bg-stone-100" />
+          <div className="space-y-4">
+            <div className="h-4 rounded bg-stone-200" />
+            <div className="h-4 rounded bg-stone-200" />
+            <div className="h-4 w-5/6 rounded bg-stone-200" />
+            <div className="h-4 w-2/3 rounded bg-stone-100" />
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 function normalizeAboutSection(section?: AboutSection): AboutSection {
   return {
     paragraph1: section?.paragraph1 || "",
@@ -41,11 +75,14 @@ function normalizeAboutSection(section?: AboutSection): AboutSection {
 
 export default function AboutUs() {
   const [content, setContent] = useState<AboutContent | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+
     const fetchContent = async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
       try {
         const res = await fetch(apiUrl("about/aboutus.php"), {
           signal: controller.signal,
@@ -55,22 +92,43 @@ export default function AboutUs() {
           throw new Error(`API responded with status ${res.status}`);
         }
         const data: AboutContent = await res.json();
-        setContent({
-          top: normalizeAboutSection(data.top),
-          bottom: normalizeAboutSection(data.bottom),
-        });
+        if (active) {
+          setContent({
+            top: normalizeAboutSection(data.top),
+            bottom: normalizeAboutSection(data.bottom),
+          });
+        }
       } catch {
-        // Silently handle errors
-        setContent(null);
+        if (active) setContent(null);
       } finally {
-        clearTimeout(timeoutId);
+        window.clearTimeout(timeoutId);
+        if (active) setIsLoading(false);
       }
     };
 
     fetchContent();
+
+    return () => {
+      active = false;
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
   }, []);
 
-  if (!content) return <p>Loading...</p>;
+  if (isLoading) return <AboutUsLoading />;
+
+  if (!content) {
+    return (
+      <div className="flex min-h-[70vh] items-center justify-center bg-white px-6 pt-24 text-center">
+        <div>
+          <h1 className="text-3xl font-semibold text-stone-700">About Us</h1>
+          <p className="mt-3 text-sm text-stone-500">
+            This content is temporarily unavailable. Please try again shortly.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white pt-10">
