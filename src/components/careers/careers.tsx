@@ -369,9 +369,7 @@ export default function CareersPage() {
       transition={{ duration: 0.5 }}
       className="bg-gray-50 "
     >
-      <h1 className="sr-only">
-        Careers at Petite Fille Cafe Rosanna | Jobs and Employment Opportunities
-      </h1>
+      <h1 className="sr-only">Careers at Petite Fille Cafe Rosanna | Jobs and Employment Opportunities</h1>
       <div>
         <CareersCarousal />
       </div>
@@ -420,7 +418,7 @@ export default function CareersPage() {
             Petite Fille family.
           </motion.p>
 
-          <motion.h1
+          <motion.h4
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
@@ -428,7 +426,7 @@ export default function CareersPage() {
             style={{ fontFamily: "fairplay" }}
           >
             Why work with us?
-          </motion.h1>
+          </motion.h4>
         </div>
       </section>
 

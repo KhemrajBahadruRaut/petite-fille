@@ -63,9 +63,9 @@ export default function CareersCarousel() {
             {/* Fixed Content - This stays in place */}
             <div className="absolute inset-0 flex items-center justify-center z-10">
                 <div className="text-center text-white px-4">
-                    <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-2">
+                    <h5 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold mb-2">
                         Careers
-                    </h1>
+                    </h5>
                     <p className="text-sm sm:text-base md:text-lg lg:text-xl opacity-90">
                         Join our team
                     </p>

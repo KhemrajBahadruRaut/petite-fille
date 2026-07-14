@@ -223,10 +223,10 @@ export default function OtpAuthCard({ mode }: OtpAuthCardProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-50 flex items-center justify-center px-4 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-50 flex items-center justify-center px-4 py-22">
       <div className="w-full max-w-md">
         {/* Decorative header */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-4">
           <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-stone-900 text-white shadow-sm mb-4">
             {isSignup ? (
               <User className="h-6 w-6" />
