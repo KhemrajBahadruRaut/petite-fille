@@ -33,23 +33,23 @@ interface AboutUsData {
   };
 }
 
+interface SectionFormData {
+  paragraph1: string;
+  paragraph2: string;
+  image1: File | null;
+  image2: File | null;
+  currentImage1?: string;
+  currentImage2?: string;
+}
+
 interface FormData {
-  top: {
-    paragraph1: string;
-    paragraph2: string;
-    image1: File | null;
-    image2: File | null;
-    currentImage1?: string;
-    currentImage2?: string;
-  };
-  bottom: {
-    paragraph1: string;
-    paragraph2: string;
-    image1: File | null;
-    image2: File | null;
-    currentImage1?: string;
-    currentImage2?: string;
-  };
+  top: SectionFormData;
+  bottom: SectionFormData;
+}
+
+interface RemovalTarget {
+  section: SectionName;
+  field: ImageField;
 }
 
 export default function AboutUsCMS() {
@@ -61,14 +61,16 @@ export default function AboutUsCMS() {
   const [loading, setLoading] = useState(false);
   const [activeSection, setActiveSection] = useState<SectionName>("top");
   const [optimizingImages, setOptimizingImages] = useState<Record<string, boolean>>({});
+  const [removingImages, setRemovingImages] = useState<Record<string, boolean>>({});
   const [optimizationNotes, setOptimizationNotes] = useState<Record<string, string>>({});
   const [previewUrls, setPreviewUrls] = useState<{
     top: { image1?: string; image2?: string };
     bottom: { image1?: string; image2?: string };
   }>({ top: {}, bottom: {} });
   const previewUrlsRef = useRef(previewUrls);
+  const persistedContentRef = useRef<AboutUsData | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const requestAboutData = useCallback(async () => {
     const version = Date.now();
     const res = await fetch(
       withCacheVersion(apiUrl("about/aboutus.php"), version),
@@ -77,11 +79,17 @@ export default function AboutUsCMS() {
     if (!res.ok) throw new Error("Failed to fetch about data");
 
     const data: AboutUsData = await res.json();
+    return { data, version };
+  }, []);
+
+  const fetchData = useCallback(async () => {
+    const { data, version } = await requestAboutData();
     const imageUrl = (path?: string) =>
       path
         ? withCacheVersion(normalizeApiAssetUrl(path), version)
         : "";
 
+    persistedContentRef.current = data;
     setFormData({
       top: {
         paragraph1: data.top?.paragraph1 || "",
@@ -100,7 +108,7 @@ export default function AboutUsCMS() {
         currentImage2: imageUrl(data.bottom?.image2),
       },
     });
-  }, []);
+  }, [requestAboutData]);
 
   // Fetch current data without allowing an old API response or image to be reused.
   useEffect(() => {
@@ -193,32 +201,139 @@ export default function AboutUsCMS() {
     };
   }, []);
 
-  const removeImage = (section: SectionName, field: ImageField) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: null,
-        [`currentImage${field.slice(-1)}`]: undefined
-      }
-    }));
+  const clearImagesLocally = (targets: RemovalTarget[]) => {
+    setFormData((previous) => {
+      const next: FormData = {
+        top: { ...previous.top },
+        bottom: { ...previous.bottom },
+      };
 
-    // Clean up preview URL
-    if (previewUrls[section][field as keyof typeof previewUrls.top]) {
-      URL.revokeObjectURL(previewUrls[section][field as keyof typeof previewUrls.top]!);
-      setPreviewUrls(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [field]: undefined
-        }
-      }));
-    }
-    setOptimizationNotes((previous) => {
-      const next = { ...previous };
-      delete next[`${section}.${field}`];
+      targets.forEach(({ section, field }) => {
+        const currentField = field === "image1" ? "currentImage1" : "currentImage2";
+        next[section][field] = null;
+        next[section][currentField] = undefined;
+      });
+
       return next;
     });
+
+    setPreviewUrls((previous) => {
+      const next = {
+        top: { ...previous.top },
+        bottom: { ...previous.bottom },
+      };
+
+      targets.forEach(({ section, field }) => {
+        const previewUrl = next[section][field];
+        if (previewUrl) URL.revokeObjectURL(previewUrl);
+        delete next[section][field];
+      });
+
+      return next;
+    });
+
+    setOptimizationNotes((previous) => {
+      const next = { ...previous };
+      targets.forEach(({ section, field }) => {
+        delete next[`${section}.${field}`];
+      });
+      return next;
+    });
+  };
+
+  const removeImages = async (targets: RemovalTarget[]) => {
+    const targetsWithImages = targets.filter(({ section, field }) => {
+      const currentField = field === "image1" ? "currentImage1" : "currentImage2";
+      return Boolean(formData[section][field] || formData[section][currentField]);
+    });
+    if (targetsWithImages.length === 0) {
+      alert("There are no images to remove.");
+      return;
+    }
+
+    const confirmationMessage = targetsWithImages.length === 1
+      ? "Are you sure you want to permanently remove this image?"
+      : `Are you sure you want to permanently remove these ${targetsWithImages.length} images?`;
+    if (!window.confirm(confirmationMessage)) return;
+
+    const persistedTargets = targetsWithImages.filter(({ section, field }) => {
+      const currentField = field === "image1" ? "currentImage1" : "currentImage2";
+      return Boolean(formData[section][currentField]);
+    });
+
+    // A newly selected image has not reached the server yet, so removing it
+    // only needs to clear its local file and preview.
+    if (persistedTargets.length === 0) {
+      clearImagesLocally(targetsWithImages);
+      return;
+    }
+
+    const removalKeys = persistedTargets.map(({ section, field }) => `${section}.${field}`);
+    setRemovingImages((previous) => {
+      const next = { ...previous };
+      removalKeys.forEach((key) => { next[key] = true; });
+      return next;
+    });
+
+    try {
+      const data = new FormData();
+      (["top", "bottom"] as const).forEach((section) => {
+        const savedSection = persistedContentRef.current?.[section];
+        data.append(
+          `${section}[paragraph1]`,
+          savedSection?.paragraph1 ?? formData[section].paragraph1,
+        );
+        data.append(
+          `${section}[paragraph2]`,
+          savedSection?.paragraph2 ?? formData[section].paragraph2,
+        );
+      });
+      persistedTargets.forEach(({ section, field }) => {
+        const removeField = field === "image1" ? "removeImage1" : "removeImage2";
+        data.append(`${section}[${removeField}]`, "true");
+      });
+
+      const response = await fetch(apiUrl("about/aboutus_update.php"), {
+        method: "POST",
+        body: data,
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error(`Removal failed with status ${response.status}`);
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.message || result.error || "The server rejected the removal");
+      }
+
+      // Do not trust a generic success response: reload the record and confirm
+      // that every requested database image path was actually cleared.
+      const { data: latestContent } = await requestAboutData();
+      const removalFailed = persistedTargets.some(
+        ({ section, field }) => Boolean(latestContent[section]?.[field]),
+      );
+      if (removalFailed) {
+        throw new Error("The server did not clear the requested image field");
+      }
+
+      persistedContentRef.current = latestContent;
+      clearImagesLocally(targetsWithImages);
+      alert(
+        targetsWithImages.length === 1
+          ? "Image removed successfully."
+          : "Images removed successfully.",
+      );
+    } catch (error) {
+      console.error("Image removal error:", error);
+      alert("The image could not be removed. No changes were made; please try again.");
+    } finally {
+      setRemovingImages((previous) => {
+        const next = { ...previous };
+        removalKeys.forEach((key) => { next[key] = false; });
+        return next;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -357,6 +472,7 @@ export default function AboutUsCMS() {
     const previewUrl = previewUrls[section][field as 'image1' | 'image2'] || currentImage;
     const imageKey = `${section}.${field}`;
     const isOptimizing = Boolean(optimizingImages[imageKey]);
+    const isRemoving = Boolean(removingImages[imageKey]);
 
     return (
       <div className="space-y-3">
@@ -384,15 +500,16 @@ export default function AboutUsCMS() {
                     void handleFileChange(section, field, file);
                   }}
                   accept="image/*"
-                  disabled={isOptimizing}
+                  disabled={isOptimizing || isRemoving}
                 />
               </label>
               <button
                 type="button"
-                onClick={() => removeImage(section, field)}
+                onClick={() => void removeImages([{ section, field }])}
+                disabled={isOptimizing || isRemoving}
                 className="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700"
               >
-                Remove
+                {isRemoving ? "Removing..." : "Remove"}
               </button>
             </div>
           </div>
@@ -413,7 +530,7 @@ export default function AboutUsCMS() {
                     void handleFileChange(section, field, file);
                   }}
                   accept="image/*"
-                  disabled={isOptimizing}
+                  disabled={isOptimizing || isRemoving}
                 />
               </label>
               <p className="text-xs text-gray-500">Images up to 25 MB; final upload must be 10 MB or less</p>
@@ -531,15 +648,18 @@ export default function AboutUsCMS() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setFormData(prev => ({
-                    top: { ...prev.top, image1: null, image2: null, currentImage1: undefined, currentImage2: undefined },
-                    bottom: { ...prev.bottom, image1: null, image2: null, currentImage1: undefined, currentImage2: undefined }
-                  }));
-                }}
+                onClick={() => void removeImages([
+                  { section: "top", field: "image1" },
+                  { section: "top", field: "image2" },
+                  { section: "bottom", field: "image1" },
+                  { section: "bottom", field: "image2" },
+                ])}
+                disabled={Object.values(removingImages).some(Boolean)}
                 className="w-full rounded border border-red-300 px-4 py-2 text-sm text-red-600 hover:bg-red-50 sm:w-auto"
               >
-                Remove All Images
+                {Object.values(removingImages).some(Boolean)
+                  ? "Removing Images..."
+                  : "Remove All Images"}
               </button>
             </div>
           </div>
@@ -552,7 +672,11 @@ export default function AboutUsCMS() {
           </div>
           <button
             type="submit"
-            disabled={loading || Object.values(optimizingImages).some(Boolean)}
+            disabled={
+              loading ||
+              Object.values(optimizingImages).some(Boolean) ||
+              Object.values(removingImages).some(Boolean)
+            }
             className="w-full rounded-md bg-blue-600 px-6 py-3 font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
           >
             {loading ? (

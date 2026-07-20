@@ -209,32 +209,36 @@ export default function AboutUs() {
                 className="object-contain"
               />
             </motion.div>
-            <motion.div
-              {...slideIn(50, 50)}
-              className="absolute top-3 sm:right-48 md:right-44 w-42 sm:w-40 md:w-50 z-12"
-            >
-              <img
-                src={content.top.image1}
-                alt="Petite Fille Cafe Rosanna dining experience"
-                width={200}
-                height={200}
-                decoding="async"
-                className="object-contain"
-              />
-            </motion.div>
-            <motion.div
-              {...slideIn(-50, -50)}
-              className="absolute -bottom-13.75 sm:bottom-4 right-4 sm:right-6 w-42 sm:w-44 md:w-48 z-11"
-            >
-              <img
-                src={content.top.image2}
-                alt="Fresh food served at Petite Fille Cafe Rosanna"
-                width={200}
-                height={200}
-                decoding="async"
-                className="object-contain"
-              />
-            </motion.div>
+            {content.top.image1 && (
+              <motion.div
+                {...slideIn(50, 50)}
+                className="absolute top-3 sm:right-48 md:right-44 w-42 sm:w-40 md:w-50 z-12"
+              >
+                <img
+                  src={content.top.image1}
+                  alt="Petite Fille Cafe Rosanna dining experience"
+                  width={200}
+                  height={200}
+                  decoding="async"
+                  className="object-contain"
+                />
+              </motion.div>
+            )}
+            {content.top.image2 && (
+              <motion.div
+                {...slideIn(-50, -50)}
+                className="absolute -bottom-13.75 sm:bottom-4 right-4 sm:right-6 w-42 sm:w-44 md:w-48 z-11"
+              >
+                <img
+                  src={content.top.image2}
+                  alt="Fresh food served at Petite Fille Cafe Rosanna"
+                  width={200}
+                  height={200}
+                  decoding="async"
+                  className="object-contain"
+                />
+              </motion.div>
+            )}
           </div>
         </div>
 
@@ -249,34 +253,38 @@ export default function AboutUs() {
                 className="object-contain"
               />
             </motion.div>
-            <motion.div
-              {...slideIn(-50, 50)}
-              className="absolute right-2 top-5 sm:right-3 w-32 sm:w-40 md:w-46 z-11"
-            >
-              <img
-                src={content.bottom.image1}
-                alt="Cafe atmosphere at Petite Fille Rosanna"
-                width={180}
-                height={180}
-                loading="lazy"
-                decoding="async"
-                className="object-contain"
-              />
-            </motion.div>
-            <motion.div
-              {...slideIn(50, -50)}
-              className="absolute bottom-5 left-2 sm:left-3 w-44 sm:w-52 md:w-60 z-12"
-            >
-              <img
-                src={content.bottom.image2}
-                alt="Breakfast and brunch at Petite Fille Cafe"
-                width={240}
-                height={240}
-                loading="lazy"
-                decoding="async"
-                className="object-contain"
-              />
-            </motion.div>
+            {content.bottom.image1 && (
+              <motion.div
+                {...slideIn(-50, 50)}
+                className="absolute right-2 top-5 sm:right-3 w-32 sm:w-40 md:w-46 z-11"
+              >
+                <img
+                  src={content.bottom.image1}
+                  alt="Cafe atmosphere at Petite Fille Rosanna"
+                  width={180}
+                  height={180}
+                  loading="lazy"
+                  decoding="async"
+                  className="object-contain"
+                />
+              </motion.div>
+            )}
+            {content.bottom.image2 && (
+              <motion.div
+                {...slideIn(50, -50)}
+                className="absolute bottom-5 left-2 sm:left-3 w-44 sm:w-52 md:w-60 z-12"
+              >
+                <img
+                  src={content.bottom.image2}
+                  alt="Breakfast and brunch at Petite Fille Cafe"
+                  width={240}
+                  height={240}
+                  loading="lazy"
+                  decoding="async"
+                  className="object-contain"
+                />
+              </motion.div>
+            )}
           </div>
 
           {/* Right text */}
