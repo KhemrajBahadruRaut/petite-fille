@@ -2,7 +2,11 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import "../globals.css";
-import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
+import {
+  apiUrl,
+  normalizeApiAssetUrl,
+  withCacheVersion,
+} from "../../utils/api";
 
 const fadeIn = {
   initial: { opacity: 0 },
@@ -64,12 +68,19 @@ function AboutUsLoading() {
   );
 }
 
-function normalizeAboutSection(section?: AboutSection): AboutSection {
+function normalizeAboutSection(
+  section?: AboutSection,
+  version = Date.now(),
+): AboutSection {
   return {
     paragraph1: section?.paragraph1 || "",
     paragraph2: section?.paragraph2 || "",
-    image1: section?.image1 ? normalizeApiAssetUrl(section.image1) : "",
-    image2: section?.image2 ? normalizeApiAssetUrl(section.image2) : "",
+    image1: section?.image1
+      ? withCacheVersion(normalizeApiAssetUrl(section.image1), version)
+      : "",
+    image2: section?.image2
+      ? withCacheVersion(normalizeApiAssetUrl(section.image2), version)
+      : "",
   };
 }
 
@@ -79,14 +90,24 @@ export default function AboutUs() {
 
   useEffect(() => {
     let active = true;
-    const controller = new AbortController();
-    const timeoutId = window.setTimeout(() => controller.abort(), 5000);
+    let hasLoaded = false;
+    let controller: AbortController | null = null;
 
     const fetchContent = async () => {
+      controller?.abort();
+      controller = new AbortController();
+      const requestController = controller;
+      const timeoutId = window.setTimeout(() => requestController.abort(), 5000);
+      const version = Date.now();
+
       try {
-        const res = await fetch(apiUrl("about/aboutus.php"), {
-          signal: controller.signal,
-        });
+        const res = await fetch(
+          withCacheVersion(apiUrl("about/aboutus.php"), version),
+          {
+            cache: "no-store",
+            signal: requestController.signal,
+          },
+        );
 
         if (!res.ok) {
           throw new Error(`API responded with status ${res.status}`);
@@ -94,24 +115,31 @@ export default function AboutUs() {
         const data: AboutContent = await res.json();
         if (active) {
           setContent({
-            top: normalizeAboutSection(data.top),
-            bottom: normalizeAboutSection(data.bottom),
+            top: normalizeAboutSection(data.top, version),
+            bottom: normalizeAboutSection(data.bottom, version),
           });
+          hasLoaded = true;
         }
       } catch {
-        if (active) setContent(null);
+        // Preserve already-rendered content if a background refresh fails.
+        if (active && requestController === controller && !hasLoaded) {
+          setContent(null);
+        }
       } finally {
         window.clearTimeout(timeoutId);
-        if (active) setIsLoading(false);
+        if (active && requestController === controller) setIsLoading(false);
       }
     };
 
     fetchContent();
+    // An editor commonly switches from the admin tab to this page to check the
+    // result. Refetch on focus so that check does not require a hard refresh.
+    window.addEventListener("focus", fetchContent);
 
     return () => {
       active = false;
-      window.clearTimeout(timeoutId);
-      controller.abort();
+      window.removeEventListener("focus", fetchContent);
+      controller?.abort();
     };
   }, []);
 
@@ -190,6 +218,7 @@ export default function AboutUs() {
                 alt="Petite Fille Cafe Rosanna dining experience"
                 width={200}
                 height={200}
+                decoding="async"
                 className="object-contain"
               />
             </motion.div>
@@ -202,6 +231,7 @@ export default function AboutUs() {
                 alt="Fresh food served at Petite Fille Cafe Rosanna"
                 width={200}
                 height={200}
+                decoding="async"
                 className="object-contain"
               />
             </motion.div>
@@ -228,6 +258,8 @@ export default function AboutUs() {
                 alt="Cafe atmosphere at Petite Fille Rosanna"
                 width={180}
                 height={180}
+                loading="lazy"
+                decoding="async"
                 className="object-contain"
               />
             </motion.div>
@@ -240,6 +272,8 @@ export default function AboutUs() {
                 alt="Breakfast and brunch at Petite Fille Cafe"
                 width={240}
                 height={240}
+                loading="lazy"
+                decoding="async"
                 className="object-contain"
               />
             </motion.div>

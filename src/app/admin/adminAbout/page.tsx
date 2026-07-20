@@ -1,6 +1,22 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
-import { apiUrl, normalizeApiAssetUrl } from "../../../utils/api";
+import { useState, useEffect, useRef, useCallback } from "react";
+import {
+  apiUrl,
+  normalizeApiAssetUrl,
+  withCacheVersion,
+} from "../../../utils/api";
+import { optimizeImageUpload } from "../../../utils/optimizeImageUpload";
+
+type SectionName = "top" | "bottom";
+type ImageField = "image1" | "image2";
+
+const MAX_SOURCE_IMAGE_BYTES = 25 * 1024 * 1024;
+const MAX_UPLOAD_IMAGE_BYTES = 10 * 1024 * 1024;
+
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 interface AboutUsData {
   top: {
@@ -43,58 +59,55 @@ export default function AboutUsCMS() {
   });
 
   const [loading, setLoading] = useState(false);
-  const [activeSection, setActiveSection] = useState<"top" | "bottom">("top");
+  const [activeSection, setActiveSection] = useState<SectionName>("top");
+  const [optimizingImages, setOptimizingImages] = useState<Record<string, boolean>>({});
+  const [optimizationNotes, setOptimizationNotes] = useState<Record<string, string>>({});
   const [previewUrls, setPreviewUrls] = useState<{
     top: { image1?: string; image2?: string };
     bottom: { image1?: string; image2?: string };
   }>({ top: {}, bottom: {} });
   const previewUrlsRef = useRef(previewUrls);
 
-  // Fetch current data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const res = await fetch(apiUrl("about/aboutus.php"));
-        if (!res.ok) {
-          throw new Error("Failed to fetch about data");
-        }
-        const data: AboutUsData = await res.json();
-        
-        setFormData({
-          top: {
-            paragraph1: data.top?.paragraph1 || "",
-            paragraph2: data.top?.paragraph2 || "",
-            image1: null,
-            image2: null,
-            currentImage1: data.top?.image1
-              ? normalizeApiAssetUrl(data.top.image1)
-              : "",
-            currentImage2: data.top?.image2
-              ? normalizeApiAssetUrl(data.top.image2)
-              : ""
-          },
-          bottom: {
-            paragraph1: data.bottom?.paragraph1 || "",
-            paragraph2: data.bottom?.paragraph2 || "",
-            image1: null,
-            image2: null,
-            currentImage1: data.bottom?.image1
-              ? normalizeApiAssetUrl(data.bottom.image1)
-              : "",
-            currentImage2: data.bottom?.image2
-              ? normalizeApiAssetUrl(data.bottom.image2)
-              : ""
-          }
-        });
-      } catch (error) {
-        console.error("Error fetching data:", error);
-      }
-    };
+  const fetchData = useCallback(async () => {
+    const version = Date.now();
+    const res = await fetch(
+      withCacheVersion(apiUrl("about/aboutus.php"), version),
+      { cache: "no-store" },
+    );
+    if (!res.ok) throw new Error("Failed to fetch about data");
 
-    fetchData();
+    const data: AboutUsData = await res.json();
+    const imageUrl = (path?: string) =>
+      path
+        ? withCacheVersion(normalizeApiAssetUrl(path), version)
+        : "";
+
+    setFormData({
+      top: {
+        paragraph1: data.top?.paragraph1 || "",
+        paragraph2: data.top?.paragraph2 || "",
+        image1: null,
+        image2: null,
+        currentImage1: imageUrl(data.top?.image1),
+        currentImage2: imageUrl(data.top?.image2),
+      },
+      bottom: {
+        paragraph1: data.bottom?.paragraph1 || "",
+        paragraph2: data.bottom?.paragraph2 || "",
+        image1: null,
+        image2: null,
+        currentImage1: imageUrl(data.bottom?.image1),
+        currentImage2: imageUrl(data.bottom?.image2),
+      },
+    });
   }, []);
 
-  const handleTextChange = (section: "top" | "bottom", field: string, value: string) => {
+  // Fetch current data without allowing an old API response or image to be reused.
+  useEffect(() => {
+    fetchData().catch((error) => console.error("Error fetching data:", error));
+  }, [fetchData]);
+
+  const handleTextChange = (section: SectionName, field: string, value: string) => {
     setFormData(prev => ({
       ...prev,
       [section]: {
@@ -104,33 +117,66 @@ export default function AboutUsCMS() {
     }));
   };
 
-  const handleFileChange = (section: "top" | "bottom", field: string, file: File | null) => {
-    if (file) {
-      const previousPreview = previewUrls[section][
-        field as keyof typeof previewUrls.top
-      ];
-      if (previousPreview) {
-        URL.revokeObjectURL(previousPreview);
-      }
+  const handleFileChange = async (
+    section: SectionName,
+    field: ImageField,
+    file: File | null,
+  ) => {
+    if (!file) return;
 
-      // Create preview URL
-      const previewUrl = URL.createObjectURL(file);
-      setPreviewUrls(prev => ({
-        ...prev,
-        [section]: {
-          ...prev[section],
-          [field]: previewUrl
-        }
-      }));
+    const imageKey = `${section}.${field}`;
+    if (!file.type.startsWith("image/")) {
+      alert("Please select a valid image file.");
+      return;
+    }
+    if (file.size > MAX_SOURCE_IMAGE_BYTES) {
+      alert("Please choose an image smaller than 25 MB.");
+      return;
     }
 
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: file
-      }
+    setOptimizingImages((previous) => ({ ...previous, [imageKey]: true }));
+    setOptimizationNotes((previous) => ({
+      ...previous,
+      [imageKey]: "Optimizing image before upload...",
     }));
+
+    try {
+      const result = await optimizeImageUpload(file);
+      if (result.file.size > MAX_UPLOAD_IMAGE_BYTES) {
+        alert(
+          "This image is still larger than 10 MB after optimization. Please resize or export it as WebP/JPEG first.",
+        );
+        setOptimizationNotes((previous) => ({
+          ...previous,
+          [imageKey]: "Image was not selected because it exceeds 10 MB.",
+        }));
+        return;
+      }
+
+      const previousPreview = previewUrls[section][field];
+      if (previousPreview) URL.revokeObjectURL(previousPreview);
+
+      const previewUrl = URL.createObjectURL(result.file);
+      setPreviewUrls((previous) => ({
+        ...previous,
+        [section]: { ...previous[section], [field]: previewUrl },
+      }));
+      setFormData((previous) => ({
+        ...previous,
+        [section]: { ...previous[section], [field]: result.file },
+      }));
+      setOptimizationNotes((previous) => ({
+        ...previous,
+        [imageKey]: result.optimized
+          ? `Optimized from ${formatFileSize(result.originalSize)} to ${formatFileSize(result.file.size)}.`
+          : `${formatFileSize(result.file.size)}. ${result.reason || "Using the original image."}`,
+      }));
+    } catch (error) {
+      console.error("Image optimization error:", error);
+      alert("This image could not be prepared. Please try another file.");
+    } finally {
+      setOptimizingImages((previous) => ({ ...previous, [imageKey]: false }));
+    }
   };
 
   useEffect(() => {
@@ -147,7 +193,7 @@ export default function AboutUsCMS() {
     };
   }, []);
 
-  const removeImage = (section: "top" | "bottom", field: string) => {
+  const removeImage = (section: SectionName, field: ImageField) => {
     setFormData(prev => ({
       ...prev,
       [section]: {
@@ -168,6 +214,11 @@ export default function AboutUsCMS() {
         }
       }));
     }
+    setOptimizationNotes((previous) => {
+      const next = { ...previous };
+      delete next[`${section}.${field}`];
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -197,17 +248,15 @@ export default function AboutUsCMS() {
       const res = await fetch(apiUrl("about/aboutus_update.php"), {
         method: "POST",
         body: data,
+        cache: "no-store",
       });
 
+      if (!res.ok) {
+        throw new Error(`Update failed with status ${res.status}`);
+      }
       const result = await res.json();
       
       if (result.success) {
-        alert("About Us content updated successfully!");
-        // Reset file inputs after successful upload
-        setFormData(prev => ({
-          top: { ...prev.top, image1: null, image2: null },
-          bottom: { ...prev.bottom, image1: null, image2: null }
-        }));
         // Clear preview URLs
         Object.values(previewUrls).forEach(section => {
           Object.values(section).forEach(url => {
@@ -215,6 +264,18 @@ export default function AboutUsCMS() {
           });
         });
         setPreviewUrls({ top: {}, bottom: {} });
+        setOptimizationNotes({});
+
+        // Read the saved paths again and attach a fresh version to every image
+        // URL. This makes both the preview and the public page bypass stale
+        // browser/CDN entries immediately after a replacement.
+        try {
+          await fetchData();
+          alert("About Us content updated successfully!");
+        } catch (refreshError) {
+          console.error("Saved, but failed to refresh About data:", refreshError);
+          alert("Content was saved. Refresh this page to reload the latest preview.");
+        }
       } else {
         throw new Error(result.message || "Error updating data");
       }
@@ -288,12 +349,14 @@ export default function AboutUsCMS() {
     field,
     currentImage
   }: {
-    section: "top" | "bottom";
-    field: "image1" | "image2";
+    section: SectionName;
+    field: ImageField;
     currentImage?: string;
   }) => {
     const hasImage = formData[section][field as 'image1' | 'image2'] || currentImage;
     const previewUrl = previewUrls[section][field as 'image1' | 'image2'] || currentImage;
+    const imageKey = `${section}.${field}`;
+    const isOptimizing = Boolean(optimizingImages[imageKey]);
 
     return (
       <div className="space-y-3">
@@ -306,6 +369,7 @@ export default function AboutUsCMS() {
             <img 
               src={previewUrl} 
               alt={`Preview`}
+              decoding="async"
               className="max-h-48 mx-auto rounded"
             />
             <div className="flex justify-center mt-3 space-x-2">
@@ -314,8 +378,13 @@ export default function AboutUsCMS() {
                 <input
                   type="file"
                   className="hidden"
-                  onChange={(e) => handleFileChange(section, field, e.target.files?.[0] || null)}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    event.target.value = "";
+                    void handleFileChange(section, field, file);
+                  }}
                   accept="image/*"
+                  disabled={isOptimizing}
                 />
               </label>
               <button
@@ -338,19 +407,35 @@ export default function AboutUsCMS() {
                 <input
                   type="file"
                   className="hidden"
-                  onChange={(e) => handleFileChange(section, field, e.target.files?.[0] || null)}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0] || null;
+                    event.target.value = "";
+                    void handleFileChange(section, field, file);
+                  }}
                   accept="image/*"
+                  disabled={isOptimizing}
                 />
               </label>
-              <p className="text-xs text-gray-500">PNG, JPG, GIF up to 10MB</p>
+              <p className="text-xs text-gray-500">Images up to 25 MB; final upload must be 10 MB or less</p>
+              <p className="text-xs text-gray-500">JPEG, PNG and WebP are optimized automatically.</p>
             </div>
           </div>
+        )}
+        {(isOptimizing || optimizationNotes[imageKey]) && (
+          <p
+            className={`text-xs ${isOptimizing ? "text-blue-600" : "text-gray-600"}`}
+            role="status"
+          >
+            {isOptimizing
+              ? "Optimizing image before upload..."
+              : optimizationNotes[imageKey]}
+          </p>
         )}
       </div>
     );
   };
 
-  const renderSectionTab = ({ section, label }: { section: "top" | "bottom", label: string }) => (
+  const renderSectionTab = ({ section, label }: { section: SectionName, label: string }) => (
     <button
       type="button"
       onClick={() => setActiveSection(section)}
@@ -364,7 +449,7 @@ export default function AboutUsCMS() {
     </button>
   );
 
-  const renderSectionForm = ({ section }: { section: "top" | "bottom" }) => (
+  const renderSectionForm = ({ section }: { section: SectionName }) => (
     <div className="space-y-6 rounded-b-lg border-2 border-t-0 border-gray-200 bg-white p-4 sm:p-6">
       {/* Paragraphs */}
       <div className="grid grid-cols-1 gap-6">
@@ -467,7 +552,7 @@ export default function AboutUsCMS() {
           </div>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || Object.values(optimizingImages).some(Boolean)}
             className="w-full rounded-md bg-blue-600 px-6 py-3 font-medium text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:px-8"
           >
             {loading ? (
@@ -479,6 +564,8 @@ export default function AboutUsCMS() {
                 Saving All Changes...
                 
               </span>
+            ) : Object.values(optimizingImages).some(Boolean) ? (
+              "Optimizing Images..."
             ) : (
               "Save All Sections"
             )}
