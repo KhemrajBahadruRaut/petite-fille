@@ -28,6 +28,7 @@ interface UserGiftCard {
   amount: number;
   status: "active" | "redeemed";
   created_at: string;
+  expires_at?: string;
   redeemed_at: string | null;
   sender_name?: string;
   sender_email?: string;
@@ -161,57 +162,116 @@ const getGiftCardSenderDisplay = (
   return senderName || senderEmail || fallback;
 };
 
-function OrderProgressBar({ order }: { order: UserOrder }) {
-  const steps =
-    order.fulfillment_method === "pickup" ? PICKUP_STEPS : DELIVERY_STEPS;
-  const currentIndex = steps.indexOf(order.status);
-  const isCancelled =
-    order.status === "cancelled" || order.status === "refunded";
+const parseGiftCardDate = (value?: string | null) => {
+  if (!value) return null;
 
-  if (isCancelled) return null;
+  const parsed = new Date(value.includes("T") ? value : value.replace(" ", "T"));
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+};
 
-  return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between">
-        {steps.map((step, i) => {
-          const cfg = ORDER_STATUS_CONFIG[step];
-          const done = currentIndex >= i;
-          const active = currentIndex === i;
-          return (
-            <React.Fragment key={step}>
-              <div className="flex flex-col items-center gap-1">
-                <div
-                  className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs transition-colors ${
-                    done
-                      ? "border-amber-500 bg-amber-500 text-white"
-                      : "border-gray-200 bg-white text-gray-400"
-                  } ${active ? "ring-2 ring-amber-200" : ""}`}
-                >
-                  {cfg.icon}
-                </div>
-                <span
-                  className={`hidden text-center text-[10px] leading-tight sm:block ${
-                    done ? "font-medium text-amber-700" : "text-gray-400"
-                  }`}
-                  style={{ fontFamily: "arial", maxWidth: 60 }}
-                >
-                  {cfg.label}
-                </span>
-              </div>
-              {i < steps.length - 1 && (
-                <div
-                  className={`h-0.5 flex-1 mx-1 rounded transition-colors ${
-                    currentIndex > i ? "bg-amber-400" : "bg-gray-200"
-                  }`}
-                />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+const addOneCalendarMonth = (date: Date) => {
+  const result = new Date(date);
+  const originalDay = result.getDate();
+
+  result.setDate(1);
+  result.setMonth(result.getMonth() + 1);
+  const lastDayOfTargetMonth = new Date(
+    result.getFullYear(),
+    result.getMonth() + 1,
+    0,
+  ).getDate();
+  result.setDate(Math.min(originalDay, lastDayOfTargetMonth));
+
+  return result;
+};
+
+const getGiftCardExpirationDate = (card: UserGiftCard) => {
+  const serverExpiration = parseGiftCardDate(card.expires_at);
+  if (serverExpiration) return serverExpiration;
+
+  const issuedDate = parseGiftCardDate(card.created_at);
+  return issuedDate ? addOneCalendarMonth(issuedDate) : null;
+};
+
+const formatGiftCardDate = (
+  value: Date | string | null | undefined,
+  format: "short" | "numeric" = "short",
+) => {
+  const date = value instanceof Date ? value : parseGiftCardDate(value);
+  if (!date) return "Unavailable";
+
+  return format === "numeric"
+    ? new Intl.DateTimeFormat("en-AU", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+      }).format(date)
+    : new Intl.DateTimeFormat("en-AU", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      }).format(date);
+};
+
+const isGiftCardExpired = (card: UserGiftCard) => {
+  const expirationDate = getGiftCardExpirationDate(card);
+  return expirationDate ? expirationDate.getTime() <= Date.now() : false;
+};
+
+const getGiftCardDisplayStatus = (card: UserGiftCard) =>
+  isGiftCardExpired(card) && card.status === "active" ? "expired" : card.status;
+
+// function OrderProgressBar({ order }: { order: UserOrder }) {
+//   const steps =
+//     order.fulfillment_method === "pickup" ? PICKUP_STEPS : DELIVERY_STEPS;
+//   const currentIndex = steps.indexOf(order.status);
+//   const isCancelled =
+//     order.status === "cancelled" || order.status === "refunded";
+
+//   if (isCancelled) return null;
+
+//   return (
+//     <div className="mt-4">
+//       <div className="flex items-center justify-between">
+//         {steps.map((step, i) => {
+//           const cfg = ORDER_STATUS_CONFIG[step];
+//           const done = currentIndex >= i;
+//           const active = currentIndex === i;
+//           return (
+//             <React.Fragment key={step}>
+//               <div className="flex flex-col items-center gap-1">
+//                 <div
+//                   className={`flex h-7 w-7 items-center justify-center rounded-full border-2 text-xs transition-colors ${
+//                     done
+//                       ? "border-amber-500 bg-amber-500 text-white"
+//                       : "border-gray-200 bg-white text-gray-400"
+//                   } ${active ? "ring-2 ring-amber-200" : ""}`}
+//                 >
+//                   {cfg.icon}
+//                 </div>
+//                 <span
+//                   className={`hidden text-center text-[10px] leading-tight sm:block ${
+//                     done ? "font-medium text-amber-700" : "text-gray-400"
+//                   }`}
+//                   style={{ fontFamily: "arial", maxWidth: 60 }}
+//                 >
+//                   {cfg.label}
+//                 </span>
+//               </div>
+//               {i < steps.length - 1 && (
+//                 <div
+//                   className={`h-0.5 flex-1 mx-1 rounded transition-colors ${
+//                     currentIndex > i ? "bg-amber-400" : "bg-gray-200"
+//                   }`}
+//                 />
+//               )}
+//             </React.Fragment>
+//           );
+//         })}
+//       </div>
+//     </div>
+//   );
+// }
 
 // ── Main component
 
@@ -392,89 +452,89 @@ export default function ProfilePage() {
 
   // ── Reservation actions
 
-  const cancelReservation = async (id: number) => {
-    if (pendingReservationActions[id]) return;
-    const prev = reservations.find((r) => r.id === id);
-    if (!prev) return;
-    setError("");
-    setMessage("");
-    setPendingReservationActions((p) => ({ ...p, [id]: "cancel" }));
-    setReservations((p) =>
-      p.map((r) => (r.id === id ? { ...r, status: "cancelled" } : r)),
-    );
-    try {
-      const res = await fetch(
-        apiUrl("reservation/cancel_user_reservation.php"),
-        {
-          method: "POST",
-          headers: jsonAuthHeaders,
-          body: JSON.stringify({ id }),
-        },
-      );
-      const payload = await res.json().catch(() => null);
-      if (!res.ok || !payload?.success)
-        throw new Error(payload?.message || "Failed to cancel.");
-      showToast("success", payload.message || "Reservation cancelled.");
-      await fetchProfileData();
-    } catch (e) {
-      setReservations((p) => p.map((r) => (r.id === id ? prev : r)));
-      const text = e instanceof Error ? e.message : "Unable to cancel.";
-      setError(text);
-      showToast("error", text);
-    } finally {
-      setPendingReservationActions((p) => {
-        const n = { ...p };
-        delete n[id];
-        return n;
-      });
-    }
-  };
+  // const cancelReservation = async (id: number) => {
+  //   if (pendingReservationActions[id]) return;
+  //   const prev = reservations.find((r) => r.id === id);
+  //   if (!prev) return;
+  //   setError("");
+  //   setMessage("");
+  //   setPendingReservationActions((p) => ({ ...p, [id]: "cancel" }));
+  //   setReservations((p) =>
+  //     p.map((r) => (r.id === id ? { ...r, status: "cancelled" } : r)),
+  //   );
+  //   try {
+  //     const res = await fetch(
+  //       apiUrl("reservation/cancel_user_reservation.php"),
+  //       {
+  //         method: "POST",
+  //         headers: jsonAuthHeaders,
+  //         body: JSON.stringify({ id }),
+  //       },
+  //     );
+  //     const payload = await res.json().catch(() => null);
+  //     if (!res.ok || !payload?.success)
+  //       throw new Error(payload?.message || "Failed to cancel.");
+  //     showToast("success", payload.message || "Reservation cancelled.");
+  //     await fetchProfileData();
+  //   } catch (e) {
+  //     setReservations((p) => p.map((r) => (r.id === id ? prev : r)));
+  //     const text = e instanceof Error ? e.message : "Unable to cancel.";
+  //     setError(text);
+  //     showToast("error", text);
+  //   } finally {
+  //     setPendingReservationActions((p) => {
+  //       const n = { ...p };
+  //       delete n[id];
+  //       return n;
+  //     });
+  //   }
+  // };
 
-  const deleteReservation = async (id: number) => {
-    if (pendingReservationActions[id]) return;
-    const prevIdx = reservations.findIndex((r) => r.id === id);
-    const prev = prevIdx >= 0 ? reservations[prevIdx] : null;
-    if (!prev) return;
-    setError("");
-    setMessage("");
-    setPendingReservationActions((p) => ({ ...p, [id]: "delete" }));
-    setReservations((p) => p.filter((r) => r.id !== id));
-    try {
-      const res = await fetch(
-        apiUrl("reservation/delete_user_reservation.php"),
-        {
-          method: "POST",
-          headers: jsonAuthHeaders,
-          body: JSON.stringify({ id }),
-        },
-      );
-      const payload = await res.json().catch(() => null);
-      if (!res.ok || !payload?.success)
-        throw new Error(payload?.message || "Failed to delete.");
-      showToast("success", payload.message || "Reservation deleted.");
-      await fetchProfileData();
-    } catch (e) {
-      setReservations((p) => {
-        if (p.some((r) => r.id === id)) return p;
-        const restored = [...p];
-        restored.splice(
-          prevIdx >= 0 && prevIdx <= p.length ? prevIdx : p.length,
-          0,
-          prev,
-        );
-        return restored;
-      });
-      const text = e instanceof Error ? e.message : "Unable to delete.";
-      setError(text);
-      showToast("error", text);
-    } finally {
-      setPendingReservationActions((p) => {
-        const n = { ...p };
-        delete n[id];
-        return n;
-      });
-    }
-  };
+  // const deleteReservation = async (id: number) => {
+  //   if (pendingReservationActions[id]) return;
+  //   const prevIdx = reservations.findIndex((r) => r.id === id);
+  //   const prev = prevIdx >= 0 ? reservations[prevIdx] : null;
+  //   if (!prev) return;
+  //   setError("");
+  //   setMessage("");
+  //   setPendingReservationActions((p) => ({ ...p, [id]: "delete" }));
+  //   setReservations((p) => p.filter((r) => r.id !== id));
+  //   try {
+  //     const res = await fetch(
+  //       apiUrl("reservation/delete_user_reservation.php"),
+  //       {
+  //         method: "POST",
+  //         headers: jsonAuthHeaders,
+  //         body: JSON.stringify({ id }),
+  //       },
+  //     );
+  //     const payload = await res.json().catch(() => null);
+  //     if (!res.ok || !payload?.success)
+  //       throw new Error(payload?.message || "Failed to delete.");
+  //     showToast("success", payload.message || "Reservation deleted.");
+  //     await fetchProfileData();
+  //   } catch (e) {
+  //     setReservations((p) => {
+  //       if (p.some((r) => r.id === id)) return p;
+  //       const restored = [...p];
+  //       restored.splice(
+  //         prevIdx >= 0 && prevIdx <= p.length ? prevIdx : p.length,
+  //         0,
+  //         prev,
+  //       );
+  //       return restored;
+  //     });
+  //     const text = e instanceof Error ? e.message : "Unable to delete.";
+  //     setError(text);
+  //     showToast("error", text);
+  //   } finally {
+  //     setPendingReservationActions((p) => {
+  //       const n = { ...p };
+  //       delete n[id];
+  //       return n;
+  //     });
+  //   }
+  // };
 
   const removeFavorite = (favoriteId: string) => {
     const fav = favorites.find((item) => item.id === favoriteId);
@@ -482,7 +542,7 @@ export default function ProfilePage() {
     if (fav) showToast("success", `${fav.name} removed from favorites.`);
   };
 
-  // ── Auth guards ───────────────────────────────────────────────────────────
+  // Auth guards 
 
   if (isLoading) {
     return (
@@ -648,8 +708,8 @@ export default function ProfilePage() {
           )}
         </AnimatePresence>
 
-        {/* ── MY ORDERS ────────────────────────────────────────────────────── */}
-        <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        {/* MY ORDERS  */}
+        {/* <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-900">My Orders</h2>
             {orders.length > 0 && (
@@ -687,7 +747,6 @@ export default function ProfilePage() {
                     key={order.id}
                     className="rounded-xl border border-gray-200 p-4"
                   >
-                    {/* Order header */}
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-gray-900">
@@ -729,10 +788,8 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
-                    {/* Progress bar */}
                     <OrderProgressBar order={order} />
 
-                    {/* Tracking info */}
                     {order.tracking_number && (
                       <div className="mt-3 flex items-center gap-2 rounded-lg bg-indigo-50 px-3 py-2 text-xs text-indigo-700">
                         <Truck className="h-3.5 w-3.5 flex-shrink-0" />
@@ -755,7 +812,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* Estimated delivery */}
                     {order.estimated_delivery && order.status === "shipped" && (
                       <p
                         className="mt-2 text-xs text-gray-500"
@@ -774,7 +830,6 @@ export default function ProfilePage() {
                       </p>
                     )}
 
-                    {/* Ready for pickup notice */}
                     {order.status === "ready_for_pickup" && (
                       <div className="mt-3 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
                         <Store className="h-3.5 w-3.5 flex-shrink-0" />
@@ -787,7 +842,6 @@ export default function ProfilePage() {
                       </div>
                     )}
 
-                    {/* Items */}
                     {Array.isArray(order.items) && order.items.length > 0 && (
                       <div className="mt-3 space-y-2">
                         {order.items.map((item, i) => (
@@ -834,10 +888,10 @@ export default function ProfilePage() {
               })}
             </div>
           )}
-        </section>
+        </section> */}
 
         {/* ── Reservations  */}
-        <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
+        {/* <section className="min-w-0 rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
           <h2 className="text-lg font-semibold text-gray-900">
             My Reservations
           </h2>
@@ -919,7 +973,7 @@ export default function ProfilePage() {
               })}
             </div>
           )}
-        </section>
+        </section> */}
 
        {/* ── Gift Cards ── */}
 <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-sm">
@@ -946,7 +1000,7 @@ export default function ProfilePage() {
               <div
                 key={card.id}
                 className={`rounded-xl border-2 p-3 ${
-                  card.status === "active"
+                  card.status === "active" && !isGiftCardExpired(card)
                     ? "border-amber-200 bg-amber-50"
                     : "border-gray-200 bg-gray-50 opacity-60"
                 }`}
@@ -960,6 +1014,13 @@ export default function ProfilePage() {
 
                   <div className="absolute left-[48.5%] top-[31.5%] w-[32%] break-words text-[clamp(10px,1.4vw,12px)] leading-tight text-[#8b7b67]">
                     {Number(card.amount).toFixed(2)}
+                  </div>
+
+                  <div className="absolute left-[82.5%] top-[31.5%] w-[14%] break-words text-[clamp(8px,1vw,11px)] leading-tight text-[#8b7b67]">
+                    {formatGiftCardDate(
+                      getGiftCardExpirationDate(card),
+                      "numeric",
+                    )}
                   </div>
 
                   <div className="absolute left-[48.5%] top-[47%] w-[48%] break-words text-[clamp(9px,1.2vw,12px)] leading-tight text-[#8b7b67]">
@@ -978,12 +1039,12 @@ export default function ProfilePage() {
                 <div className="mt-3 flex items-center justify-between">
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
-                      card.status === "active"
+                      getGiftCardDisplayStatus(card) === "active"
                         ? "border border-green-200 bg-green-100 text-green-700"
                         : "bg-gray-200 text-gray-500"
                     }`}
                   >
-                    {card.status}
+                    {getGiftCardDisplayStatus(card)}
                   </span>
                 </div>
 
@@ -996,11 +1057,11 @@ export default function ProfilePage() {
                 <div className="mt-2 space-y-0.5 text-xs text-gray-400">
                   <p>
                     Issued:{" "}
-                    {new Date(card.created_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+                    {formatGiftCardDate(card.created_at)}
+                  </p>
+                  <p>
+                    Expires:{" "}
+                    {formatGiftCardDate(getGiftCardExpirationDate(card))}
                   </p>
 
                   {card.redeemed_at && (
@@ -1043,6 +1104,13 @@ export default function ProfilePage() {
                     {Number(card.amount).toFixed(2)}
                   </div>
 
+                  <div className="absolute left-[82.5%] top-[31.5%] w-[14%] break-words text-[clamp(8px,1vw,11px)] leading-tight text-[#8b7b67]">
+                    {formatGiftCardDate(
+                      getGiftCardExpirationDate(card),
+                      "numeric",
+                    )}
+                  </div>
+
                   <div className="absolute left-[48.5%] top-[47%] w-[48%] break-words text-[clamp(9px,1.2vw,12px)] leading-tight text-[#8b7b67]">
                     {card.recipient || "Recipient"}
                   </div>
@@ -1074,12 +1142,12 @@ export default function ProfilePage() {
                 <div className="mt-2 flex items-center justify-between">
                   <span
                     className={`rounded-full px-2.5 py-1 text-xs font-medium capitalize ${
-                      card.status === "active"
+                      getGiftCardDisplayStatus(card) === "active"
                         ? "border border-green-200 bg-green-100 text-green-700"
                         : "bg-gray-200 text-gray-500"
                     }`}
                   >
-                    {card.status}
+                    {getGiftCardDisplayStatus(card)}
                   </span>
                 </div>
 
@@ -1092,11 +1160,11 @@ export default function ProfilePage() {
                 <div className="mt-2 space-y-0.5 text-xs text-gray-400">
                   <p>
                     Sent:{" "}
-                    {new Date(card.created_at).toLocaleDateString("en-US", {
-                      month: "short",
-                      day: "numeric",
-                      year: "numeric",
-                    })}
+                    {formatGiftCardDate(card.created_at)}
+                  </p>
+                  <p>
+                    Expires:{" "}
+                    {formatGiftCardDate(getGiftCardExpirationDate(card))}
                   </p>
 
                   {card.redeemed_at && (
