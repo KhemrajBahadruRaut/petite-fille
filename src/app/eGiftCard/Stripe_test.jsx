@@ -28,18 +28,196 @@ const CARD_ELEMENT_OPTIONS = {
   },
 };
 
+const formatGiftCardDate = (value) => {
+  const match = String(value || "").match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "";
+
+  return new Intl.DateTimeFormat("en-AU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(parsed);
+};
+
+const getPreviewExpirationDate = () => {
+  const date = new Date();
+  const originalDay = date.getDate();
+
+  date.setDate(1);
+  date.setMonth(date.getMonth() + 1);
+  const lastDayOfTargetMonth = new Date(
+    date.getFullYear(),
+    date.getMonth() + 1,
+    0,
+  ).getDate();
+  date.setDate(Math.min(originalDay, lastDayOfTargetMonth));
+
+  return formatGiftCardDate(date);
+};
+
+const loadGiftCardTemplate = () =>
+  new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () =>
+      reject(new Error("Unable to load the gift card image."));
+    image.src = "/giftcard/gift-card-template.png";
+  });
+
+const drawFittedCardText = (
+  context,
+  text,
+  x,
+  y,
+  maxWidth,
+  initialFontSize,
+  fontFamily = "Arial",
+  italic = true,
+) => {
+  let fontSize = initialFontSize;
+  const value = String(text || "");
+
+  do {
+    context.font = `${italic ? "italic " : ""}${fontSize}px ${fontFamily}`;
+    if (context.measureText(value).width <= maxWidth || fontSize <= 17) break;
+    fontSize -= 1;
+  } while (fontSize > 17);
+
+  context.fillText(value, x, y, maxWidth);
+};
+
+const renderGiftCardImage = async (card) => {
+  const template = await loadGiftCardTemplate();
+  const canvas = document.createElement("canvas");
+  canvas.width = template.naturalWidth;
+  canvas.height = template.naturalHeight;
+
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Unable to create the gift card image.");
+
+  context.drawImage(template, 0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#8b7b67";
+  context.textBaseline = "top";
+
+  drawFittedCardText(
+    context,
+    Number(card.amount).toFixed(2),
+    canvas.width * 0.485,
+    canvas.height * 0.315,
+    canvas.width * 0.25,
+    32,
+  );
+  drawFittedCardText(
+    context,
+    formatGiftCardDate(card.expires_at),
+    canvas.width * 0.825,
+    canvas.height * 0.315,
+    canvas.width * 0.14,
+    26,
+  );
+  drawFittedCardText(
+    context,
+    card.recipient,
+    canvas.width * 0.485,
+    canvas.height * 0.47,
+    canvas.width * 0.46,
+    30,
+  );
+  drawFittedCardText(
+    context,
+    card.sender_name,
+    canvas.width * 0.485,
+    canvas.height * 0.61,
+    canvas.width * 0.46,
+    30,
+  );
+  drawFittedCardText(
+    context,
+    card.code,
+    canvas.width * 0.485,
+    canvas.height * 0.76,
+    canvas.width * 0.46,
+    26,
+    "monospace",
+    false,
+  );
+
+  return canvas.toDataURL("image/jpeg", 0.9);
+};
+
 const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [cardError, setCardError] = useState(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [paidPaymentIntentId, setPaidPaymentIntentId] = useState(null);
+
+  const deliverGiftCardEmails = async (paymentIntentId) => {
+    const mailRes = await fetch(apiUrl("payment/sendGiftCard.php"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ paymentIntentId }),
+    });
+
+    const preparation = await mailRes.json().catch(() => ({}));
+    if (!mailRes.ok || !preparation.success) {
+      throw new Error(
+        preparation.error || "Unable to prepare the gift card email.",
+      );
+    }
+
+    let mailResult = preparation;
+    if (preparation.requiresCardImages) {
+      const cards = Array.isArray(preparation.cards) ? preparation.cards : [];
+      if (cards.length === 0) {
+        throw new Error("No gift card codes were created.");
+      }
+
+      const cardImages = await Promise.all(
+        cards.map(async (card) => ({
+          code: card.code,
+          imageDataUrl: await renderGiftCardImage(card),
+        })),
+      );
+
+      const sendRes = await fetch(apiUrl("payment/sendGiftCard.php"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          paymentIntentId,
+          cardImages,
+        }),
+      });
+      mailResult = await sendRes.json().catch(() => ({}));
+
+      if (!sendRes.ok || !mailResult.success) {
+        throw new Error(
+          mailResult.error || "Unable to send the gift card emails.",
+        );
+      }
+    }
+
+    if (!mailResult.sentToRecipient || !mailResult.sentToSender) {
+      console.error("One or more gift card emails failed:", mailResult);
+    }
+  };
 
   const handlePayment = async () => {
     if (!stripe || !elements) return;
     setIsProcessing(true);
     setCardError(null);
+    let paymentSucceeded = Boolean(paidPaymentIntentId);
 
     try {
+      if (paidPaymentIntentId) {
+        await deliverGiftCardEmails(paidPaymentIntentId);
+        onSuccess();
+        return;
+      }
+
       // Step 1 — create payment intent
       const res = await fetch(apiUrl("payment/create-payment.php"), {
         method: "POST",
@@ -85,35 +263,19 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
       }
 
       if (paymentIntent?.status === "succeeded") {
+        paymentSucceeded = true;
+        setPaidPaymentIntentId(paymentIntent.id);
         // Step 3 — payment confirmed, now send the gift card email
-        const mailRes = await fetch(apiUrl("payment/sendGiftCard.php"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            paymentIntentId: paymentIntent.id,
-            recipient: formData.recipient,
-            recipientEmail: formData.recipientEmail,
-            senderName: formData.senderName,
-            senderEmail: formData.senderEmail,
-            message: formData.message,
-            giftCardAmount: formData.amount,
-            quantity: formData.quantity,
-          }),
-        });
-
-        if (!mailRes.ok) {
-          // Payment succeeded but email failed — still show success to user,
-          // error is logged server-side so you can resend manually
-          console.error(
-            "Gift card email failed:",
-            await mailRes.json().catch(() => ({})),
-          );
-        }
-
+        await deliverGiftCardEmails(paymentIntent.id);
         onSuccess();
       }
     } catch (err) {
-      setCardError(err.message || "Something went wrong.");
+      const detail = err.message || "Something went wrong.";
+      setCardError(
+        paymentSucceeded
+          ? `Your payment succeeded, but the email could not be sent. ${detail}`
+          : detail,
+      );
     } finally {
       setIsProcessing(false);
     }
@@ -206,7 +368,7 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
         <div className="flex gap-3">
           <button
             onClick={onBack}
-            disabled={isProcessing}
+            disabled={isProcessing || Boolean(paidPaymentIntentId)}
             className="flex-1 py-3 border-2 border-gray-200 text-gray-700 font-medium rounded-xl hover:bg-gray-50 transition-all disabled:opacity-50"
           >
             ← Back
@@ -238,10 +400,10 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   />
                 </svg>
-                Processing…
+                {paidPaymentIntentId ? "Sending email…" : "Processing…"}
               </>
             ) : (
-              `Pay $${totalPrice}.00`
+              paidPaymentIntentId ? "Retry email" : `Pay $${totalPrice}.00`
             )}
           </button>
         </div>
@@ -307,6 +469,7 @@ const Stripe_test = () => {
     () => formData.amount * formData.quantity,
     [formData.amount, formData.quantity],
   );
+  const previewExpirationDate = useMemo(() => getPreviewExpirationDate(), []);
 
   const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 
@@ -453,23 +616,21 @@ const Stripe_test = () => {
 
               {onlinePurchaseEnabled && (
                 <>
-                  <div className="absolute left-[42%] top-[30%] text-[#8b7b67] text-sm sm:text-lg italic font-semibold">
-                    {formData.amount}
+                  <div className="absolute left-[48.5%] top-[30%] text-[#8b7b67] text-sm sm:text-lg italic font-semibold">
+                    {Number(formData.amount).toFixed(2)}
                   </div>
 
-                  <div className="absolute left-[42%] top-[45%] text-[#8b7b67] text-sm sm:text-lg italic">
+                  <div className="absolute left-[82.5%] top-[31.5%] text-[#8b7b67] text-[10px] sm:text-sm italic">
+                    {previewExpirationDate}
+                  </div>
+
+                  <div className="absolute left-[48.5%] top-[45%] text-[#8b7b67] text-sm sm:text-lg italic">
                     {formData.recipient || "Recipient Name"}
                   </div>
 
-                  <div className="absolute left-[42%] top-[61%] text-[#8b7b67] text-sm sm:text-lg italic">
+                  <div className="absolute left-[48.5%] top-[61%] text-[#8b7b67] text-sm sm:text-lg italic">
                     {formData.senderName || "Your Name"}
                   </div>
-
-                  {formData.message && (
-                    <div className="absolute left-[39%] top-[76%] max-w-[45%] text-[#8b7b67] text-xs sm:text-sm italic line-clamp-2 ">
-                      “{formData.message}”
-                    </div>
-                  )}
                 </>
               )}
             </div>
