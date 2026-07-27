@@ -8,8 +8,15 @@ import {
   Plus,
   Pencil,
   Save,
+  ImageIcon,
+  Upload,
 } from "lucide-react";
-import { apiUrl, normalizeApiAssetUrl } from "../../../utils/api";
+import {
+  apiUrl,
+  normalizeApiAssetUrl,
+  withCacheVersion,
+} from "../../../utils/api";
+import { optimizeImageUpload } from "@/utils/optimizeImageUpload";
 
 /* ---------------- Types ---------------- */
 interface MerchItem {
@@ -43,6 +50,19 @@ interface MerchCategory {
 interface MerchSettings {
   online_purchase_enabled: boolean;
 }
+
+interface MerchHeroImage {
+  slot: number;
+  image_url: string;
+  updated_at?: string;
+}
+
+const MERCH_HERO_SLOTS = [
+  { slot: 1, label: "Top image", fallback: "/merchendise/merch1.webp" },
+  { slot: 2, label: "Left image", fallback: "/merchendise/coffee.webp" },
+  { slot: 3, label: "Bottom image", fallback: "/merchendise/bag1.webp" },
+  { slot: 4, label: "Right image", fallback: "/merchendise/cup2.webp" },
+];
 
 /* ---------------- Toast ---------------- */
 const ToastNotification = ({
@@ -129,6 +149,11 @@ export default function AdminMerch() {
   });
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [settingsSaving, setSettingsSaving] = useState(false);
+  const [heroImages, setHeroImages] = useState<Record<number, MerchHeroImage>>(
+    {},
+  );
+  const [heroImagesLoading, setHeroImagesLoading] = useState(true);
+  const [heroSavingSlot, setHeroSavingSlot] = useState<number | null>(null);
 
   /* ---------- Toast helpers ---------- */
   const addToast = useCallback((message: string, type: Toast["type"]) =>
@@ -184,11 +209,128 @@ export default function AdminMerch() {
     }
   }, [addToast]);
 
+  const fetchHeroImages = useCallback(async () => {
+    setHeroImagesLoading(true);
+    try {
+      const response = await fetch(apiUrl("merch/hero_images.php"), {
+        cache: "no-store",
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to fetch hero images");
+      }
+
+      const nextImages: Record<number, MerchHeroImage> = {};
+      const images: MerchHeroImage[] = Array.isArray(data.images)
+        ? data.images
+        : [];
+      for (const image of images) {
+        if (image.slot >= 1 && image.slot <= 4 && image.image_url) {
+          nextImages[image.slot] = image;
+        }
+      }
+      setHeroImages(nextImages);
+    } catch {
+      addToast("Failed to load merchandise hero images", "error");
+    } finally {
+      setHeroImagesLoading(false);
+    }
+  }, [addToast]);
+
   useEffect(() => {
     fetchCategories();
     fetchItems();
     fetchSettings();
-  }, [fetchCategories, fetchItems, fetchSettings]);
+    fetchHeroImages();
+  }, [fetchCategories, fetchHeroImages, fetchItems, fetchSettings]);
+
+  const uploadHeroImage = async (slot: number, selectedFile: File) => {
+    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    if (!allowedTypes.has(selectedFile.type)) {
+      addToast("Choose a JPG, PNG, or WebP image", "warning");
+      return;
+    }
+    if (selectedFile.size > 25 * 1024 * 1024) {
+      addToast("The source image must be no larger than 25 MB", "warning");
+      return;
+    }
+
+    setHeroSavingSlot(slot);
+    try {
+      const optimized = await optimizeImageUpload(selectedFile);
+      if (optimized.file.size > 10 * 1024 * 1024) {
+        throw new Error("The optimized image must be no larger than 10 MB");
+      }
+
+      const body = new FormData();
+      body.append("slot", String(slot));
+      body.append("image", optimized.file, optimized.file.name);
+      const response = await fetch(apiUrl("merch/hero_images.php"), {
+        method: "POST",
+        body,
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to update the hero image");
+      }
+
+      await fetchHeroImages();
+      addToast("Merchandise hero image updated", "success");
+    } catch (error) {
+      addToast(
+        error instanceof Error ? error.message : "Failed to update hero image",
+        "error",
+      );
+    } finally {
+      setHeroSavingSlot(null);
+    }
+  };
+
+  const resetHeroImage = async (slot: number) => {
+    if (!window.confirm("Restore the original image for this hero position?")) {
+      return;
+    }
+
+    setHeroSavingSlot(slot);
+    try {
+      const response = await fetch(
+        apiUrl(`merch/hero_images.php?slot=${slot}`),
+        { method: "DELETE" },
+      );
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to restore the original image");
+      }
+
+      await fetchHeroImages();
+      addToast("Original merchandise hero image restored", "success");
+    } catch (error) {
+      addToast(
+        error instanceof Error
+          ? error.message
+          : "Failed to restore the original image",
+        "error",
+      );
+    } finally {
+      setHeroSavingSlot(null);
+    }
+  };
+
+  const heroPreviewUrl = (slot: number, fallback: string) => {
+    const image = heroImages[slot];
+    if (!image) return fallback;
+
+    const parsedVersion = image.updated_at
+      ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
+      : 0;
+    return withCacheVersion(
+      normalizeApiAssetUrl(image.image_url),
+      Number.isFinite(parsedVersion) ? parsedVersion : 0,
+    );
+  };
 
   const updatePurchaseSetting = async (nextEnabled: boolean) => {
     const confirmed = window.confirm(
@@ -420,6 +562,97 @@ const addCategory = async () => {
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="mb-6 rounded-xl border bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-5 flex items-start gap-3">
+          <div className="rounded-lg bg-amber-100 p-2">
+            <ImageIcon className="h-5 w-5 text-amber-700" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              Merchandise Hero Images
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Change the four images displayed on the right side of the
+              merchandise page. JPG, PNG, or WebP; up to 10 MB after
+              optimization.
+            </p>
+          </div>
+        </div>
+
+        {heroImagesLoading ? (
+          <p className="py-8 text-center text-sm text-gray-500">
+            Loading hero images...
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {MERCH_HERO_SLOTS.map(({ slot, label, fallback }) => {
+              const hasOverride = Boolean(heroImages[slot]);
+              const isSaving = heroSavingSlot === slot;
+
+              return (
+                <article
+                  key={slot}
+                  className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
+                >
+                  <div className="aspect-4/5 overflow-hidden bg-gray-100">
+                    <img
+                      src={heroPreviewUrl(slot, fallback)}
+                      alt={`${label} preview`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="space-y-3 p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-sm font-semibold text-gray-800">
+                        {label}
+                      </p>
+                      <span className="text-xs text-gray-500">
+                        {hasOverride ? "Custom" : "Original"}
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <label
+                        className={`inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-amber-700 ${
+                          isSaving
+                            ? "cursor-not-allowed opacity-60"
+                            : "cursor-pointer"
+                        }`}
+                      >
+                        <Upload className="h-3.5 w-3.5" />
+                        {isSaving
+                          ? "Saving..."
+                          : hasOverride
+                            ? "Replace"
+                            : "Upload"}
+                        <input
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          className="sr-only"
+                          disabled={isSaving}
+                          onChange={(event) => {
+                            const file = event.target.files?.[0];
+                            event.target.value = "";
+                            if (file) void uploadHeroImage(slot, file);
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => resetHeroImage(slot)}
+                        disabled={!hasOverride || isSaving}
+                        className="rounded-lg border border-gray-300 px-3 py-2 text-xs font-semibold text-gray-700 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        Reset
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* CATEGORY MANAGER */}

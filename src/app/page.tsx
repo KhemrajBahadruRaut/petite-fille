@@ -4,6 +4,7 @@ import MainPage from "@/components/mainpage/MainPage";
 import Welcome from "@/components/welcomePage/welcome";
 import WhatWeOffer from "@/components/whatWeOffer/WhatWeOffer";
 import "./globals.css";
+import InstagramPosts from "@/components/insta-posts/Instagram";
 
 export const metadata: Metadata = {
   title: "Petite Fille | Cafe Rosanna - Breakfast, Brunch & Coffee",
@@ -43,6 +44,7 @@ export default async function Home() {
       <Welcome />
       <WhatWeOffer />
       <GiftCard />
+      <InstagramPosts/>
     </div>
   );
 }
