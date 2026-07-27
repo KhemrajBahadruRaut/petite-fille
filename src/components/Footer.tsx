@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 import {
   FaPaperPlane,
@@ -30,8 +31,11 @@ const Footer = () => {
               <FaFacebook />
             </a>
             <a
-              href="https://www.instagram.com/petitefillerosanna/"
-              aria-label="Instagram"
+              href="https://www.instagram.com/accounts/login/?next=%2Fpetitefillerosanna%2F&source=desktop_nav"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Open Petite Fille on Instagram in a new tab; login may be required"
+              title="Open Petite Fille on Instagram"
               className="hover:text-gray-200"
             >
               <FaInstagram />
@@ -82,9 +86,9 @@ const Footer = () => {
           </h3>
           <ul className="space-y-3 text-sm pt-4">
             <li>
-              <a href="/" className="hover:text-gray-200">
+              <Link href="/" className="hover:text-gray-200">
                 Home
-              </a>
+              </Link>
             </li>
             <li>
               <a href="/aboutUs" className="hover:text-gray-200">
