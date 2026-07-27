@@ -212,7 +212,7 @@ export default function AboutUs() {
             {content.top.image1 && (
               <motion.div
                 {...slideIn(50, 50)}
-                className="absolute top-3 sm:right-48 md:right-44 w-42 sm:w-40 md:w-50 z-12"
+                className="absolute top-3 sm:right-48 md:right-46 w-34 sm:w-40 md:w-50 z-12"
               >
                 <img
                   src={content.top.image1}
@@ -227,7 +227,7 @@ export default function AboutUs() {
             {content.top.image2 && (
               <motion.div
                 {...slideIn(-50, -50)}
-                className="absolute -bottom-13.75 sm:bottom-4 right-4 sm:right-6 w-42 sm:w-44 md:w-48 z-11"
+                className="absolute -bottom-13.75 sm:bottom-4 right-4 sm:right-6 w-34 sm:w-44 md:w-48 z-11"
               >
                 <img
                   src={content.top.image2}
@@ -256,7 +256,7 @@ export default function AboutUs() {
             {content.bottom.image1 && (
               <motion.div
                 {...slideIn(-50, 50)}
-                className="absolute right-2 top-5 sm:right-3 w-32 sm:w-40 md:w-46 z-11"
+                className="absolute right-2 top-4 sm:right-3 w-32 sm:w-40 md:w-46 z-11"
               >
                 <img
                   src={content.bottom.image1}
@@ -272,13 +272,13 @@ export default function AboutUs() {
             {content.bottom.image2 && (
               <motion.div
                 {...slideIn(50, -50)}
-                className="absolute bottom-5 left-2 sm:left-3 w-44 sm:w-52 md:w-60 z-12"
+                className="absolute bottom-9 left-2 sm:left-5 w-44 sm:w-52 md:w-60 z-12"
               >
                 <img
                   src={content.bottom.image2}
                   alt="Breakfast and brunch at Petite Fille Cafe"
-                  width={240}
-                  height={240}
+                  width={180}
+                  height={180}
                   loading="lazy"
                   decoding="async"
                   className="object-contain"

@@ -118,7 +118,7 @@ const WhatWeOffer = () => {
   const displayItems = isLoading ? fallbackItems : items;
 
   return (
-    <div className="bg-[#F5F1E8] py-10">
+    <div className="bg-[#F5F1E8] ">
       <section className="w-full  py-16 px-6 md:px-12 lg:px-20 container mx-auto">
         {/* Heading */}
         <div className="text-center max-w-2xl mx-auto mb-12">
