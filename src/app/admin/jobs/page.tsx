@@ -20,6 +20,7 @@ import {
   withCacheVersion,
 } from "../../../utils/api";
 import { optimizeImageUpload } from "@/utils/optimizeImageUpload";
+import { preloadImages, waitForNextPaint } from "@/utils/preloadImage";
 
 type JobType = "Full-time" | "Part-time" | "Contract";
 
@@ -221,8 +222,8 @@ export default function AdminJobsPage() {
     }
   }, [addToast]);
 
-  const fetchCarouselImages = useCallback(async () => {
-    setCarouselLoading(true);
+  const fetchCarouselImages = useCallback(async (waitForPreviews = false) => {
+    if (!waitForPreviews) setCarouselLoading(true);
     try {
       const response = await fetch(apiUrl("jobs/carousel_images.php"), {
         cache: "no-store",
@@ -242,12 +243,29 @@ export default function AdminJobsPage() {
             }))
             .filter((image: CareerCarouselImage) => image.id > 0 && image.image_url)
         : [];
+
+      const previewsReady = waitForPreviews
+        ? await preloadImages(
+            images.map((image) => {
+              const parsedVersion = image.updated_at
+                ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
+                : 0;
+              return withCacheVersion(
+                normalizeApiAssetUrl(image.image_url),
+                Number.isFinite(parsedVersion) ? parsedVersion : Date.now(),
+              );
+            }),
+          )
+        : true;
+
       setCarouselImages(images);
+      return previewsReady;
     } catch {
       setCarouselImages([]);
       addToast("Failed to load careers carousel images", "error");
+      return false;
     } finally {
-      setCarouselLoading(false);
+      if (!waitForPreviews) setCarouselLoading(false);
     }
   }, [addToast]);
 
@@ -275,7 +293,7 @@ export default function AdminJobsPage() {
 
     try {
       for (const selectedFile of selectedFiles) {
-        const optimized = await optimizeImageUpload(selectedFile);
+        const optimized = await optimizeImageUpload(selectedFile, 1600, 0.82);
         if (optimized.file.size > 10 * 1024 * 1024) {
           throw new Error(
             `${selectedFile.name} is still larger than the 10 MB upload limit`,
@@ -298,21 +316,36 @@ export default function AdminJobsPage() {
         uploadedCount += 1;
       }
 
+      const previewsReady = await fetchCarouselImages(true);
+      await waitForNextPaint();
       addToast(
-        `${uploadedCount} careers carousel image${
-          uploadedCount === 1 ? "" : "s"
-        } added`,
-        "success",
+        previewsReady
+          ? `${uploadedCount} careers carousel image${
+              uploadedCount === 1 ? "" : "s"
+            } added`
+          : `${uploadedCount} image${
+              uploadedCount === 1 ? " was" : "s were"
+            } uploaded, but the preview is still loading. Refresh if needed.`,
+        previewsReady ? "success" : "warning",
       );
     } catch (error) {
+      if (uploadedCount > 0) {
+        await fetchCarouselImages(true);
+        await waitForNextPaint();
+      }
       addToast(
-        error instanceof Error
-          ? error.message
-          : "Failed to upload carousel images",
-        "error",
+        `${
+          uploadedCount > 0
+            ? `${uploadedCount} image${uploadedCount === 1 ? " was" : "s were"} uploaded. `
+            : ""
+        }${
+          error instanceof Error
+            ? error.message
+            : "Failed to upload carousel images"
+        }`,
+        uploadedCount > 0 ? "warning" : "error",
       );
     } finally {
-      await fetchCarouselImages();
       setCarouselUploading(false);
     }
   };

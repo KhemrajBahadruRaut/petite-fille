@@ -24,6 +24,7 @@ import {
   withCacheVersion,
 } from "../../utils/api";
 import { useLiveRefresh } from "@/hooks/useLiveRefresh";
+import { preloadImages } from "@/utils/preloadImage";
 import Link from "next/link";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -573,6 +574,7 @@ export default function Merchendise() {
       }
 
       const nextImages = [...DEFAULT_MERCH_HERO_IMAGES];
+      const remoteImageUrls: string[] = [];
       const images: MerchHeroImage[] = Array.isArray(data.images)
         ? data.images
         : [];
@@ -585,12 +587,16 @@ export default function Merchendise() {
         const parsedVersion = image.updated_at
           ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
           : 0;
-        nextImages[image.slot - 1] = withCacheVersion(
+        const imageUrl = withCacheVersion(
           normalizeApiAssetUrl(image.image_url),
           Number.isFinite(parsedVersion) ? parsedVersion : 0,
         );
+        nextImages[image.slot - 1] = imageUrl;
+        remoteImageUrls.push(imageUrl);
       }
 
+      await preloadImages(remoteImageUrls);
+      if (signal.aborted) return;
       setHeroImages(nextImages);
     } catch (error) {
       if (!(error instanceof Error && error.name === "AbortError")) {
@@ -789,7 +795,7 @@ export default function Merchendise() {
             <img
               src={heroImages[0]}
               alt="T-Shirts"
-              loading="lazy"
+              loading="eager"
               decoding="async"
               className="w-full h-full object-cover shadow-md"
             />
@@ -805,7 +811,7 @@ export default function Merchendise() {
             <img
               src={heroImages[1]}
               alt="Coffee Bag"
-              loading="lazy"
+              loading="eager"
               decoding="async"
               className="w-full h-full object-cover shadow-md"
             />
@@ -821,7 +827,7 @@ export default function Merchendise() {
             <img
               src={heroImages[2]}
               alt="Tote Bag"
-              loading="lazy"
+              loading="eager"
               decoding="async"
               className="w-full h-full object-cover shadow-md"
             />
@@ -837,7 +843,7 @@ export default function Merchendise() {
             <img
               src={heroImages[3]}
               alt="Mugs"
-              loading="lazy"
+              loading="eager"
               decoding="async"
               className="w-full h-full object-cover shadow-md"
             />

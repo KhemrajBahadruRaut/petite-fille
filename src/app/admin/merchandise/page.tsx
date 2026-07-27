@@ -17,6 +17,7 @@ import {
   withCacheVersion,
 } from "../../../utils/api";
 import { optimizeImageUpload } from "@/utils/optimizeImageUpload";
+import { preloadImages, waitForNextPaint } from "@/utils/preloadImage";
 
 /* ---------------- Types ---------------- */
 interface MerchItem {
@@ -209,8 +210,8 @@ export default function AdminMerch() {
     }
   }, [addToast]);
 
-  const fetchHeroImages = useCallback(async () => {
-    setHeroImagesLoading(true);
+  const fetchHeroImages = useCallback(async (waitForPreviews = false) => {
+    if (!waitForPreviews) setHeroImagesLoading(true);
     try {
       const response = await fetch(apiUrl("merch/hero_images.php"), {
         cache: "no-store",
@@ -230,11 +231,28 @@ export default function AdminMerch() {
           nextImages[image.slot] = image;
         }
       }
+
+      const previewsReady = waitForPreviews
+        ? await preloadImages(
+            Object.values(nextImages).map((image) => {
+              const parsedVersion = image.updated_at
+                ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
+                : 0;
+              return withCacheVersion(
+                normalizeApiAssetUrl(image.image_url),
+                Number.isFinite(parsedVersion) ? parsedVersion : Date.now(),
+              );
+            }),
+          )
+        : true;
+
       setHeroImages(nextImages);
+      return previewsReady;
     } catch {
       addToast("Failed to load merchandise hero images", "error");
+      return false;
     } finally {
-      setHeroImagesLoading(false);
+      if (!waitForPreviews) setHeroImagesLoading(false);
     }
   }, [addToast]);
 
@@ -256,9 +274,20 @@ export default function AdminMerch() {
       return;
     }
 
+    if (heroImages[slot]) {
+      const slotLabel =
+        MERCH_HERO_SLOTS.find((imageSlot) => imageSlot.slot === slot)?.label ??
+        "hero image";
+      const confirmed = window.confirm(
+        `Are you sure you want to replace the current ${slotLabel.toLowerCase()} with "${selectedFile.name}"? The current custom image will be removed.`,
+      );
+
+      if (!confirmed) return;
+    }
+
     setHeroSavingSlot(slot);
     try {
-      const optimized = await optimizeImageUpload(selectedFile);
+      const optimized = await optimizeImageUpload(selectedFile, 1200, 0.82);
       if (optimized.file.size > 10 * 1024 * 1024) {
         throw new Error("The optimized image must be no larger than 10 MB");
       }
@@ -276,8 +305,14 @@ export default function AdminMerch() {
         throw new Error(data?.message || "Failed to update the hero image");
       }
 
-      await fetchHeroImages();
-      addToast("Merchandise hero image updated", "success");
+      const previewReady = await fetchHeroImages(true);
+      await waitForNextPaint();
+      addToast(
+        previewReady
+          ? "Merchandise hero image updated"
+          : "Image uploaded, but its preview is still loading. Refresh if needed.",
+        previewReady ? "success" : "warning",
+      );
     } catch (error) {
       addToast(
         error instanceof Error ? error.message : "Failed to update hero image",

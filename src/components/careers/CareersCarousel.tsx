@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useLiveRefresh } from "@/hooks/useLiveRefresh";
+import { preloadImages } from "@/utils/preloadImage";
 import {
     apiUrl,
     normalizeApiAssetUrl,
@@ -52,6 +53,8 @@ export default function CareersCarousel() {
                     );
                 });
 
+            await preloadImages(remoteSlides);
+            if (signal.aborted) return;
             setSlides(remoteSlides.length > 0 ? remoteSlides : FALLBACK_SLIDES);
         } catch (error) {
             if (!(error instanceof Error && error.name === "AbortError")) {
