@@ -217,8 +217,8 @@ export default function AboutUs() {
                 <img
                   src={content.top.image1}
                   alt="Petite Fille Cafe Rosanna dining experience"
-                  width={200}
-                  height={200}
+                  width={180}
+                  height={180}
                   decoding="async"
                   className="object-contain"
                 />
@@ -227,13 +227,13 @@ export default function AboutUs() {
             {content.top.image2 && (
               <motion.div
                 {...slideIn(-50, -50)}
-                className="absolute -bottom-13.75 sm:bottom-4 right-4 sm:right-6 w-34 sm:w-44 md:w-48 z-11"
+                className="absolute -bottom-13.75 sm:bottom-0.5 right-4  sm:right-1 w-34 sm:w-44 md:w-48 z-11"
               >
                 <img
                   src={content.top.image2}
                   alt="Fresh food served at Petite Fille Cafe Rosanna"
-                  width={200}
-                  height={200}
+                  width={180}
+                  height={180}
                   decoding="async"
                   className="object-contain"
                 />
