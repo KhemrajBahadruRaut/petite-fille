@@ -26,6 +26,7 @@ const Footer = () => {
             <a
               href="https://www.facebook.com/PetiteFilleRosanna"
               aria-label="Facebook"
+              target="_blank"
               className="hover:text-gray-200"
             >
               <FaFacebook />
@@ -42,6 +43,7 @@ const Footer = () => {
             </a>
             <a
               href="https://www.tiktok.com/@petite.fille.cafe"
+              target="_blank"
               aria-label="TikTok"
               className="hover:text-gray-200"
             >
