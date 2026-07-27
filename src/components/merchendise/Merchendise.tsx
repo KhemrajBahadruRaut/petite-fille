@@ -18,7 +18,11 @@ import {
   useCartTotalItems,
   type CartItem,
 } from "@/stores/cartStore";
-import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
+import {
+  apiUrl,
+  normalizeApiAssetUrl,
+  withCacheVersion,
+} from "../../utils/api";
 import { useLiveRefresh } from "@/hooks/useLiveRefresh";
 import Link from "next/link";
 
@@ -55,7 +59,20 @@ interface CategorySection {
   products: Product[];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+interface MerchHeroImage {
+  slot: number;
+  image_url: string;
+  updated_at?: string;
+}
+
+const DEFAULT_MERCH_HERO_IMAGES = [
+  "/merchendise/merch1.webp",
+  "/merchendise/coffee.webp",
+  "/merchendise/bag1.webp",
+  "/merchendise/cup2.webp",
+];
+
+// Helpers
 
 const normalizeCategoryKey = (value: string) => value.trim().toLowerCase();
 
@@ -83,7 +100,7 @@ const transformProduct = (item: BackendProduct): Product => {
   };
 };
 
-// ─── Added to Cart Toast ──────────────────────────────────────────────────────
+// Added to Cart Toast
 
 function AddedToCartToast({
   product,
@@ -504,6 +521,7 @@ export default function Merchendise() {
   const [isLoading, setIsLoading] = useState(true);
   const [onlinePurchaseEnabled, setOnlinePurchaseEnabled] = useState(true);
   const [settingsLoading, setSettingsLoading] = useState(true);
+  const [heroImages, setHeroImages] = useState(DEFAULT_MERCH_HERO_IMAGES);
 
   // Cart state (Zustand, persisted to localStorage)
   const cartItems = useCartStore((state) => state.items);
@@ -541,6 +559,47 @@ export default function Merchendise() {
   }, []);
 
   useLiveRefresh(fetchSettings);
+
+  const fetchHeroImages = useCallback(async (signal: AbortSignal) => {
+    try {
+      const response = await fetch(apiUrl("merch/hero_images.php"), {
+        cache: "no-store",
+        signal,
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to fetch merchandise hero images");
+      }
+
+      const nextImages = [...DEFAULT_MERCH_HERO_IMAGES];
+      const images: MerchHeroImage[] = Array.isArray(data.images)
+        ? data.images
+        : [];
+
+      for (const image of images) {
+        if (image.slot < 1 || image.slot > nextImages.length || !image.image_url) {
+          continue;
+        }
+
+        const parsedVersion = image.updated_at
+          ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
+          : 0;
+        nextImages[image.slot - 1] = withCacheVersion(
+          normalizeApiAssetUrl(image.image_url),
+          Number.isFinite(parsedVersion) ? parsedVersion : 0,
+        );
+      }
+
+      setHeroImages(nextImages);
+    } catch (error) {
+      if (!(error instanceof Error && error.name === "AbortError")) {
+        console.error("Failed to refresh merchandise hero images:", error);
+      }
+    }
+  }, []);
+
+  useLiveRefresh(fetchHeroImages);
 
   // ── Fetch products 
   const fetchData = useCallback(async (signal: AbortSignal) => {
@@ -658,7 +717,7 @@ export default function Merchendise() {
             transition={{ delay: 0.3, duration: 0.6 }}
             viewport={{ once: true }}
           >
-            Bring a little piece of Petite Fille home with you. Explore our exclusive collection of branded merchandise, thoughtfully designed for those who love great coffee, good food, and the welcoming spirit of our café. Whether you're treating yourself or looking for the perfect gift, there's something for every Petite Fille fan.
+            Bring a little piece of Petite Fille home with you. Explore our exclusive collection of branded merchandise, thoughtfully designed for those who love great coffee, good food, and the welcoming spirit of our café. Whether you&apos;re treating yourself or looking for the perfect gift, there&apos;s something for every Petite Fille fan.
           </motion.p>
           <motion.div
             className="flex justify-center md:justify-start"
@@ -728,7 +787,7 @@ export default function Merchendise() {
             whileHover={{ y: -5, rotate: -2, transition: { duration: 0.3 } }}
           >
             <img
-              src="/merchendise/merch1.webp"
+              src={heroImages[0]}
               alt="T-Shirts"
               loading="lazy"
               decoding="async"
@@ -744,7 +803,7 @@ export default function Merchendise() {
             whileHover={{ y: -5, rotate: 2, transition: { duration: 0.3 } }}
           >
             <img
-              src="/merchendise/coffee.webp"
+              src={heroImages[1]}
               alt="Coffee Bag"
               loading="lazy"
               decoding="async"
@@ -760,7 +819,7 @@ export default function Merchendise() {
             whileHover={{ y: -5, rotate: -2, transition: { duration: 0.3 } }}
           >
             <img
-              src="/merchendise/bag1.webp"
+              src={heroImages[2]}
               alt="Tote Bag"
               loading="lazy"
               decoding="async"
@@ -776,7 +835,7 @@ export default function Merchendise() {
             whileHover={{ y: -5, rotate: 2, transition: { duration: 0.3 } }}
           >
             <img
-              src="/merchendise/cup2.webp"
+              src={heroImages[3]}
               alt="Mugs"
               loading="lazy"
               decoding="async"
