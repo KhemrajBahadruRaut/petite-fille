@@ -84,9 +84,30 @@ export default function GalleryClient() {
   const rows = useMemo(
     () =>
       [
-        { direction: "left", images: sections[1] || [] },
-        { direction: "right", images: sections[2] || [] },
-        { direction: "left", images: sections[3] || [] },
+        {
+          direction: "left",
+          images: sections[1] || [],
+          widthClass: "w-44",
+          aspectClass: "aspect-[3/4]",
+          width: 176,
+          height: 235,
+        },
+        {
+          direction: "right",
+          images: sections[2] || [],
+          widthClass: "w-72",
+          aspectClass: "aspect-video",
+          width: 288,
+          height: 162,
+        },
+        {
+          direction: "left",
+          images: sections[3] || [],
+          widthClass: "w-48",
+          aspectClass: "aspect-square",
+          width: 192,
+          height: 192,
+        },
       ].filter((row) => row.images.length > 0),
     [sections],
   );
@@ -112,15 +133,15 @@ export default function GalleryClient() {
                 onClick={() => setSelectedImage(img.image_url)}
                 type="button"
               >
-                <div className="overflow-hidden shadow-md">
+                <div className={`overflow-hidden shadow-md ${row.widthClass} ${row.aspectClass}`}>
                   <img
                     src={img.image_url}
                     alt={`Petite Fille Cafe Rosanna - food, coffee and cafe photo ${i * 10 + imgIndex + 1}`}
-                    width={200}
-                    height={140}
+                    width={row.width}
+                    height={row.height}
                     loading="lazy"
                     decoding="async"
-                    className="object-cover transition-transform duration-500 hover:scale-110"
+                    className="h-full w-full object-cover transition-transform duration-500 hover:scale-110"
                   />
                 </div>
               </button>

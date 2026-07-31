@@ -29,7 +29,10 @@ export default function AdminGalleryPage() {
 
   const sectionConfig = {
     1: {
-      name: "Portfolio",
+      name: "Vertical Images",
+      description: "Portrait format (3:4)",
+      aspectClass: "aspect-[3/4]",
+      gridClass: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
@@ -40,7 +43,10 @@ export default function AdminGalleryPage() {
       hoverColor: "hover:bg-rose-100 hover:border-rose-300 hover:shadow-md hover:scale-[1.01]"
     },
     2: {
-      name: "Showcase",
+      name: "Horizontal Images",
+      description: "Landscape format (16:9)",
+      aspectClass: "aspect-video",
+      gridClass: "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -51,7 +57,10 @@ export default function AdminGalleryPage() {
       hoverColor: "hover:bg-emerald-100 hover:border-emerald-300 hover:shadow-md hover:scale-[1.01]"
     },
     3: {
-      name: "Gallery",
+      name: "Square Images",
+      description: "Square format (1:1)",
+      aspectClass: "aspect-square",
+      gridClass: "grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6",
       icon: (
         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.084 15.812a7.5 7.5 0 010-7.624M19.043 17.771a10.5 10.5 0 010-11.542M9.25 8.5l3 3m0 0l3-3m-3 3V3m-3.5 9.5h7" />
@@ -265,6 +274,9 @@ export default function AdminGalleryPage() {
     setFiles(prev => prev.filter((_, index) => index !== indexToRemove));
   };
 
+  const selectedSectionConfig =
+    sectionConfig[section as keyof typeof sectionConfig];
+
   return (
     <div className="min-h-screen bg-slate-50 p-4 md:p-6 lg:p-8">
       <div className="max-w-7xl mx-auto">
@@ -274,7 +286,9 @@ export default function AdminGalleryPage() {
           <h1 className="text-xl font-semibold text-slate-800 mb-2">
             Gallery Management
           </h1>
-          <p className="text-slate-600">Organize and manage your gallery collections with ease</p>
+          <p className="text-slate-600">
+            Keep portrait, landscape, and square images in their matching sections.
+          </p>
         </div>
 
         {/* Upload Section */}
@@ -310,11 +324,14 @@ export default function AdminGalleryPage() {
                         const fileKey = `${file.name}-${index}`;
                         const progress = uploadProgress[fileKey];
                         return (
-                          <div key={index} className="relative">
+                          <div
+                            key={index}
+                            className={`relative overflow-hidden rounded-lg bg-slate-100 ${selectedSectionConfig.aspectClass}`}
+                          >
                             <img
                               src={previewUrls[index]}
                               alt={`Preview ${index + 1}`}
-                              className="w-full h-20 object-cover rounded-lg shadow-sm"
+                              className="absolute inset-0 h-full w-full object-cover shadow-sm"
                             />
                             {progress !== undefined && (
                               <div className="absolute inset-0 bg-black bg-opacity-50 rounded-lg flex items-center justify-center">
@@ -404,7 +421,8 @@ export default function AdminGalleryPage() {
                         <span className="text-2xl mr-3">{config.icon}</span>
                         <div className="text-left flex-1">
                           <div className="font-semibold">Section {sec}</div>
-                          <div className="text-sm opacity-75">{config.name}</div>
+                          <div className="text-sm opacity-80">{config.name}</div>
+                          <div className="text-xs opacity-70">{config.description}</div>
                         </div>
                         {isSelected && (
                           <svg className="w-5 h-5 ml-2" fill="currentColor" viewBox="0 0 20 20">
@@ -500,7 +518,7 @@ export default function AdminGalleryPage() {
                       </div>
                       
                       <div className="text-xs text-slate-500 mt-3 pt-2 border-t border-slate-200">
-                        Destination: Section {section} • Total size: {(files.reduce((acc, file) => acc + file.size, 0) / 1024 / 1024).toFixed(2)} MB
+                        Destination: Section {section} ({selectedSectionConfig.name}) • Total size: {(files.reduce((acc, file) => acc + file.size, 0) / 1024 / 1024).toFixed(2)} MB
                       </div>
                     </div>
                   </>
@@ -528,19 +546,22 @@ export default function AdminGalleryPage() {
                       <p className="text-slate-500 text-sm">
                         {sections[sec]?.length || 0} {(sections[sec]?.length || 0) === 1 ? 'image' : 'images'}
                       </p>
+                      <p className="text-slate-400 text-xs">
+                        {config.description}
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 {sections[sec]?.length > 0 ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+                  <div className={`grid gap-4 ${config.gridClass}`}>
                     {sections[sec].map((img) => (
                       <div
                         key={img.id}
                         className="relative group rounded-lg overflow-hidden border border-slate-200 bg-slate-50 hover:shadow-md transition-all duration-200"
                       >
                         {imageErrors[img.id] ? (
-                          <div className="w-full h-32 bg-slate-100 flex flex-col items-center justify-center text-slate-400">
+                          <div className={`${config.aspectClass} flex w-full flex-col items-center justify-center bg-slate-100 text-slate-400`}>
                             <svg className="w-8 h-8 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                             </svg>
@@ -550,7 +571,7 @@ export default function AdminGalleryPage() {
                           <img
                             src={img.image_url}
                             alt={`Section ${sec} image ${img.id}`}
-                            className="w-full h-32 object-cover"
+                            className={`${config.aspectClass} w-full object-cover`}
                             onError={() => handleImageError(img.id)}
                             loading="lazy"
                           />

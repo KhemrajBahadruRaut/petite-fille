@@ -1,19 +1,30 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   X,
   CheckCircle,
   AlertCircle,
+  ArrowDown,
+  ArrowUp,
   Trash2,
   Plus,
   Edit2,
   Eye,
   EyeOff,
+  ImageIcon,
   Utensils,
   Pencil,
   Save,
+  Upload,
 } from "lucide-react";
-import { apiUrl } from "../../../utils/api";
+import {
+  apiUrl,
+  normalizeApiAssetUrl,
+  withCacheVersion,
+} from "../../../utils/api";
+import { optimizeImageUpload } from "@/utils/optimizeImageUpload";
+import { preloadImages, waitForNextPaint } from "@/utils/preloadImage";
+import { announceMenuCarouselRefresh } from "@/utils/menuCarouselRefresh";
 
 interface MenuItem {
   id: number;
@@ -45,6 +56,13 @@ interface Category {
   id: number;
   name: string;
   slug: string;
+}
+
+interface MenuCarouselImage {
+  id: number;
+  image_url: string;
+  sort_order: number;
+  updated_at?: string;
 }
 
 const ToastNotification = ({
@@ -124,6 +142,11 @@ export default function AdminMenu() {
   const [pendingAllImageVisibility, setPendingAllImageVisibility] = useState<
     "hide" | "show" | null
   >(null);
+  const [carouselImages, setCarouselImages] = useState<MenuCarouselImage[]>([]);
+  const [carouselLoading, setCarouselLoading] = useState(true);
+  const [carouselUploading, setCarouselUploading] = useState(false);
+  const [carouselBusyId, setCarouselBusyId] = useState<number | null>(null);
+  const [carouselReordering, setCarouselReordering] = useState(false);
 
   const [form, setForm] = useState<MenuForm>({
     name: "",
@@ -134,15 +157,18 @@ export default function AdminMenu() {
   });
 
   /** Toast helpers */
-  const addToast = (message: string, type: "success" | "error" | "warning") => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, message, type }]);
-  };
+  const addToast = useCallback(
+    (message: string, type: "success" | "error" | "warning") => {
+      const id = Date.now() + Math.random();
+      setToasts((prev) => [...prev, { id, message, type }]);
+    },
+    [],
+  );
   const removeToast = (id: number) =>
     setToasts((prev) => prev.filter((t) => t.id !== id));
 
   /** Fetch items */
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await fetch(
@@ -168,10 +194,10 @@ export default function AdminMenu() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [addToast]);
 
   /** Fetch categories */
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const res = await fetch(apiUrl("menu/get_categories.php"));
       const data = await res.json();
@@ -179,12 +205,225 @@ export default function AdminMenu() {
     } catch {
       addToast("Failed to load categories", "error");
     }
-  };
+  }, [addToast]);
+
+  const fetchCarouselImages = useCallback(async (waitForPreviews = false) => {
+    if (!waitForPreviews) setCarouselLoading(true);
+
+    try {
+      const response = await fetch(apiUrl("menu/carousel_images.php"), {
+        cache: "no-store",
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.message || "Failed to fetch carousel images");
+      }
+
+      const images: MenuCarouselImage[] = Array.isArray(data.images)
+        ? data.images
+            .map((image: MenuCarouselImage) => ({
+              ...image,
+              id: Number(image.id),
+              sort_order: Number(image.sort_order),
+            }))
+            .filter((image: MenuCarouselImage) => image.id > 0 && image.image_url)
+        : [];
+
+      const previewsReady = waitForPreviews
+        ? await preloadImages(
+            images.map((image) => {
+              const parsedVersion = image.updated_at
+                ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
+                : 0;
+              return withCacheVersion(
+                normalizeApiAssetUrl(image.image_url),
+                Number.isFinite(parsedVersion) ? parsedVersion : Date.now(),
+              );
+            }),
+          )
+        : true;
+
+      setCarouselImages(images);
+      return previewsReady;
+    } catch {
+      setCarouselImages([]);
+      addToast("Failed to load menu carousel images", "error");
+      return false;
+    } finally {
+      if (!waitForPreviews) setCarouselLoading(false);
+    }
+  }, [addToast]);
 
   useEffect(() => {
     fetchCategories();
     fetchItems();
-  }, []);
+    fetchCarouselImages();
+  }, [fetchCarouselImages, fetchCategories, fetchItems]);
+
+  const uploadCarouselImages = async (selectedFiles: File[]) => {
+    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
+    const invalidFile = selectedFiles.find(
+      (file) =>
+        !allowedTypes.has(file.type) || file.size > 25 * 1024 * 1024,
+    );
+
+    if (invalidFile) {
+      addToast(
+        "Choose JPG, PNG, or WebP images no larger than 25 MB each",
+        "warning",
+      );
+      return;
+    }
+
+    setCarouselUploading(true);
+    let uploadedCount = 0;
+
+    try {
+      for (const selectedFile of selectedFiles) {
+        const optimized = await optimizeImageUpload(selectedFile, 1600, 0.82);
+        if (optimized.file.size > 10 * 1024 * 1024) {
+          throw new Error(
+            `${selectedFile.name} is still larger than the 10 MB upload limit`,
+          );
+        }
+
+        const body = new FormData();
+        body.append("image", optimized.file, optimized.file.name);
+        const response = await fetch(apiUrl("menu/carousel_images.php"), {
+          method: "POST",
+          body,
+        });
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !data?.success) {
+          throw new Error(
+            data?.message || `Failed to upload ${selectedFile.name}`,
+          );
+        }
+        uploadedCount += 1;
+      }
+
+      announceMenuCarouselRefresh();
+      const previewsReady = await fetchCarouselImages(true);
+      await waitForNextPaint();
+      addToast(
+        previewsReady
+          ? `${uploadedCount} menu carousel image${
+              uploadedCount === 1 ? "" : "s"
+            } added`
+          : `${uploadedCount} image${
+              uploadedCount === 1 ? " was" : "s were"
+            } uploaded, but the preview is still loading. Refresh if needed.`,
+        previewsReady ? "success" : "warning",
+      );
+    } catch (error) {
+      if (uploadedCount > 0) {
+        announceMenuCarouselRefresh();
+        await fetchCarouselImages(true);
+        await waitForNextPaint();
+      }
+      addToast(
+        `${
+          uploadedCount > 0
+            ? `${uploadedCount} image${uploadedCount === 1 ? " was" : "s were"} uploaded. `
+            : ""
+        }${
+          error instanceof Error
+            ? error.message
+            : "Failed to upload carousel images"
+        }`,
+        uploadedCount > 0 ? "warning" : "error",
+      );
+    } finally {
+      setCarouselUploading(false);
+    }
+  };
+
+  const deleteCarouselImage = async (image: MenuCarouselImage) => {
+    const shouldDelete = window.confirm(
+      carouselImages.length === 1
+        ? "Delete this image? The public menu carousel will return to its original images."
+        : "Delete this menu carousel image?",
+    );
+    if (!shouldDelete) return;
+
+    setCarouselBusyId(image.id);
+    try {
+      const response = await fetch(
+        apiUrl(`menu/carousel_images.php?id=${image.id}`),
+        { method: "DELETE" },
+      );
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to delete carousel image");
+      }
+
+      announceMenuCarouselRefresh();
+      await fetchCarouselImages();
+      addToast("Menu carousel image deleted", "success");
+    } catch (error) {
+      addToast(
+        error instanceof Error
+          ? error.message
+          : "Failed to delete carousel image",
+        "error",
+      );
+    } finally {
+      setCarouselBusyId(null);
+    }
+  };
+
+  const moveCarouselImage = async (index: number, direction: -1 | 1) => {
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= carouselImages.length) return;
+
+    const previousImages = carouselImages;
+    const nextImages = [...carouselImages];
+    [nextImages[index], nextImages[targetIndex]] = [
+      nextImages[targetIndex],
+      nextImages[index],
+    ];
+    setCarouselImages(nextImages);
+    setCarouselReordering(true);
+
+    try {
+      const response = await fetch(apiUrl("menu/carousel_images.php"), {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: nextImages.map((image) => image.id) }),
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.success) {
+        throw new Error(data?.message || "Failed to reorder carousel images");
+      }
+
+      announceMenuCarouselRefresh();
+      await fetchCarouselImages();
+    } catch (error) {
+      setCarouselImages(previousImages);
+      addToast(
+        error instanceof Error
+          ? error.message
+          : "Failed to reorder carousel images",
+        "error",
+      );
+    } finally {
+      setCarouselReordering(false);
+    }
+  };
+
+  const carouselPreviewUrl = (image: MenuCarouselImage) => {
+    const parsedVersion = image.updated_at
+      ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
+      : 0;
+    return withCacheVersion(
+      normalizeApiAssetUrl(image.image_url),
+      Number.isFinite(parsedVersion) ? parsedVersion : 0,
+    );
+  };
 
   /** Form validation */
   const validateForm = (): boolean => {
@@ -639,6 +878,125 @@ export default function AdminMenu() {
         <p className="text-gray-600">
           Manage your restaurant menu items and categories
         </p>
+      </div>
+
+      <div className="mb-8 rounded-xl border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-3">
+            <div className="rounded-lg bg-amber-100 p-2">
+              <ImageIcon className="h-5 w-5 text-amber-700" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Menu Image Carousel
+              </h2>
+              <p className="mt-1 text-sm text-gray-500">
+                Upload, remove, and reorder the images shown at the top of the
+                public menu page.
+              </p>
+            </div>
+          </div>
+
+          <label
+            className={`inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-amber-700 ${
+              carouselUploading
+                ? "cursor-not-allowed opacity-60"
+                : "cursor-pointer"
+            }`}
+          >
+            <Upload className="h-4 w-4" />
+            {carouselUploading ? "Uploading..." : "Add Images"}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              multiple
+              disabled={carouselUploading}
+              className="sr-only"
+              onChange={(event) => {
+                const files = Array.from(event.target.files ?? []);
+                event.target.value = "";
+                if (files.length > 0) void uploadCarouselImages(files);
+              }}
+            />
+          </label>
+        </div>
+
+        {carouselLoading ? (
+          <p className="py-8 text-center text-sm text-gray-500">
+            Loading carousel images...
+          </p>
+        ) : carouselImages.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
+            <ImageIcon className="mx-auto mb-3 h-8 w-8 text-gray-400" />
+            <p className="text-sm font-medium text-gray-700">
+              The public menu page is using its four original images.
+            </p>
+            <p className="mt-1 text-xs text-gray-500">
+              Add one or more images here to replace the original carousel.
+            </p>
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {carouselImages.map((image, index) => {
+              const isBusy = carouselBusyId === image.id;
+              return (
+                <article
+                  key={image.id}
+                  className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
+                >
+                  <div className="aspect-video overflow-hidden bg-gray-100">
+                    <img
+                      src={carouselPreviewUrl(image)}
+                      alt={`Menu carousel image ${index + 1}`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="flex items-center justify-between gap-3 p-3">
+                    <span className="text-sm font-semibold text-gray-700">
+                      Slide {index + 1}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveCarouselImage(index, -1)}
+                        disabled={index === 0 || carouselReordering || isBusy}
+                        className="rounded-md border border-gray-300 p-2 text-gray-600 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35"
+                        title="Move earlier"
+                        aria-label={`Move slide ${index + 1} earlier`}
+                      >
+                        <ArrowUp className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveCarouselImage(index, 1)}
+                        disabled={
+                          index === carouselImages.length - 1 ||
+                          carouselReordering ||
+                          isBusy
+                        }
+                        className="rounded-md border border-gray-300 p-2 text-gray-600 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-35"
+                        title="Move later"
+                        aria-label={`Move slide ${index + 1} later`}
+                      >
+                        <ArrowDown className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteCarouselImage(image)}
+                        disabled={isBusy || carouselReordering}
+                        className="rounded-md border border-red-200 p-2 text-red-600 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-35"
+                        title="Delete image"
+                        aria-label={`Delete slide ${index + 1}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Categories */}
