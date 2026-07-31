@@ -169,7 +169,7 @@ const WhatWeOffer = () => {
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   />
                 </div>
-                <div className="flex justify-between mt-4 font-medium text-gray-700">
+                {/* <div className="flex justify-between mt-4 font-medium text-gray-700">
                   <span>{item.name}</span>
                   <span>
                     $
@@ -179,6 +179,7 @@ const WhatWeOffer = () => {
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-gray-600">{item.description}</p>
+                 */}
               </div>
             ))}
           </div>
