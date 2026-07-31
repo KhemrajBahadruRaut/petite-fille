@@ -728,7 +728,7 @@ export default function AdminMenu() {
       category:
         categories.find((c) => c.name === item.category)?.id.toString() || "",
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 410, behavior: "smooth" });
   };
 
   /** Category add */
