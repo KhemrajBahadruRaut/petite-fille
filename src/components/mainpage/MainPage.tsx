@@ -105,7 +105,7 @@ export default function MainPage() {
 
         {/* Mobile Buttons */}
         <div className="flex flex-wrap md:hidden gap-5 justify-center w-full py-6">
-          <Link href="/reservation" className={`${buttonBase} ${bookTableBtn}`}>
+          <Link href="https://petite-file-cafe.resos.com/booking" target="_blank" className={`${buttonBase} ${bookTableBtn}`}>
             Book A Table
           </Link>
           <Link href="/menu" className={`${buttonBase} ${orderOnlineBtn}`}>
