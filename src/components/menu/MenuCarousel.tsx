@@ -18,9 +18,6 @@ interface MenuCarouselImage {
 
 const FALLBACK_SLIDES = [
     "/reservation/img1.webp",
-    "/reservation/img2.webp",
-    "/reservation/img3.webp",
-    "/reservation/img4.webp",
 ];
 
 export default function MenuCarousel() {
