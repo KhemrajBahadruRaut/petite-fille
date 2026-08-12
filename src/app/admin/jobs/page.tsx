@@ -21,6 +21,7 @@ import {
 } from "../../../utils/api";
 import { optimizeImageUpload } from "@/utils/optimizeImageUpload";
 import { preloadImages, waitForNextPaint } from "@/utils/preloadImage";
+import { logAdminActivity } from "@/utils/activityLog";
 
 type JobType = "Full-time" | "Part-time" | "Contract";
 
@@ -328,6 +329,7 @@ export default function AdminJobsPage() {
             } uploaded, but the preview is still loading. Refresh if needed.`,
         previewsReady ? "success" : "warning",
       );
+      logAdminActivity("Content Management", "Uploaded careers carousel image", `${uploadedCount} careers carousel image(s) added`);
     } catch (error) {
       if (uploadedCount > 0) {
         await fetchCarouselImages(true);
@@ -372,6 +374,7 @@ export default function AdminJobsPage() {
 
       await fetchCarouselImages();
       addToast("Careers carousel image deleted", "success");
+      logAdminActivity("Content Management", "Deleted careers carousel image", "Removed a careers carousel image");
     } catch (error) {
       addToast(
         error instanceof Error
@@ -482,6 +485,7 @@ export default function AdminJobsPage() {
       }
 
       addToast(editId !== null ? "Job updated successfully" : "Job added successfully", "success");
+      logAdminActivity("Content Management", editId !== null ? "Updated job listing" : "Added job listing", form.title.trim());
       resetForm();
       await fetchJobs();
     } catch (error) {
@@ -521,6 +525,7 @@ export default function AdminJobsPage() {
       }
 
       addToast("Job deleted successfully", "success");
+      logAdminActivity("Content Management", "Deleted job listing", job.title);
       await fetchJobs();
     } catch (error) {
       const message = error instanceof Error ? error.message : "Failed to delete job";

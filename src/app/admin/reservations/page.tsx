@@ -11,6 +11,7 @@ import {
   Zap,
 } from "lucide-react";
 import { apiUrl } from "../../../utils/api";
+import { logAdminActivity } from "@/utils/activityLog";
 
 type ReservationStatus =
   | "pending"
@@ -214,6 +215,7 @@ function SettingsPanel({
       savedRef.current = settings;
       setIsDirty(false);
       onMessage({ type: "success", text: "Settings saved successfully." });
+      logAdminActivity("Reservations", "Updated reservation settings", `Reservations: ${settings.reservations_enabled ? "open" : "closed"}, Peak mode: ${settings.peak_mode ? "on" : "off"}`);
     } catch (error) {
       onMessage({
         type: "error",
@@ -378,6 +380,7 @@ export default function AdminReservationsPage() {
         sortReservationsByRecent(prev.map((item) => (item.id === id ? { ...item, status } : item))),
       );
       setMessage({ type: "success", text: `Reservation #${id} updated.` });
+      logAdminActivity("Reservations", "Updated reservation status", `Reservation #${id} → ${status}`);
     } catch (error) {
       setMessage({
         type: "error",
@@ -407,6 +410,7 @@ export default function AdminReservationsPage() {
       if (!response.ok || !data.success) throw new Error(data.message || "Failed to delete reservation.");
       setReservations((prev) => prev.filter((item) => item.id !== id));
       setMessage({ type: "success", text: data.message || `Reservation #${id} deleted.` });
+      logAdminActivity("Reservations", "Deleted reservation", `Deleted reservation #${id}`);
     } catch (error) {
       setMessage({
         type: "error",

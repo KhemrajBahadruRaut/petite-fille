@@ -25,6 +25,7 @@ import {
 import { optimizeImageUpload } from "@/utils/optimizeImageUpload";
 import { preloadImages, waitForNextPaint } from "@/utils/preloadImage";
 import { announceMenuCarouselRefresh } from "@/utils/menuCarouselRefresh";
+import { logAdminActivity } from "@/utils/activityLog";
 
 interface MenuItem {
   id: number;
@@ -317,6 +318,7 @@ export default function AdminMenu() {
             } uploaded, but the preview is still loading. Refresh if needed.`,
         previewsReady ? "success" : "warning",
       );
+      logAdminActivity("Content Management", "Uploaded carousel image", `${uploadedCount} menu carousel image(s) added`);
     } catch (error) {
       if (uploadedCount > 0) {
         announceMenuCarouselRefresh();
@@ -363,6 +365,7 @@ export default function AdminMenu() {
       announceMenuCarouselRefresh();
       await fetchCarouselImages();
       addToast("Menu carousel image deleted", "success");
+      logAdminActivity("Content Management", "Deleted carousel image", "Removed a menu carousel image");
     } catch (error) {
       addToast(
         error instanceof Error
@@ -482,6 +485,7 @@ export default function AdminMenu() {
         });
         setEditingItemId(null);
         fetchItems();
+        logAdminActivity("Content Management", editingItemId ? "Updated menu item" : "Added menu item", `${form.name} ($${form.price})`);
       } else {
         throw new Error("Failed to save item");
       }
@@ -509,6 +513,7 @@ export default function AdminMenu() {
 
       if (res.ok && data?.success) {
         addToast(`${itemName} deleted successfully`, "success");
+        logAdminActivity("Content Management", "Deleted menu item", itemName);
         fetchItems();
       } else {
         addToast(data?.message || "Failed to delete item", "error");
@@ -558,6 +563,7 @@ export default function AdminMenu() {
             : `${item.name} shown on menu`,
           "success",
         );
+        logAdminActivity("Content Management", nextHidden ? "Hid menu item" : "Showed menu item", item.name);
         fetchItems();
       } else {
         throw new Error(data?.message || "Failed to update image visibility");
@@ -620,6 +626,7 @@ export default function AdminMenu() {
             : `${item.name} picture shown on menu`,
           "success",
         );
+        logAdminActivity("Content Management", nextHidden ? "Hid item image" : "Showed item image", item.name);
         fetchItems();
       } else {
         throw new Error(data?.message || "Failed to update image visibility");
@@ -698,6 +705,7 @@ export default function AdminMenu() {
             : "All main menu pictures shown on menu",
           "success",
         );
+        logAdminActivity("Content Management", nextHidden ? "Hid all menu images" : "Showed all menu images", `${affectedItems.length} item images toggled`);
         fetchItems();
       } else {
         throw new Error(data?.message || "Failed to update menu images");
@@ -758,6 +766,7 @@ export default function AdminMenu() {
 
     if (res.ok) {
       addToast("Category added", "success");
+      logAdminActivity("Content Management", "Added category", tempCategory.name);
       fetchCategories(); // sync real ID from server
     } else {
       // Rollback on failure
@@ -789,6 +798,7 @@ export default function AdminMenu() {
 
       if (res.ok) {
         addToast("Category updated", "success");
+        logAdminActivity("Content Management", "Updated category", editingCategoryName.trim());
         setEditingCategoryId(null);
         setEditingCategoryName("");
         fetchCategories();
@@ -816,6 +826,7 @@ export default function AdminMenu() {
 
     if (res.ok && data.success) {
       addToast("Category deleted", "success");
+      logAdminActivity("Content Management", "Deleted category", name);
       fetchCategories(); // re-sync
     } else {
       addToast(data.message || data.error || "Failed to delete category", "error");

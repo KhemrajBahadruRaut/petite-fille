@@ -2,6 +2,7 @@
 
 import { apiUrl } from "@/utils/api";
 import { toast } from "@/hooks/use-toast";
+import { logAdminActivity } from "@/utils/activityLog";
 import React, { useEffect, useRef, useState } from "react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -131,6 +132,7 @@ const WelcomeEditor = () => {
         title: "Changes saved",
         description: "Welcome section has been updated successfully.",
       });
+      logAdminActivity("Content Management", "Updated Welcome section", "Welcome section content saved");
     } catch (err: any) {
       toast({
         variant: "destructive",

@@ -6,6 +6,7 @@ import {
   withCacheVersion,
 } from "../../../utils/api";
 import { optimizeImageUpload } from "../../../utils/optimizeImageUpload";
+import { logAdminActivity } from "@/utils/activityLog";
 
 type SectionName = "top" | "bottom";
 type ImageField = "image1" | "image2";
@@ -319,6 +320,7 @@ export default function AboutUsCMS() {
 
       persistedContentRef.current = latestContent;
       clearImagesLocally(targetsWithImages);
+      logAdminActivity("Content Management", "Removed About Us image", `${targetsWithImages.length} image(s) removed`);
       alert(
         targetsWithImages.length === 1
           ? "Image removed successfully."
@@ -386,6 +388,7 @@ export default function AboutUsCMS() {
         // browser/CDN entries immediately after a replacement.
         try {
           await fetchData();
+          logAdminActivity("Content Management", "Updated About Us", "About Us content saved");
           alert("About Us content updated successfully!");
         } catch (refreshError) {
           console.error("Saved, but failed to refresh About data:", refreshError);

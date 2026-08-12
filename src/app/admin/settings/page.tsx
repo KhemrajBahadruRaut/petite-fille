@@ -4,6 +4,7 @@ import React, { FormEvent, useMemo, useState } from "react";
 import { ShieldCheck, KeyRound } from "lucide-react";
 import { apiUrl } from "../../../utils/api";
 import { getAdminSession } from "@/utils/adminAuth";
+import { logAdminActivity } from "@/utils/activityLog";
 
 interface ChangePasswordResponse {
   status?: string;
@@ -82,6 +83,7 @@ export default function AdminSettingsPage() {
         type: "success",
         message: "Password changed successfully.",
       });
+      logAdminActivity("Settings", "Changed password", `Password updated for ${session.email}`);
 
       setCurrentPassword("");
       setNewPassword("");

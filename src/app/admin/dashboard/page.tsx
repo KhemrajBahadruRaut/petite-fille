@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Calendar, Clock3, RefreshCw, Users } from "lucide-react";
+import { ArrowRight, Calendar, Clock3, RefreshCw, Users, Activity, Filter } from "lucide-react";
 import { apiUrl } from "../../../utils/api";
 
 type ReservationStatus =
@@ -45,6 +45,22 @@ interface AdminRealtimeResponse {
   message?: string;
 }
 
+interface ActivityLogEntry {
+  id: number;
+  admin_email: string;
+  section: string;
+  action: string;
+  details: string;
+  created_at: string;
+}
+
+interface ActivityLogResponse {
+  success?: boolean;
+  logs?: ActivityLogEntry[];
+  total?: number;
+  message?: string;
+}
+
 function formatDate(dateString: string): string {
   if (!dateString) return "-";
   const date = new Date(dateString);
@@ -53,6 +69,18 @@ function formatDate(dateString: string): string {
     month: "short",
     day: "numeric",
     year: "numeric",
+  });
+}
+
+function formatLogDate(dateString: string): string {
+  if (!dateString) return "-";
+  const date = new Date(dateString + (dateString.includes("T") ? "" : "Z"));
+  if (Number.isNaN(date.getTime())) return dateString;
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 }
 
@@ -88,6 +116,32 @@ function statusBadgeClass(status: ReservationStatus): string {
   }
 }
 
+const SECTION_BADGE_COLORS: Record<string, string> = {
+  "Content Management": "bg-purple-100 text-purple-700 border-purple-200",
+  Orders: "bg-blue-100 text-blue-700 border-blue-200",
+  Contacts: "bg-indigo-100 text-indigo-700 border-indigo-200",
+  "Gift Cards": "bg-amber-100 text-amber-700 border-amber-200",
+  Reservations: "bg-green-100 text-green-700 border-green-200",
+  Settings: "bg-gray-100 text-gray-600 border-gray-200",
+};
+
+function sectionBadgeClass(section: string): string {
+  return (
+    SECTION_BADGE_COLORS[section] ??
+    "bg-slate-100 text-slate-600 border-slate-200"
+  );
+}
+
+const SECTION_FILTER_OPTIONS = [
+  "All Sections",
+  "Content Management",
+  "Orders",
+  "Contacts",
+  "Gift Cards",
+  "Reservations",
+  "Settings",
+];
+
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -96,6 +150,39 @@ export default function AdminDashboard() {
   const [realtimeStats, setRealtimeStats] = useState<AdminRealtimeStats | null>(
     null,
   );
+
+  // Activity log state
+  const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [activityFilter, setActivityFilter] = useState("All Sections");
+
+  const fetchActivityLogs = useCallback(async () => {
+    setActivityLoading(true);
+    try {
+      const params = new URLSearchParams({ limit: "30" });
+      if (activityFilter !== "All Sections") {
+        params.set("section", activityFilter);
+      }
+      const response = await fetch(
+        apiUrl(`admin/get_activity_log.php?${params.toString()}`),
+        { cache: "no-store" },
+      );
+      const payload =
+        (await response.json().catch(() => null)) as ActivityLogResponse | null;
+
+      if (
+        response.ok &&
+        payload?.success &&
+        Array.isArray(payload.logs)
+      ) {
+        setActivityLogs(payload.logs);
+      }
+    } catch {
+      // Silent — activity log fetch failure shouldn't block the dashboard.
+    } finally {
+      setActivityLoading(false);
+    }
+  }, [activityFilter]);
 
   const fetchDashboardData = useCallback(async (manual = false) => {
     if (manual) {
@@ -152,6 +239,10 @@ export default function AdminDashboard() {
     void fetchDashboardData(false);
   }, [fetchDashboardData]);
 
+  useEffect(() => {
+    void fetchActivityLogs();
+  }, [fetchActivityLogs]);
+
   const summary = useMemo(() => {
     const totalReservations = reservations.length;
     const pending = realtimeStats?.pendingReservations ?? 0;
@@ -180,6 +271,11 @@ export default function AdminDashboard() {
 
   const latestReservations = useMemo(() => reservations.slice(0, 8), [reservations]);
 
+  const handleRefreshAll = () => {
+    void fetchDashboardData(true);
+    void fetchActivityLogs();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
@@ -191,7 +287,7 @@ export default function AdminDashboard() {
         </div>
         <button
           type="button"
-          onClick={() => void fetchDashboardData(true)}
+          onClick={handleRefreshAll}
           disabled={loading || refreshing}
           className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
         >
@@ -247,6 +343,78 @@ export default function AdminDashboard() {
         </div>
       </div>
 
+      {/* ── Activity Log ── */}
+      <div className="mb-6 rounded-xl border border-gray-200 bg-white shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-gray-200 px-4 py-3">
+          <div className="flex items-center gap-2">
+            <Activity className="h-4 w-4 text-indigo-600" />
+            <h2 className="text-sm font-semibold text-gray-900">
+              Recent Activity Log
+            </h2>
+          </div>
+          <div className="flex items-center gap-2">
+            <Filter className="h-3.5 w-3.5 text-gray-400" />
+            <select
+              value={activityFilter}
+              onChange={(e) => setActivityFilter(e.target.value)}
+              className="rounded-md border border-gray-300 px-2 py-1 text-xs text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            >
+              {SECTION_FILTER_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {activityLoading ? (
+          <div className="p-6 text-sm text-gray-500">Loading activity log...</div>
+        ) : activityLogs.length === 0 ? (
+          <div className="p-6 text-center text-sm text-gray-500">
+            No activity logged yet. Changes made in admin sections will appear here.
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {activityLogs.map((log) => (
+              <div
+                key={log.id}
+                className="flex flex-wrap items-start gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
+              >
+                {/* Dot */}
+                <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full bg-indigo-400" />
+
+                {/* Content */}
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={`inline-flex rounded-full border px-2 py-0.5 text-[11px] font-medium ${sectionBadgeClass(log.section)}`}
+                    >
+                      {log.section}
+                    </span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {log.action}
+                    </span>
+                  </div>
+                  {log.details && (
+                    <p className="mt-0.5 text-xs text-gray-500 truncate max-w-xl">
+                      {log.details}
+                    </p>
+                  )}
+                  <div className="mt-1 flex flex-wrap items-center gap-3 text-[11px] text-gray-400">
+                    <span className="font-medium text-gray-500">
+                      {log.admin_email}
+                    </span>
+                    <span>{formatLogDate(log.created_at)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Latest Reservations ── */}
       <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-gray-200 px-4 py-3">
           <h2 className="text-sm font-semibold text-gray-900">Latest Reservations</h2>

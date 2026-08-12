@@ -1,6 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { X, CheckCircle, AlertCircle, Trash2, Mail, Phone, User, Calendar, Filter } from "lucide-react";
+import { logAdminActivity } from "@/utils/activityLog";
 
 // ---------------- Types ----------------
 interface ContactSubmission {
@@ -111,6 +112,7 @@ export default function AdminContacts() {
       if (!res.ok) throw new Error("Failed to update status");
       
       addToast("Status updated successfully", "success");
+      logAdminActivity("Contacts", "Updated contact status", `Contact #${id} → ${newStatus}`);
       fetchContacts();
     } catch (err) {
       console.error(err);
@@ -131,6 +133,7 @@ export default function AdminContacts() {
       if (!res.ok) throw new Error("Failed to delete");
       
       addToast(`Message from ${name} deleted`, "success");
+      logAdminActivity("Contacts", "Deleted contact", `Deleted message from ${name}`);
       fetchContacts();
       setSelectedContact(null);
     } catch (err) {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { apiUrl } from "../../../utils/api";
+import { logAdminActivity } from "@/utils/activityLog";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -135,6 +136,7 @@ function GiftCardSettingsPanel() {
         online_purchase_enabled:
           data.settings?.online_purchase_enabled !== false,
       });
+      logAdminActivity("Gift Cards", "Toggled online purchase", nextEnabled ? "Enabled online gift card purchases" : "Disabled online gift card purchases");
     } catch {
       setSettings(previousSettings);
       setError("Could not save gift card purchase settings.");
@@ -259,6 +261,7 @@ function RedeemPanel() {
       } else {
         setSuccess(true);
         setVerified(null);
+        logAdminActivity("Gift Cards", "Redeemed gift card", `Redeemed code ${verified.code} ($${verified.amount})`);
       }
     } catch {
       setError("Network error. Please try again.");

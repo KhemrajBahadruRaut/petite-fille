@@ -18,6 +18,7 @@ import {
 } from "../../../utils/api";
 import { optimizeImageUpload } from "@/utils/optimizeImageUpload";
 import { preloadImages, waitForNextPaint } from "@/utils/preloadImage";
+import { logAdminActivity } from "@/utils/activityLog";
 
 /* ---------------- Types ---------------- */
 interface MerchItem {
@@ -313,6 +314,7 @@ export default function AdminMerch() {
           : "Image uploaded, but its preview is still loading. Refresh if needed.",
         previewReady ? "success" : "warning",
       );
+      logAdminActivity("Content Management", "Updated merch hero image", `Slot ${slot} hero image replaced`);
     } catch (error) {
       addToast(
         error instanceof Error ? error.message : "Failed to update hero image",
@@ -342,6 +344,7 @@ export default function AdminMerch() {
 
       await fetchHeroImages();
       addToast("Original merchandise hero image restored", "success");
+      logAdminActivity("Content Management", "Reset merch hero image", `Slot ${slot} restored to original`);
     } catch (error) {
       addToast(
         error instanceof Error
@@ -402,6 +405,7 @@ export default function AdminMerch() {
           : "Online merchandise purchases disabled",
         "success",
       );
+      logAdminActivity("Content Management", "Toggled merch purchase", nextEnabled ? "Enabled online merch purchases" : "Disabled online merch purchases");
     } catch {
       setSettings(previousSettings);
       addToast("Failed to save merchandise purchase settings", "error");
@@ -439,6 +443,7 @@ const addCategory = async () => {
 
       setNewCategory("");
       addToast("Category added", "success");
+      logAdminActivity("Content Management", "Added merch category", newCategory.trim());
     } catch {
       addToast("Failed to add category", "error");
     }
@@ -456,6 +461,7 @@ const addCategory = async () => {
     setEditingCategoryId(null);
     fetchCategories();
     addToast("Category updated", "success");
+    logAdminActivity("Content Management", "Updated merch category", editingCategoryName.trim());
   };
 
   const deleteCategory = async (id: number, name: string) => {
@@ -467,6 +473,7 @@ const addCategory = async () => {
 
     fetchCategories();
     addToast("Category deleted", "success");
+    logAdminActivity("Content Management", "Deleted merch category", name);
   };
 
   /* ---------- Item CRUD ---------- */
@@ -510,6 +517,7 @@ const addCategory = async () => {
       setEditId(null);
       await fetchItems();
       addToast(editId !== null ? "Item updated" : "Item added", "success");
+      logAdminActivity("Content Management", editId !== null ? "Updated merch item" : "Added merch item", `${form.name.trim()} ($${form.price})`);
     } catch (error) {
       const message =
         error instanceof Error ? error.message : "Failed to save item";
@@ -538,6 +546,7 @@ const addCategory = async () => {
 
     fetchItems();
     addToast("Item deleted", "success");
+    logAdminActivity("Content Management", "Deleted merch item", name);
   };
 
   /* ---------------- JSX ---------------- */

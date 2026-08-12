@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { apiUrl, normalizeApiAssetUrl } from "../../../utils/api";
+import { logAdminActivity } from "@/utils/activityLog";
 
 interface Image {
   id: number;
@@ -224,6 +225,7 @@ export default function AdminGalleryPage() {
       if (successCount > 0) {
         await fetchImages(); // Refresh the images list
         alert(`Successfully uploaded ${successCount} image(s)!${errorCount > 0 ? ` ${errorCount} failed.` : ''}`);
+        logAdminActivity("Content Management", "Uploaded gallery images", `${successCount} image(s) uploaded to Section ${section}`);
       }
       
       if (errorCount === files.length) {
@@ -256,6 +258,7 @@ export default function AdminGalleryPage() {
       
       await fetchImages();
       alert('Image deleted successfully!');
+      logAdminActivity("Content Management", "Deleted gallery image", `Removed image #${id}`);
     } catch (error) {
       console.error('Delete error:', error);
       alert('Delete failed. Please try again.');

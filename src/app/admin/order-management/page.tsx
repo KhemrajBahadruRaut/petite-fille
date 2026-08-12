@@ -13,7 +13,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { apiUrl } from "../../../utils/api";
-import { getAdminToken, isAdminAuthenticated } from "@/utils/adminAuth"; // adjust path as needed
+import { getAdminToken, isAdminAuthenticated } from "@/utils/adminAuth";
+import { logAdminActivity } from "@/utils/activityLog";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type OrderStatus =
@@ -246,6 +247,7 @@ export default function AdminOrderManagementPage() {
       }
 
       setToast({ type: "success", message: `Order #${order.id} updated.` });
+      logAdminActivity("Orders", "Updated order", `Order #${order.id} → ${updates.status ?? order.status}`);
       await fetchOrders(true);
     } catch (e) {
       const text = e instanceof Error ? e.message : "Unable to update order.";
