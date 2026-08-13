@@ -1133,7 +1133,7 @@ export default function AdminMenu() {
             </select>
           </InputField>
 
-          {form.category.toLowerCase() !== "sides" && (
+          {/* {form.category.toLowerCase() !== "sides" && (
             <InputField label="Image">
               <input
                 type="file"
@@ -1144,7 +1144,7 @@ export default function AdminMenu() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-amber-500 file:mr-4 file:py-1 file:px-4 file:rounded file:border-0 file:text-sm file:font-medium file:bg-amber-50 file:text-amber-700 hover:file:bg-amber-100"
               />
             </InputField>
-          )}
+          )} */}
         </div>
 
         {form.category.toLowerCase() !== "sides" && (

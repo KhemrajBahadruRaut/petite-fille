@@ -89,7 +89,7 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
           }}
         >
           <h1 className="sr-only">Menu | Petite Fille Cafe Rosanna</h1>
-          {hasVisibleImage && (
+          {/* {hasVisibleImage && (
             <div className="relative mb-3 aspect-square overflow-hidden rounded-lg bg-gray-200 shadow-md sm:mb-4">
               {!imageError ? (
                 <Image
@@ -118,12 +118,12 @@ const MenuItemCard: React.FC<{ item: MenuItem; index: number }> = React.memo(
                 </div>
               )}
             </div>
-          )}
+          )} */}
             <button
               onClick={handleToggleFavorite}
               className={`z-10 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white/90 backdrop-blur-sm transition-all duration-300 hover:scale-110 ${
                 hasVisibleImage
-                  ? "absolute top-3 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100"
+                  ? "absolute top-5 right-3 opacity-100 md:opacity-0 md:group-hover:opacity-100"
                   : "mb-3 ml-auto"
               }`}
             >
