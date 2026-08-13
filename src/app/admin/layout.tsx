@@ -266,6 +266,26 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             ),
           },
           {
+            href: "/admin/whatWeOffer",
+            label: "What We Offer",
+            shortLabel: "Offers",
+            icon: (
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeWidth={2}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            ),
+          },
+          {
             href: "/admin/jobs",
             label: "Jobs",
             shortLabel: "Jobs",
@@ -594,6 +614,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       "/admin/gallery",
       "/admin/adminAbout",
       "/admin/merchandise",
+      "/admin/whatWeOffer",
       "/admin/jobs",
     ];
     if (cmsPages.includes(pathname)) {

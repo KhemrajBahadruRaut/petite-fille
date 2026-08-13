@@ -2,120 +2,57 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { apiUrl, normalizeApiAssetUrl } from "../../utils/api";
 
-interface MenuItem {
+interface OfferItem {
   id: number;
-  name: string;
-  price: number;
-  description: string;
   image: string;
+  sort_order: number;
 }
 
-const pickRandomItems = <T,>(items: T[], count: number): T[] => {
-  const shuffled = [...items];
-  for (let i = shuffled.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled.slice(0, count);
-};
+// Fallback images used when no admin-managed items exist yet
+const fallbackImages = [
+  "/whatweoffer/offer3.webp",
+  "/whatweoffer/offer2.webp",
+  "/whatweoffer/offer1.webp",
+  "/whatweoffer/offer4.webp",
+];
 
 const WhatWeOffer = () => {
-  const [items, setItems] = useState<MenuItem[]>([]);
+  const [images, setImages] = useState<string[]>(fallbackImages);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Fallback items in case fetch fails
-  const fallbackItems = useMemo(
-    () => [
-      {
-        id: 1,
-        name: "Fresh Daily Special",
-        price: 21,
-        description:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-        image: "/whatweoffer/offer3.webp",
-      },
-      {
-        id: 2,
-        name: "Chef's Choice",
-        price: 21,
-        description:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-        image: "/whatweoffer/offer2.webp",
-      },
-      {
-        id: 3,
-        name: "Seasonal Favorite",
-        price: 21,
-        description:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-        image: "/whatweoffer/offer1.webp",
-      },
-      {
-        id: 4,
-        name: "House Special",
-        price: 21,
-        description:
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt",
-        image: "/whatweoffer/offer4.webp",
-      },
-    ],
-    [],
-  );
-
   useEffect(() => {
-    const fetchRandomItems = async () => {
+    const fetchOfferItems = async () => {
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+        const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-        const res = await fetch(apiUrl("menu/get_menu_item.php"), {
+        const res = await fetch(apiUrl("whatweoffer/whatweoffer.php"), {
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
 
-        if (!res.ok) {
-          throw new Error(`API responded with status ${res.status}`);
-        }
+        if (!res.ok) throw new Error(`API responded with status ${res.status}`);
         const data = await res.json();
 
-        // Flatten all items from all categories
-        const allItems: MenuItem[] = data.flatMap(
-          (category: { items: MenuItem[] }) =>
-            (category.items || [])
-              .filter((item: MenuItem) => !!item.image)
-              .map((item: MenuItem) => ({
-                id: item.id,
-                name: item.name,
-                price: item.price,
-                description:
-                  item.description || "Delicious fresh item made with love",
-                image: normalizeApiAssetUrl(item.image),
-              })),
-        );
-
-        const randomFour = pickRandomItems(allItems, 4);
-
-        if (randomFour.length > 0) {
-          setItems(randomFour);
-        } else {
-          setItems(fallbackItems);
+        const items: OfferItem[] = data.items || [];
+        if (items.length > 0) {
+          setImages(items.map((item) => normalizeApiAssetUrl(item.image)));
         }
+        // If no items from API, keep using fallback images
       } catch {
-        // Silently use fallback items if fetch fails
-        setItems(fallbackItems);
+        // Silently use fallback images if fetch fails
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchRandomItems();
-  }, [fallbackItems]);
+    fetchOfferItems();
+  }, []);
 
-  // Show loading skeleton or fallback while loading
-  const displayItems = isLoading ? fallbackItems : items;
+  const displayImages = isLoading ? fallbackImages : images;
 
   return (
     <div className="bg-[#F5F1E8] ">
@@ -153,33 +90,22 @@ const WhatWeOffer = () => {
           viewport={{ once: true, amount: 0.3 }}
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-12">
-            {displayItems.map((item, i) => (
+            {displayImages.map((src, i) => (
               <div
-                key={item.id || i}
+                key={i}
                 className="flex flex-col group"
                 style={{ fontFamily: "arial" }}
               >
                 {/* Image Wrapper with Hover */}
                 <div className="overflow-hidden relative w-full h-60">
                   <Image
-                    src={item.image}
-                    alt={item.name}
+                    src={src}
+                    alt={`What we offer ${i + 1}`}
                     fill
                     className="object-cover transform transition-transform duration-500 group-hover:scale-110"
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
                   />
                 </div>
-                {/* <div className="flex justify-between mt-4 font-medium text-gray-700">
-                  <span>{item.name}</span>
-                  <span>
-                    $
-                    {typeof item.price === "number"
-                      ? item.price.toFixed(2)
-                      : item.price}
-                  </span>
-                </div>
-                <p className="mt-2 text-sm text-gray-600">{item.description}</p>
-                 */}
               </div>
             ))}
           </div>
