@@ -144,6 +144,12 @@ const WhatWeOfferEditor = () => {
       const data = await res.json();
       if (!res.ok || !data.success)
         throw new Error(data.error || "Reorder failed");
+
+      logAdminActivity(
+        "Content Management",
+        "Reordered What We Offer images",
+        "Updated image display order in What We Offer section"
+      );
     } catch {
       toast({
         variant: "destructive",
