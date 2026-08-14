@@ -8,6 +8,7 @@ import { useParams } from "next/navigation";
 import { apiUrl } from "../../../utils/api";
 import { ApplicationModal } from "@/components/careers/careers";
 import { hasAppliedForJob } from "@/utils/jobApplicationStorage";
+import { formatJobPostingTime } from "@/utils/jobPostingTime";
 
 interface JobListing {
   id: string;
@@ -19,6 +20,7 @@ interface JobListing {
   description: string;
   requirements: string[];
   postedDaysAgo: number;
+  postedSecondsAgo: number;
   slug: string;
 }
 
@@ -93,6 +95,11 @@ export default function JobSlugPage() {
         postedDaysAgo: Number.isFinite(Number(found.postedDaysAgo))
           ? Math.max(0, Number(found.postedDaysAgo))
           : 0,
+        postedSecondsAgo: Number.isFinite(Number(found.postedSecondsAgo))
+          ? Math.max(0, Number(found.postedSecondsAgo))
+          : Number.isFinite(Number(found.postedDaysAgo))
+            ? Math.max(0, Number(found.postedDaysAgo)) * 24 * 60 * 60
+            : 0,
         slug: found.slug || "",
       });
     } catch {
@@ -199,7 +206,7 @@ export default function JobSlugPage() {
             className="mt-4"
           >
             <span className="text-xs text-gray-400">
-              Posted {job.postedDaysAgo === 0 ? "today" : `${job.postedDaysAgo}d ago`}
+              Posted {formatJobPostingTime(job.postedSecondsAgo, job.postedDaysAgo)}
             </span>
           </motion.div>
         </div>

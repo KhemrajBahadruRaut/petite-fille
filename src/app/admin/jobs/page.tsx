@@ -25,6 +25,7 @@ import {
 import { optimizeImageUpload } from "@/utils/optimizeImageUpload";
 import { preloadImages, waitForNextPaint } from "@/utils/preloadImage";
 import { logAdminActivity } from "@/utils/activityLog";
+import { formatJobPostingTime } from "@/utils/jobPostingTime";
 
 type JobType = "Full-time" | "Part-time" | "Contract";
 
@@ -38,6 +39,7 @@ interface JobRecord {
   description: string;
   requirements: string[];
   postedDaysAgo: number;
+  postedSecondsAgo: number;
   slug: string;
 }
 
@@ -176,6 +178,11 @@ function normalizeJob(raw: unknown): JobRecord | null {
     postedDaysAgo: Number.isFinite(Number(record.postedDaysAgo))
       ? Math.max(0, Number(record.postedDaysAgo))
       : 0,
+    postedSecondsAgo: Number.isFinite(Number(record.postedSecondsAgo))
+      ? Math.max(0, Number(record.postedSecondsAgo))
+      : Number.isFinite(Number(record.postedDaysAgo))
+        ? Math.max(0, Number(record.postedDaysAgo)) * 24 * 60 * 60
+        : 0,
     slug: `${record.slug ?? ""}`.trim(),
   };
 }
@@ -868,7 +875,7 @@ export default function AdminJobsPage() {
                     <td className="px-6 py-4 text-sm text-gray-700">{job.salary || "-"}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">{job.location || "-"}</td>
                     <td className="px-6 py-4 text-sm text-gray-700">
-                      {job.postedDaysAgo}d ago
+                      {formatJobPostingTime(job.postedSecondsAgo, job.postedDaysAgo)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex flex-wrap items-center gap-3">

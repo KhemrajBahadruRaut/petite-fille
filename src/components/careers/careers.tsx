@@ -8,6 +8,7 @@ import {
   getAppliedJobIds,
   markJobAsApplied,
 } from "@/utils/jobApplicationStorage";
+import { formatJobPostingTime } from "@/utils/jobPostingTime";
 
 // Types
 interface JobListing {
@@ -19,6 +20,7 @@ interface JobListing {
   salary: string;
   location: string;
   postedDaysAgo: number;
+  postedSecondsAgo: number;
   description: string;
   requirements: string[];
   slug: string;
@@ -66,6 +68,7 @@ interface JobsApiRecord {
   description?: string;
   requirements?: string[] | string;
   postedDaysAgo?: number;
+  postedSecondsAgo?: number;
   slug?: string;
 }
 
@@ -113,6 +116,11 @@ const normalizeJob = (job: JobsApiRecord): JobListing => ({
   postedDaysAgo: Number.isFinite(Number(job.postedDaysAgo))
     ? Math.max(0, Number(job.postedDaysAgo))
     : 0,
+  postedSecondsAgo: Number.isFinite(Number(job.postedSecondsAgo))
+    ? Math.max(0, Number(job.postedSecondsAgo))
+    : Number.isFinite(Number(job.postedDaysAgo))
+      ? Math.max(0, Number(job.postedDaysAgo)) * 24 * 60 * 60
+      : 0,
   description: (job.description || "").trim() || "Description not available.",
   requirements: normalizeRequirements(job.requirements),
   slug: (job.slug || "").trim(),
@@ -505,7 +513,7 @@ const JobListItem = React.memo(
           {job.title}
         </h3>
         <span className="text-[#EEC27E] text-xs sm:text-sm font-medium">
-          {job.postedDaysAgo}d ago
+          {formatJobPostingTime(job.postedSecondsAgo, job.postedDaysAgo)}
         </span>
       </div>
 
