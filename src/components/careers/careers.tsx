@@ -1,11 +1,15 @@
 "use client";
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Coffee, Heart, Gift } from "lucide-react";
+import { Coffee, Heart, Gift, X, Upload, CheckCircle, AlertCircle } from "lucide-react";
 import CareersCarousal from "./CareersCarousel";
 import { motion, AnimatePresence } from "framer-motion";
 import { apiUrl } from "../../utils/api";
+import {
+  getAppliedJobIds,
+  markJobAsApplied,
+} from "@/utils/jobApplicationStorage";
 
-// Types (unchanged)
+// Types
 interface JobListing {
   id: string;
   title: string;
@@ -17,6 +21,7 @@ interface JobListing {
   postedDaysAgo: number;
   description: string;
   requirements: string[];
+  slug: string;
 }
 
 interface WhyWorkWithUsItem {
@@ -61,6 +66,7 @@ interface JobsApiRecord {
   description?: string;
   requirements?: string[] | string;
   postedDaysAgo?: number;
+  slug?: string;
 }
 
 const DEFAULT_DEPARTMENT = "Open Department";
@@ -97,7 +103,6 @@ const normalizeJobType = (type: string | undefined): JobListing["type"] => {
 };
 
 const normalizeJob = (job: JobsApiRecord): JobListing => ({
-  // Backend stores no explicit department yet, so keep a stable label for current UI.
   id: `${job.id ?? ""}`,
   title: (job.title || "").trim() || "Untitled Role",
   department: DEFAULT_DEPARTMENT,
@@ -110,6 +115,7 @@ const normalizeJob = (job: JobsApiRecord): JobListing => ({
     : 0,
   description: (job.description || "").trim() || "Description not available.",
   requirements: normalizeRequirements(job.requirements),
+  slug: (job.slug || "").trim(),
 });
 
 // Animation variants
@@ -133,7 +139,306 @@ const scaleIn = {
   exit: { opacity: 0, scale: 0.9 },
 };
 
-// Optimized components with animations
+// ─── Application Modal ─────────────────────────────────────────────
+interface ApplicationFormData {
+  name: string;
+  email: string;
+  phone: string;
+  cover_letter: string;
+  resume: File | null;
+}
+
+const INITIAL_FORM: ApplicationFormData = {
+  name: "",
+  email: "",
+  phone: "",
+  cover_letter: "",
+  resume: null,
+};
+
+export const ApplicationModal = React.memo(
+  ({
+    job,
+    onClose,
+    onSubmitted,
+  }: {
+    job: { id: string; title: string };
+    onClose: () => void;
+    onSubmitted?: (jobId: string) => void;
+  }) => {
+    const [form, setForm] = useState<ApplicationFormData>(INITIAL_FORM);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [result, setResult] = useState<{
+      type: "success" | "error";
+      message: string;
+    } | null>(null);
+
+    // Lock body scroll while modal is open
+    useEffect(() => {
+      document.body.style.overflow = "hidden";
+      return () => {
+        document.body.style.overflow = "";
+      };
+    }, []);
+
+    const handleSubmit = async (e: React.FormEvent) => {
+      e.preventDefault();
+      setResult(null);
+
+      if (!form.name.trim()) {
+        setResult({ type: "error", message: "Full name is required." });
+        return;
+      }
+      if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+        setResult({ type: "error", message: "A valid email is required." });
+        return;
+      }
+      if (!form.resume) {
+        setResult({ type: "error", message: "Please upload your resume (PDF)." });
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      try {
+        const body = new FormData();
+        body.append("job_id", job.id);
+        body.append("name", form.name.trim());
+        body.append("email", form.email.trim());
+        body.append("phone", form.phone.trim());
+        body.append("cover_letter", form.cover_letter.trim());
+        body.append("resume", form.resume);
+
+        const response = await fetch(apiUrl("jobs/submit_application.php"), {
+          method: "POST",
+          body,
+        });
+
+        const data = await response.json();
+
+        if (data.status === "success") {
+          markJobAsApplied(job.id);
+          onSubmitted?.(job.id);
+          setResult({
+            type: "success",
+            message: "Your application has been submitted successfully! We'll be in touch soon.",
+          });
+          setForm(INITIAL_FORM);
+        } else {
+          throw new Error(data.message || "Failed to submit application");
+        }
+      } catch (error) {
+        setResult({
+          type: "error",
+          message:
+            error instanceof Error
+              ? error.message
+              : "Something went wrong. Please try again.",
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
+    return (
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-50 flex items-center justify-center p-4"
+        style={{ fontFamily: "arial" }}
+      >
+        {/* Backdrop */}
+        <div
+          className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+          onClick={onClose}
+        />
+
+        {/* Modal */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.95, y: 20 }}
+          transition={{ duration: 0.25 }}
+          className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col"
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-[#EEC27E]/10 to-white">
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Apply Now</h3>
+              <p className="text-sm text-gray-500 mt-0.5">{job.title}</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </div>
+
+          {/* Body */}
+          <div className="overflow-y-auto flex-1 px-6 py-5">
+            {result && (
+              <div
+                className={`mb-4 flex items-start gap-3 rounded-lg border p-3 text-sm ${
+                  result.type === "success"
+                    ? "border-green-200 bg-green-50 text-green-800"
+                    : "border-red-200 bg-red-50 text-red-800"
+                }`}
+              >
+                {result.type === "success" ? (
+                  <CheckCircle className="w-5 h-5 mt-0.5 shrink-0" />
+                ) : (
+                  <AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
+                )}
+                <p>{result.message}</p>
+              </div>
+            )}
+
+            {result?.type !== "success" && (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 text-sm focus:border-[#EEC27E] focus:outline-none focus:ring-2 focus:ring-[#EEC27E]/30"
+                    placeholder="Your full name"
+                  />
+                </div>
+
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, email: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 text-sm focus:border-[#EEC27E] focus:outline-none focus:ring-2 focus:ring-[#EEC27E]/30"
+                    placeholder="you@example.com"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) =>
+                      setForm((prev) => ({ ...prev, phone: e.target.value }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 text-sm focus:border-[#EEC27E] focus:outline-none focus:ring-2 focus:ring-[#EEC27E]/30"
+                    placeholder="Your phone number"
+                  />
+                </div>
+
+                {/* Resume */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Resume (PDF) <span className="text-red-500">*</span>
+                  </label>
+                  <label
+                    className={`flex items-center gap-3 rounded-lg border-2 border-dashed px-4 py-3 cursor-pointer transition-colors ${
+                      form.resume
+                        ? "border-[#EEC27E] bg-[#EEC27E]/5"
+                        : "border-gray-300 hover:border-[#EEC27E]"
+                    }`}
+                  >
+                    <Upload className="w-5 h-5 text-gray-400 shrink-0" />
+                    <span className="text-sm text-gray-600 truncate">
+                      {form.resume ? form.resume.name : "Click to upload PDF (max 5 MB)"}
+                    </span>
+                    <input
+                      type="file"
+                      accept="application/pdf"
+                      className="sr-only"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] ?? null;
+                        if (file && file.type !== "application/pdf") {
+                          setResult({
+                            type: "error",
+                            message: "Only PDF files are accepted.",
+                          });
+                          return;
+                        }
+                        if (file && file.size > 5 * 1024 * 1024) {
+                          setResult({
+                            type: "error",
+                            message: "Resume must be under 5 MB.",
+                          });
+                          return;
+                        }
+                        setForm((prev) => ({ ...prev, resume: file }));
+                      }}
+                    />
+                  </label>
+                </div>
+
+                {/* Cover Letter */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Cover Letter
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={form.cover_letter}
+                    onChange={(e) =>
+                      setForm((prev) => ({
+                        ...prev,
+                        cover_letter: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2.5 text-gray-900 text-sm focus:border-[#EEC27E] focus:outline-none focus:ring-2 focus:ring-[#EEC27E]/30 resize-none"
+                    placeholder="Tell us why you'd be a great fit..."
+                  />
+                </div>
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="w-full rounded-lg bg-[#EEC27E] px-5 py-3 text-sm font-semibold text-white transition-all hover:bg-[#d9a960] disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Application"}
+                </button>
+              </form>
+            )}
+
+            {result?.type === "success" && (
+              <div className="text-center py-4">
+                <button
+                  onClick={onClose}
+                  className="rounded-lg bg-gray-100 px-6 py-2.5 text-sm font-medium text-gray-700 transition hover:bg-gray-200"
+                >
+                  Close
+                </button>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </motion.div>
+    );
+  },
+);
+
+ApplicationModal.displayName = "ApplicationModal";
+
+// ─── Existing Components ────────────────────────────────────────────
+
 const WhyWorkCard = React.memo(
   ({ item, index }: { item: WhyWorkWithUsItem; index: number }) => {
     const IconComponent = item.icon;
@@ -244,59 +549,85 @@ const JobListItem = React.memo(
 
 JobListItem.displayName = "JobListItem";
 
-const JobDetails = React.memo(({ job }: { job: JobListing }) => (
-  <motion.div
-    initial="initial"
-    animate="animate"
-    exit="exit"
-    variants={scaleIn}
-    transition={{ duration: 0.3 }}
-    className="bg-yellow-50 border-2 border-[#EEC27E] p-6 sm:p-8"
-  >
-    <div className="mb-6">
-      <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
-        {job.title} of {job.department}
-      </h2>
-      <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-4">
-        {job.description}
-      </p>
+const JobDetails = React.memo(
+  ({
+    job,
+    onApply,
+    hasApplied,
+  }: {
+    job: JobListing;
+    onApply: () => void;
+    hasApplied: boolean;
+  }) => (
+    <motion.div
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={scaleIn}
+      transition={{ duration: 0.3 }}
+      className="bg-yellow-50 border-2 border-[#EEC27E] p-6 sm:p-8"
+    >
+      <div className="mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">
+          {job.title} of {job.department}
+        </h2>
+        <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-4">
+          {job.description}
+        </p>
 
-      <div className="space-y-2 mb-6">
-        <div className="flex items-center gap-2 text-sm sm:text-base text-gray-700">
-          <span className="w-2 h-2 bg-[#EEC27E] rounded-full"></span>
-          <span>{job.experience}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm sm:text-base text-gray-700">
-          <span className="w-2 h-2 bg-[#EEC27E] rounded-full"></span>
-          <span>{job.salary}</span>
-        </div>
-        <div className="flex items-center gap-2 text-sm sm:text-base text-gray-700">
-          <span className="w-2 h-2 bg-[#EEC27E] rounded-full"></span>
-          <span>{job.location}</span>
+        <div className="space-y-2 mb-6">
+          <div className="flex items-center gap-2 text-sm sm:text-base text-gray-700">
+            <span className="w-2 h-2 bg-[#EEC27E] rounded-full"></span>
+            <span>{job.experience}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm sm:text-base text-gray-700">
+            <span className="w-2 h-2 bg-[#EEC27E] rounded-full"></span>
+            <span>{job.salary}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm sm:text-base text-gray-700">
+            <span className="w-2 h-2 bg-[#EEC27E] rounded-full"></span>
+            <span>{job.location}</span>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div>
-      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
-        Requirements
-      </h3>
-      <div className="space-y-3">
-        {job.requirements.map((requirement, index) => (
-          <motion.p
-            key={index}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="text-gray-600 text-sm sm:text-base leading-relaxed"
-          >
-            {requirement}
-          </motion.p>
-        ))}
+      <div className="mb-6">
+        <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
+          Requirements
+        </h3>
+        <div className="space-y-3">
+          {job.requirements.map((requirement, index) => (
+            <motion.p
+              key={index}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: index * 0.1 }}
+              className="text-gray-600 text-sm sm:text-base leading-relaxed"
+            >
+              {requirement}
+            </motion.p>
+          ))}
+        </div>
       </div>
-    </div>
-  </motion.div>
-));
+
+      {hasApplied ? (
+        <div className="inline-flex items-center gap-2 rounded-lg bg-green-100 px-5 py-3 text-sm font-semibold text-green-800">
+          <CheckCircle className="h-5 w-5" />
+          Application submitted
+        </div>
+      ) : (
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={onApply}
+          className="w-full sm:w-auto rounded-lg bg-[#EEC27E] px-8 py-3 text-sm font-semibold text-white transition-all hover:bg-[#d9a960] hover:shadow-lg"
+        >
+          Apply Now
+        </motion.button>
+      )}
+    </motion.div>
+  ),
+);
 
 JobDetails.displayName = "JobDetails";
 
@@ -305,6 +636,15 @@ export default function CareersPage() {
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [isLoadingJobs, setIsLoadingJobs] = useState<boolean>(true);
   const [jobsError, setJobsError] = useState<string | null>(null);
+  const [applyingJob, setApplyingJob] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [appliedJobIds, setAppliedJobIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setAppliedJobIds(getAppliedJobIds());
+  }, []);
 
   const fetchJobs = useCallback(async () => {
     setIsLoadingJobs(true);
@@ -340,7 +680,6 @@ export default function CareersPage() {
     fetchJobs();
   }, [fetchJobs]);
 
-  // Memoized selected job to prevent unnecessary re-renders
   const selectedJob = useMemo(
     () => jobs.find((job) => job.id === selectedJobId),
     [jobs, selectedJobId],
@@ -357,9 +696,20 @@ export default function CareersPage() {
     }
   }, [jobs, selectedJobId]);
 
-  // Optimized job selection handler
   const handleJobSelect = useCallback((jobId: string) => {
     setSelectedJobId((current) => (current === jobId ? null : jobId));
+  }, []);
+
+  const handleApply = useCallback(() => {
+    if (selectedJob) {
+      setApplyingJob({ id: selectedJob.id, title: selectedJob.title });
+    }
+  }, [selectedJob]);
+
+  const handleApplicationSubmitted = useCallback((jobId: string) => {
+    setAppliedJobIds((currentIds) =>
+      currentIds.includes(jobId) ? currentIds : [...currentIds, jobId],
+    );
   }, []);
 
   return (
@@ -509,7 +859,12 @@ export default function CareersPage() {
             <div className="lg:col-span-3">
               <AnimatePresence mode="wait">
                 {selectedJob ? (
-                  <JobDetails key={selectedJob.id} job={selectedJob} />
+                  <JobDetails
+                    key={selectedJob.id}
+                    job={selectedJob}
+                    onApply={handleApply}
+                    hasApplied={appliedJobIds.includes(selectedJob.id)}
+                  />
                 ) : (
                   <motion.div
                     key="placeholder"
@@ -591,6 +946,17 @@ export default function CareersPage() {
           </p>
         </motion.div>
       </section>
+
+      {/* Application Modal */}
+      <AnimatePresence>
+        {applyingJob && (
+          <ApplicationModal
+            job={applyingJob}
+            onClose={() => setApplyingJob(null)}
+            onSubmitted={handleApplicationSubmitted}
+          />
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 }

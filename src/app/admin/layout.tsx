@@ -616,6 +616,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       "/admin/merchandise",
       "/admin/whatWeOffer",
       "/admin/jobs",
+      "/admin/jobs/applications",
     ];
     if (cmsPages.includes(pathname)) {
       setExpandedSections((prev) => ({ ...prev, cms: true }));

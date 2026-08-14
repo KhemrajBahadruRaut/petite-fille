@@ -7,6 +7,8 @@ import {
   ArrowUp,
   BriefcaseBusiness,
   CheckCircle,
+  ClipboardCopy,
+  FileText,
   ImageIcon,
   Pencil,
   Plus,
@@ -14,6 +16,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import Link from "next/link";
 import {
   apiUrl,
   normalizeApiAssetUrl,
@@ -35,6 +38,7 @@ interface JobRecord {
   description: string;
   requirements: string[];
   postedDaysAgo: number;
+  slug: string;
 }
 
 interface JobForm {
@@ -172,6 +176,7 @@ function normalizeJob(raw: unknown): JobRecord | null {
     postedDaysAgo: Number.isFinite(Number(record.postedDaysAgo))
       ? Math.max(0, Number(record.postedDaysAgo))
       : 0,
+    slug: `${record.slug ?? ""}`.trim(),
   };
 }
 
@@ -196,6 +201,17 @@ export default function AdminJobsPage() {
 
   const removeToast = (id: number) => {
     setToasts((prev) => prev.filter((toast) => toast.id !== id));
+  };
+
+  const copyCareersLink = async () => {
+    const url = new URL("/careers", window.location.origin).toString();
+
+    try {
+      await navigator.clipboard.writeText(url);
+      addToast("Careers page link copied to clipboard!", "success");
+    } catch {
+      addToast("Failed to copy link", "error");
+    }
   };
 
   const fetchJobs = useCallback(async () => {
@@ -863,6 +879,21 @@ export default function AdminJobsPage() {
                           <Pencil className="h-4 w-4" />
                           Edit
                         </button>
+                        <button
+                          onClick={copyCareersLink}
+                          className="inline-flex items-center gap-1 text-sm font-medium text-emerald-600 transition-colors hover:text-emerald-800"
+                          title="Copy careers page link"
+                        >
+                          <ClipboardCopy className="h-4 w-4" />
+                          Copy Link
+                        </button>
+                        <Link
+                          href={`/admin/jobs/applications?job_id=${job.id}`}
+                          className="inline-flex items-center gap-1 text-sm font-medium text-purple-600 transition-colors hover:text-purple-800"
+                        >
+                          <FileText className="h-4 w-4" />
+                          Applications
+                        </Link>
                         <button
                           onClick={() => deleteJob(job)}
                           className="inline-flex items-center gap-1 text-sm font-medium text-red-600 transition-colors hover:text-red-800"
