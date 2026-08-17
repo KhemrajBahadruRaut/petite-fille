@@ -13,7 +13,7 @@
   "dependencies": {
     "@stripe/react-stripe-js": "^6.2.0",
     "@stripe/stripe-js": "^9.3.0",
-    "framer-motion": "^12.23.12",
+    "framer-motion": "^12.43.0",
     "lucide": "^0.542.0",
     "lucide-react": "^0.542.0",
     "next": "16.1.6",

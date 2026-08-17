@@ -23,10 +23,9 @@ function canvasToBlob(
 }
 
 /**
- * Reduces upload time for large About-page photos in the browser. Files that
- * cannot be safely decoded (for example animated GIF, SVG, HEIC or AVIF in an
- * older browser) are returned unchanged. We also keep the original whenever
- * the encoded result is not actually smaller.
+ * Reduces upload time for large images in the browser while preserving the
+ * original image format. Files that cannot be decoded by the current browser
+ * are returned unchanged for the caller to handle.
  */
 export async function optimizeImageUpload(
   originalFile: File,

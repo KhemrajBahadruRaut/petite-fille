@@ -44,8 +44,9 @@ interface BackendProduct {
   name: string;
   price: string | number;
   description: string;
-  image: string;
+  image?: string;
   image_url?: string;
+  image_version?: string | number;
   category: string;
 }
 
@@ -63,6 +64,7 @@ interface CategorySection {
 interface MerchHeroImage {
   slot: number;
   image_url: string;
+  image_version?: string | number;
   updated_at?: string;
 }
 
@@ -72,6 +74,8 @@ const DEFAULT_MERCH_HERO_IMAGES = [
   "/merchendise/bag1.webp",
   "/merchendise/cup2.webp",
 ];
+
+const MERCH_CONTENT_UPDATED_KEY = "merchandise-content-updated";
 
 // Helpers
 
@@ -88,7 +92,8 @@ const transformProduct = (item: BackendProduct): Product => {
   const parsedPrice =
     typeof item.price === "number" ? item.price : Number(item.price);
   const safePrice = Number.isFinite(parsedPrice) ? parsedPrice : 0;
-  const imagePath = item.image_url || `merch/uploads/${item.image || ""}`;
+  const imagePath = item.image_url || (item.image ? `merch/uploads/${item.image}` : "");
+  const imageVersion = Number(item.image_version);
 
   return {
     id: `${item.category}-${item.id}`,
@@ -96,7 +101,10 @@ const transformProduct = (item: BackendProduct): Product => {
     description: item.description || "",
     price: safePrice,
     priceDisplay: `$${safePrice.toFixed(2)} AUD`,
-    image: normalizeApiAssetUrl(imagePath),
+    image: withCacheVersion(
+      normalizeApiAssetUrl(imagePath),
+      Number.isFinite(imageVersion) ? imageVersion : 0,
+    ),
     category: item.category,
   };
 };
@@ -324,6 +332,10 @@ const ProductCard = React.memo(function ProductCard({
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const { addToFavorites, removeFromFavorites, isFavorite } = useCart();
   const isItemFavorite = isFavorite(product.id);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [product.image]);
 
   const handleToggleFavorite = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -584,12 +596,17 @@ export default function Merchendise() {
           continue;
         }
 
+        const imageVersion = Number(image.image_version);
         const parsedVersion = image.updated_at
           ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
           : 0;
         const imageUrl = withCacheVersion(
           normalizeApiAssetUrl(image.image_url),
-          Number.isFinite(parsedVersion) ? parsedVersion : 0,
+          Number.isFinite(imageVersion) && imageVersion > 0
+            ? imageVersion
+            : Number.isFinite(parsedVersion)
+              ? parsedVersion
+              : 0,
         );
         nextImages[image.slot - 1] = imageUrl;
         remoteImageUrls.push(imageUrl);
@@ -611,14 +628,14 @@ export default function Merchendise() {
   const fetchData = useCallback(async (signal: AbortSignal) => {
       try {
         const [categoriesResponse, productsResponse] = await Promise.all([
-          fetch(apiUrl("merch/categories/get_categories.php"), {
-            cache: "no-store",
-            signal,
-          }),
-          fetch(apiUrl("merch/get_merch_items.php"), {
-            cache: "no-store",
-            signal,
-          }),
+          fetch(
+            withCacheVersion(apiUrl("merch/categories/get_categories.php")),
+            { cache: "no-store", signal },
+          ),
+          fetch(
+            withCacheVersion(apiUrl("merch/get_merch_items.php")),
+            { cache: "no-store", signal },
+          ),
         ]);
 
         if (!categoriesResponse.ok)
@@ -655,7 +672,22 @@ export default function Merchendise() {
       }
   }, []);
 
-  useLiveRefresh(fetchData);
+  useLiveRefresh(fetchData, 1_000);
+
+  useEffect(() => {
+    const refreshUpdatedMerchandise = (event: StorageEvent) => {
+      if (event.key !== MERCH_CONTENT_UPDATED_KEY) return;
+
+      const controller = new AbortController();
+      void Promise.all([
+        fetchHeroImages(controller.signal),
+        fetchData(controller.signal),
+      ]);
+    };
+
+    window.addEventListener("storage", refreshUpdatedMerchandise);
+    return () => window.removeEventListener("storage", refreshUpdatedMerchandise);
+  }, [fetchData, fetchHeroImages]);
 
   // ── Buy Now / Add to Cart handler 
   const canPurchase = !settingsLoading && onlinePurchaseEnabled;

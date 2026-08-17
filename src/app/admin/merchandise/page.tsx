@@ -16,7 +16,6 @@ import {
   normalizeApiAssetUrl,
   withCacheVersion,
 } from "../../../utils/api";
-import { optimizeImageUpload } from "@/utils/optimizeImageUpload";
 import { preloadImages, waitForNextPaint } from "@/utils/preloadImage";
 import { logAdminActivity } from "@/utils/activityLog";
 
@@ -27,6 +26,8 @@ interface MerchItem {
   price: number;
   description?: string;
   image?: string;
+  image_url?: string;
+  image_version?: string | number;
   category: string;
 }
 
@@ -56,6 +57,7 @@ interface MerchSettings {
 interface MerchHeroImage {
   slot: number;
   image_url: string;
+  image_version?: string | number;
   updated_at?: string;
 }
 
@@ -65,6 +67,29 @@ const MERCH_HERO_SLOTS = [
   { slot: 3, label: "Bottom image", fallback: "/merchendise/bag1.webp" },
   { slot: 4, label: "Right image", fallback: "/merchendise/cup2.webp" },
 ];
+
+const MAX_IMAGE_UPLOAD_BYTES = 10 * 1024 * 1024;
+const MERCH_CONTENT_UPDATED_KEY = "merchandise-content-updated";
+
+function validateImageFile(file: File): string | null {
+  if (file.type && !file.type.startsWith("image/")) {
+    return "Choose an image file";
+  }
+
+  if (file.size > MAX_IMAGE_UPLOAD_BYTES) {
+    return "The image must be no larger than 10 MB";
+  }
+
+  return null;
+}
+
+function notifyMerchandiseUpdated() {
+  try {
+    window.localStorage.setItem(MERCH_CONTENT_UPDATED_KEY, String(Date.now()));
+  } catch {
+    // Private browsing can block storage. Polling remains available as a fallback.
+  }
+}
 
 /* ---------------- Toast ---------------- */
 const ToastNotification = ({
@@ -178,7 +203,12 @@ export default function AdminMerch() {
   const fetchItems = useCallback(async () => {
     setIsLoading(true);
     try {
-      const r = await fetch(apiUrl("merch/get_merch_items.php"));
+      const r = await fetch(
+        withCacheVersion(apiUrl("merch/get_merch_items.php")),
+        {
+          cache: "no-store",
+        },
+      );
       if (!r.ok) throw new Error("Failed to fetch items");
       setItems(await r.json());
     } catch {
@@ -236,12 +266,17 @@ export default function AdminMerch() {
       const previewsReady = waitForPreviews
         ? await preloadImages(
             Object.values(nextImages).map((image) => {
+              const imageVersion = Number(image.image_version);
               const parsedVersion = image.updated_at
                 ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
                 : 0;
               return withCacheVersion(
                 normalizeApiAssetUrl(image.image_url),
-                Number.isFinite(parsedVersion) ? parsedVersion : Date.now(),
+                Number.isFinite(imageVersion) && imageVersion > 0
+                  ? imageVersion
+                  : Number.isFinite(parsedVersion)
+                    ? parsedVersion
+                    : Date.now(),
               );
             }),
           )
@@ -265,13 +300,9 @@ export default function AdminMerch() {
   }, [fetchCategories, fetchHeroImages, fetchItems, fetchSettings]);
 
   const uploadHeroImage = async (slot: number, selectedFile: File) => {
-    const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
-    if (!allowedTypes.has(selectedFile.type)) {
-      addToast("Choose a JPG, PNG, or WebP image", "warning");
-      return;
-    }
-    if (selectedFile.size > 25 * 1024 * 1024) {
-      addToast("The source image must be no larger than 25 MB", "warning");
+    const validationError = validateImageFile(selectedFile);
+    if (validationError) {
+      addToast(validationError, "warning");
       return;
     }
 
@@ -288,14 +319,9 @@ export default function AdminMerch() {
 
     setHeroSavingSlot(slot);
     try {
-      const optimized = await optimizeImageUpload(selectedFile, 1200, 0.82);
-      if (optimized.file.size > 10 * 1024 * 1024) {
-        throw new Error("The optimized image must be no larger than 10 MB");
-      }
-
       const body = new FormData();
       body.append("slot", String(slot));
-      body.append("image", optimized.file, optimized.file.name);
+      body.append("image", selectedFile, selectedFile.name);
       const response = await fetch(apiUrl("merch/hero_images.php"), {
         method: "POST",
         body,
@@ -306,7 +332,28 @@ export default function AdminMerch() {
         throw new Error(data?.message || "Failed to update the hero image");
       }
 
-      const previewReady = await fetchHeroImages(true);
+      const uploadedImage = data.image as MerchHeroImage | undefined;
+      if (!uploadedImage?.image_url || uploadedImage.slot !== slot) {
+        throw new Error("The uploaded image was not returned by the server");
+      }
+
+      const imageVersion = Number(uploadedImage.image_version);
+      const parsedVersion = uploadedImage.updated_at
+        ? Date.parse(`${uploadedImage.updated_at.replace(" ", "T")}Z`)
+        : Date.now();
+      const previewReady = await preloadImages([
+        withCacheVersion(
+          normalizeApiAssetUrl(uploadedImage.image_url),
+          Number.isFinite(imageVersion) && imageVersion > 0
+            ? imageVersion
+            : Number.isFinite(parsedVersion)
+              ? parsedVersion
+              : Date.now(),
+        ),
+      ]);
+
+      setHeroImages((current) => ({ ...current, [slot]: uploadedImage }));
+      notifyMerchandiseUpdated();
       await waitForNextPaint();
       addToast(
         previewReady
@@ -343,6 +390,7 @@ export default function AdminMerch() {
       }
 
       await fetchHeroImages();
+      notifyMerchandiseUpdated();
       addToast("Original merchandise hero image restored", "success");
       logAdminActivity("Content Management", "Reset merch hero image", `Slot ${slot} restored to original`);
     } catch (error) {
@@ -361,12 +409,17 @@ export default function AdminMerch() {
     const image = heroImages[slot];
     if (!image) return fallback;
 
+    const imageVersion = Number(image.image_version);
     const parsedVersion = image.updated_at
       ? Date.parse(`${image.updated_at.replace(" ", "T")}Z`)
       : 0;
     return withCacheVersion(
       normalizeApiAssetUrl(image.image_url),
-      Number.isFinite(parsedVersion) ? parsedVersion : 0,
+      Number.isFinite(imageVersion) && imageVersion > 0
+        ? imageVersion
+        : Number.isFinite(parsedVersion)
+          ? parsedVersion
+          : 0,
     );
   };
 
@@ -481,14 +534,19 @@ const addCategory = async () => {
     if (!form.name || !form.price)
       return addToast("Name & price required", "warning");
 
+    if (form.image) {
+      const validationError = validateImageFile(form.image);
+      if (validationError) {
+        addToast(validationError, "warning");
+        return;
+      }
+    }
+
     const fd = new FormData();
     fd.append("name", form.name.trim());
     fd.append("price", form.price);
     fd.append("description", form.description.trim());
     fd.append("category", form.category);
-    if (form.image) {
-      fd.append("image", form.image, form.image.name);
-    }
     if (editId !== null) {
       fd.append("id", editId.toString());
     }
@@ -500,6 +558,10 @@ const addCategory = async () => {
 
     setIsSubmitting(true);
     try {
+      if (form.image) {
+        fd.append("image", form.image, form.image.name);
+      }
+
       const response = await fetch(url, { method: "POST", body: fd });
       const data = await response.json().catch(() => null);
 
@@ -516,6 +578,7 @@ const addCategory = async () => {
       });
       setEditId(null);
       await fetchItems();
+      notifyMerchandiseUpdated();
       addToast(editId !== null ? "Item updated" : "Item added", "success");
       logAdminActivity("Content Management", editId !== null ? "Updated merch item" : "Added merch item", `${form.name.trim()} ($${form.price})`);
     } catch (error) {
@@ -536,7 +599,7 @@ const addCategory = async () => {
       image: null,
       category: item.category,
     });
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.scrollTo({ top: 750, behavior: "smooth" });
   };
 
   const deleteItem = async (id: number, name: string) => {
@@ -549,7 +612,7 @@ const addCategory = async () => {
     logAdminActivity("Content Management", "Deleted merch item", name);
   };
 
-  /* ---------------- JSX ---------------- */
+  /*  JSX  */
   return (
     <div className="min-h-screen bg-gray-50 p-4 sm:p-6">
       {/* Toasts */}
@@ -619,8 +682,7 @@ const addCategory = async () => {
             </h2>
             <p className="mt-1 text-sm text-gray-500">
               Change the four images displayed on the right side of the
-              merchandise page. JPG, PNG, or WebP; up to 10 MB after
-              optimization.
+              merchandise page.
             </p>
           </div>
         </div>
@@ -672,7 +734,7 @@ const addCategory = async () => {
                             : "Upload"}
                         <input
                           type="file"
-                          accept="image/jpeg,image/png,image/webp"
+                          accept="image/*,.heic,.heif"
                           className="sr-only"
                           disabled={isSaving}
                           onChange={(event) => {
@@ -823,7 +885,7 @@ const addCategory = async () => {
           <InputField label="Image">
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif"
               onChange={(e) =>
                 setForm({ ...form, image: e.target.files?.[0] || null })
               }
@@ -891,7 +953,12 @@ const addCategory = async () => {
                       <div className="flex items-center gap-3">
                         {item.image && (
                           <img
-                            src={normalizeApiAssetUrl(`merch/uploads/${item.image}`)}
+                            src={normalizeApiAssetUrl(
+                              withCacheVersion(
+                                item.image_url || `merch/uploads/${item.image}`,
+                                Number(item.image_version) || 0,
+                              ),
+                            )}
                             alt={item.name}
                             className="w-12 h-12 rounded-lg object-cover border"
                           />
