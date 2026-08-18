@@ -378,7 +378,7 @@ export default function AdminJobsPage() {
   const deleteCarouselImage = async (image: CareerCarouselImage) => {
     const shouldDelete = window.confirm(
       carouselImages.length === 1
-        ? "Delete this image? The public careers carousel will return to its original images."
+        ? "Delete this image? The public careers carousel will show a skeleton until another image is uploaded."
         : "Delete this careers carousel image?",
     );
     if (!shouldDelete) return;
@@ -627,10 +627,10 @@ export default function AdminJobsPage() {
           <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
             <ImageIcon className="mx-auto mb-3 h-8 w-8 text-gray-400" />
             <p className="text-sm font-medium text-gray-700">
-              The public careers page is using its four original images.
+              No careers carousel images have been uploaded.
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Add one or more images here to replace the original carousel.
+              The public carousel shows a skeleton until an image is added.
             </p>
           </div>
         ) : (

@@ -16,13 +16,9 @@ interface MenuCarouselImage {
     updated_at?: string;
 }
 
-const FALLBACK_SLIDES = [
-    "/reservation/img1.webp",
-];
-
 export default function MenuCarousel() {
     const [currentSlide, setCurrentSlide] = useState(0);
-    const [slides, setSlides] = useState(FALLBACK_SLIDES);
+    const [slides, setSlides] = useState<string[]>([]);
 
     const fetchSlides = useCallback(async (signal: AbortSignal) => {
         try {
@@ -53,7 +49,7 @@ export default function MenuCarousel() {
 
             await preloadImages(remoteSlides);
             if (signal.aborted) return;
-            setSlides(remoteSlides.length > 0 ? remoteSlides : FALLBACK_SLIDES);
+            setSlides(remoteSlides);
         } catch (error) {
             if (!(error instanceof Error && error.name === "AbortError")) {
                 console.error("Failed to refresh menu carousel:", error);
@@ -78,7 +74,9 @@ export default function MenuCarousel() {
     }, [fetchSlides]);
 
     useEffect(() => {
-        setCurrentSlide((current) => Math.min(current, slides.length - 1));
+        setCurrentSlide((current) =>
+            slides.length === 0 ? 0 : Math.min(current, slides.length - 1),
+        );
     }, [slides.length]);
 
     useEffect(() => {
@@ -105,19 +103,27 @@ export default function MenuCarousel() {
 
     return (
         <div className="relative h-48 sm:h-56 md:h-64 lg:h-80 xl:h-96 overflow-hidden group pointer-events-auto">
-            <div
-                className="flex h-full transition-transform duration-700 ease-in-out"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-            >
-                {slides.map((slide) => (
-                    <div key={slide} className="relative min-w-full h-full">
-                        <div
-                            className="absolute inset-0 bg-cover bg-center"
-                            style={{ backgroundImage: `url(${slide})` }}
-                        />
-                    </div>
-                ))}
-            </div>
+            {slides.length === 0 ? (
+                <div
+                    className="h-full w-full animate-pulse bg-gray-200"
+                    role="status"
+                    aria-label="Loading menu carousel images"
+                />
+            ) : (
+                <div
+                    className="flex h-full transition-transform duration-700 ease-in-out"
+                    style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+                >
+                    {slides.map((slide) => (
+                        <div key={slide} className="relative min-w-full h-full">
+                            <div
+                                className="absolute inset-0 bg-cover bg-center"
+                                style={{ backgroundImage: `url(${slide})` }}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
 
             <div className="absolute inset-0 flex items-center justify-center z-10">
                 <div className="text-center text-white px-4">

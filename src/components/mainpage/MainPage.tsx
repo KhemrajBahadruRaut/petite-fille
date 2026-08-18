@@ -3,7 +3,9 @@ import { motion } from "framer-motion";
 import { Variants } from "framer-motion";
 // import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import React, { useCallback, useState } from "react";
+import { useLiveRefresh } from "@/hooks/useLiveRefresh";
+import { apiUrl } from "@/utils/api";
 
 const buttonBase =
   "px-10 py-3 shadow-md text-sm sm:text-2xl transition-all duration-300";
@@ -12,6 +14,7 @@ const bookTableBtn =
 const orderOnlineBtn =
   // "bg-[#B7AA99] text-white hover:rounded-bl-3xl hover:rounded-tr-3xl rounded-tl-3xl rounded-br-3xl";
   "bg-[#B7AA99] text-white border border-[#B7AA99] text-[#B7AA99] rounded-tr-3xl rounded-bl-3xl hover:rounded-tl-3xl hover:rounded-br-3xl hover:rounded-tr-none hover:rounded-bl-none transition-all duration-300 ease-in-out px-6 py-2";
+const externalBookingUrl = "https://petite-file-cafe.resos.com/booking";
 
 const fadeSlide = {
   hidden: { x: 200, opacity: 0 },
@@ -34,6 +37,40 @@ const rotateScale: Variants = {
 };
 
 export default function MainPage() {
+  const [reservationsEnabled, setReservationsEnabled] = useState<boolean | null>(
+    null,
+  );
+
+  const fetchReservationSettings = useCallback(async (signal: AbortSignal) => {
+    try {
+      const response = await fetch(
+        apiUrl("reservation/reservation-settings/get_settings.php"),
+        { cache: "no-store", signal },
+      );
+      const data: {
+        success?: boolean;
+        settings?: { reservations_enabled?: boolean };
+      } = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error("Failed to fetch reservation settings");
+      }
+
+      setReservationsEnabled(data.settings?.reservations_enabled === true);
+    } catch (error) {
+      if (!(error instanceof Error && error.name === "AbortError")) {
+        console.error("Failed to refresh homepage reservation setting:", error);
+      }
+    }
+  }, []);
+
+  useLiveRefresh(fetchReservationSettings);
+
+  const useInternalReservationPage = reservationsEnabled === true;
+  const bookingHref = useInternalReservationPage
+    ? "/reservation"
+    : externalBookingUrl;
+
   return (
     <div className="bg-white pb-14 pt-20">
       <h1 className="sr-only">Petite Fille Cafe Rosanna</h1>
@@ -70,8 +107,9 @@ export default function MainPage() {
             style={{ fontFamily: "fairplay" }}
           >
             <Link
-              href="https://petite-file-cafe.resos.com/booking"
-              target="_blank"
+              href={bookingHref}
+              target={useInternalReservationPage ? undefined : "_blank"}
+              rel={useInternalReservationPage ? undefined : "noopener noreferrer"}
               className={`${buttonBase} ${bookTableBtn}`}
             >
               Book A Table
@@ -105,7 +143,12 @@ export default function MainPage() {
 
         {/* Mobile Buttons */}
         <div className="flex flex-wrap md:hidden gap-5 justify-center w-full py-6">
-          <Link href="https://petite-file-cafe.resos.com/booking" target="_blank" className={`${buttonBase} ${bookTableBtn}`}>
+          <Link
+            href={bookingHref}
+            target={useInternalReservationPage ? undefined : "_blank"}
+            rel={useInternalReservationPage ? undefined : "noopener noreferrer"}
+            className={`${buttonBase} ${bookTableBtn}`}
+          >
             Book A Table
           </Link>
           <Link href="/menu" className={`${buttonBase} ${orderOnlineBtn}`}>

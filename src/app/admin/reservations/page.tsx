@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { apiUrl } from "../../../utils/api";
 import { logAdminActivity } from "@/utils/activityLog";
+import ReservationCarouselManager from "./ReservationCarouselManager";
 
 type ReservationStatus =
   | "pending"
@@ -441,6 +442,7 @@ export default function AdminReservationsPage() {
 
       {/* ── Settings Panel ── */}
       <SettingsPanel onMessage={setMessage} />
+      <ReservationCarouselManager onMessage={setMessage} />
 
       {/* ── Page Header ── */}
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">

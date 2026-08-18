@@ -345,7 +345,7 @@ export default function AdminMenu() {
   const deleteCarouselImage = async (image: MenuCarouselImage) => {
     const shouldDelete = window.confirm(
       carouselImages.length === 1
-        ? "Delete this image? The public menu carousel will return to its original images."
+        ? "Delete this image? The public menu carousel will show a skeleton until another image is uploaded."
         : "Delete this menu carousel image?",
     );
     if (!shouldDelete) return;
@@ -940,10 +940,10 @@ export default function AdminMenu() {
           <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-8 text-center">
             <ImageIcon className="mx-auto mb-3 h-8 w-8 text-gray-400" />
             <p className="text-sm font-medium text-gray-700">
-              The public menu page is using its four original images.
+              No menu carousel images have been uploaded.
             </p>
             <p className="mt-1 text-xs text-gray-500">
-              Add one or more images here to replace the original carousel.
+              The public carousel shows a skeleton until an image is added.
             </p>
           </div>
         ) : (
