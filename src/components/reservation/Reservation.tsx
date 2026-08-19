@@ -1087,33 +1087,20 @@ export default function ReservationPage() {
               </div>
 
               {/* Fee notice — adapts to peak mode */}
-              <div
-                className={`mt-3 rounded p-3 text-center text-xs ${
-                  isPeakMode
-                    ? "border border-amber-200 bg-amber-50 text-amber-800"
-                    : "bg-gray-50 text-gray-500"
-                }`}
-              >
-                {isPeakMode ? (
-                  <>
-                    <p className="font-semibold">
-                      🎉 Peak / Festive Period — Advance Payment Required
-                    </p>
-                    <p className="mt-1">
-                      A non-refundable advance payment of{" "}
-                      <strong>${peakPrice}</strong> per booking is required to
-                      secure your reservation. You will be redirected to
-                      complete payment after confirming.
-                    </p>
-                  </>
-                ) : (
-                  <p>
-                    A fee of ${PRICE_PER_PERSON} per person is required to
-                    secure your booking. Non-refundable if canceled within 6
-                    hours of booking or no-show.
-                  </p>
-                )}
-              </div>
+             {isPeakMode && (
+  <div className="mt-3 rounded border border-amber-200 bg-amber-50 p-3 text-center text-xs text-amber-800">
+    <p className="font-semibold">
+      🎉 Peak / Festive Period — Advance Payment Required
+    </p>
+
+    <p className="mt-1">
+      A non-refundable advance payment of{" "}
+      <strong>${peakPrice}</strong> per booking is required to secure your
+      reservation. You will be redirected to complete payment after
+      confirming.
+    </p>
+  </div>
+)}
 
               <label className="mt-2 flex items-start gap-2 text-sm">
                 <input
