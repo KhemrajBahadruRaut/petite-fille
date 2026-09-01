@@ -13,7 +13,7 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 );
 
-// $5 to $100 in $5 increments → [5, 10, 15, ... 100]
+// AUD $5 to AUD $100 in $5 increments → [5, 10, 15, ... 100]
 const AMOUNT_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 5);
 
 const CARD_ELEMENT_OPTIONS = {
@@ -230,7 +230,7 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
           senderEmail: formData.senderEmail,
           quantity: formData.quantity,
           giftCardAmount: formData.amount,
-          currency: "usd",
+          currency: "aud",
         }),
       });
 
@@ -306,7 +306,7 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
           <div className="flex justify-between">
             <span className="text-gray-500">Amount × Qty</span>
             <span className="font-medium">
-              ${formData.amount} × {formData.quantity}
+              AUD ${formData.amount} × {formData.quantity}
             </span>
           </div>
           {formData.message && (
@@ -319,7 +319,7 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
           )}
           <div className="border-t border-amber-200 pt-2 mt-2 flex justify-between font-semibold text-gray-800">
             <span>Total</span>
-            <span>${totalPrice}.00</span>
+            <span>AUD ${totalPrice}.00</span>
           </div>
         </div>
 
@@ -403,7 +403,7 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
                 {paidPaymentIntentId ? "Sending email…" : "Processing…"}
               </>
             ) : (
-              paidPaymentIntentId ? "Retry email" : `Pay $${totalPrice}.00`
+              paidPaymentIntentId ? "Retry email" : `Pay AUD $${totalPrice}.00`
             )}
           </button>
         </div>
@@ -565,7 +565,7 @@ const Stripe_test = () => {
             Gift Card Sent!
           </h2>
           <p className="text-gray-600 mb-2">
-            Your eGift card worth <strong>${totalPrice}</strong> has been sent
+            Your eGift card worth <strong>AUD ${totalPrice}</strong> has been sent
             to <strong>{formData.recipient}</strong> at{" "}
             <strong>{formData.recipientEmail}</strong>.
           </p>
@@ -693,7 +693,7 @@ const Stripe_test = () => {
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
-                    ${amount}
+                    AUD ${amount}
                   </button>
                 ))}
               </div>
@@ -826,7 +826,7 @@ const Stripe_test = () => {
                   <span className="text-lg font-medium text-gray-600">+</span>
                 </button>
                 <span className="text-sm text-gray-600 ml-4">
-                  Total: ${totalPrice}.00
+                  Total: AUD ${totalPrice}.00
                 </span>
               </div>
               {errors.quantity && (
@@ -901,7 +901,7 @@ const Stripe_test = () => {
               onClick={handleContinue}
               className="w-full py-4 bg-linear-to-r from-amber-600 to-yellow-600 text-white font-medium rounded-xl hover:from-amber-700 hover:to-yellow-700 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-all shadow-lg"
             >
-              Continue — ${totalPrice}.00
+              Continue — AUD ${totalPrice}.00
             </button>
           </div>
           )}
