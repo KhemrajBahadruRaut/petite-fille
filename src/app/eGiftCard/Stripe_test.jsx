@@ -13,8 +13,11 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 );
 
-// $5 to $100 in $5 increments → [5, 10, 15, ... 100]
-const AMOUNT_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 5);
+// $1 followed by $5 to $100 in $5 increments
+const AMOUNT_OPTIONS = [
+  1,
+  ...Array.from({ length: 20 }, (_, i) => (i + 1) * 5),
+];
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
