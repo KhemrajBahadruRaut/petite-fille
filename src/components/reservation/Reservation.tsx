@@ -761,7 +761,7 @@ export default function ReservationPage() {
         setFeedback({
           type: "success",
           message:
-            "Reservation submitted successfully. Please check your mail for details.",
+            "Reservation confirmed successfully. Please check your email for details.",
         });
         resetForm();
       }

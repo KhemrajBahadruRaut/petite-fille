@@ -13,8 +13,11 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 );
 
-// AUD $5 to AUD $100 in $5 increments → [5, 10, 15, ... 100]
-const AMOUNT_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 5);
+// AUD $1 followed by AUD $5 to AUD $100 in $5 increments
+const AMOUNT_OPTIONS = [
+  1,
+  ...Array.from({ length: 20 }, (_, i) => (i + 1) * 5),
+];
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -200,8 +203,12 @@ const CheckoutForm = ({ formData, totalPrice, onSuccess, onBack }) => {
       }
     }
 
-    if (!mailResult.sentToRecipient || !mailResult.sentToSender) {
-      console.error("One or more gift card emails failed:", mailResult);
+    if (
+      !mailResult.sentToRecipient ||
+      !mailResult.sentToSender ||
+      !mailResult.sentToAdmin
+    ) {
+      console.error("One or more eGift Card emails failed:", mailResult);
     }
   };
 

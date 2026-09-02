@@ -61,8 +61,15 @@ interface SettingsApiResponse {
   message?: string;
 }
 
-const STATUS_OPTIONS: ReservationStatus[] = [
+const STATUS_FILTER_OPTIONS: ReservationStatus[] = [
   "pending",
+  "confirmed",
+  "cancelled",
+  "fulfilled",
+  "no_show",
+];
+
+const STATUS_UPDATE_OPTIONS: Exclude<ReservationStatus, "pending">[] = [
   "confirmed",
   "cancelled",
   "fulfilled",
@@ -375,12 +382,21 @@ export default function AdminReservationsPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id, status, cancelledBy: "admin" }),
       });
-      const data = (await response.json()) as { success?: boolean; message?: string };
+      const data = (await response.json()) as {
+        success?: boolean;
+        message?: string;
+        statusChanged?: boolean;
+        emailSent?: boolean;
+        emailMessage?: string;
+      };
       if (!response.ok || !data.success) throw new Error(data.message || "Failed to update status.");
       setReservations((prev) =>
         sortReservationsByRecent(prev.map((item) => (item.id === id ? { ...item, status } : item))),
       );
-      setMessage({ type: "success", text: `Reservation #${id} updated.` });
+      setMessage({
+        type: data.statusChanged && data.emailSent === false ? "error" : "success",
+        text: data.message || `Reservation #${id} updated and customer notified.`,
+      });
       logAdminActivity("Reservations", "Updated reservation status", `Reservation #${id} → ${status}`);
     } catch (error) {
       setMessage({
@@ -500,7 +516,7 @@ export default function AdminReservationsPage() {
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-xs text-gray-700 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto"
         >
           <option value="all">All</option>
-          {STATUS_OPTIONS.map((status) => (
+          {STATUS_FILTER_OPTIONS.map((status) => (
             <option key={status} value={status}>
               {statusLabel(status)}
             </option>
@@ -586,7 +602,10 @@ export default function AdminReservationsPage() {
                             title={isUpdating ? "Updating reservation status..." : "Update reservation status"}
                             onChange={(e) => updateStatus(reservation.id, e.target.value as ReservationStatus)}
                           >
-                            {STATUS_OPTIONS.map((status) => (
+                            {reservation.status === "pending" && (
+                              <option value="pending" disabled>pending</option>
+                            )}
+                            {STATUS_UPDATE_OPTIONS.map((status) => (
                               <option key={status} value={status}>{statusLabel(status)}</option>
                             ))}
                           </select>

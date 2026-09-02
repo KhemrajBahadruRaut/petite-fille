@@ -4,7 +4,6 @@
 //   /* config options here */
     
 //     output: 'export', 
-//     allowedDevOrigins: ['172.28.32.1:3000'],
 //     outputFileTracingRoot: __dirname, 
 //     images: {
       
