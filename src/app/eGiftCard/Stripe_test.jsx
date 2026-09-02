@@ -13,11 +13,10 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 );
 
-// AUD $1 followed by AUD $5 to AUD $100 in $5 increments
-const AMOUNT_OPTIONS = [
-  1,
-  ...Array.from({ length: 20 }, (_, i) => (i + 1) * 5),
-];
+// Preset values remain in $5 increments; customers can also enter $5–$500.
+const AMOUNT_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 5);
+const MIN_GIFT_CARD_AMOUNT = 5;
+const MAX_GIFT_CARD_AMOUNT = 500;
 
 const CARD_ELEMENT_OPTIONS = {
   style: {
@@ -432,6 +431,7 @@ const Stripe_test = () => {
 
   const [errors, setErrors] = useState({});
   const [step, setStep] = useState("form");
+  const [isCustomAmount, setIsCustomAmount] = useState(false);
   const [onlinePurchaseEnabled, setOnlinePurchaseEnabled] = useState(true);
   const [settingsLoading, setSettingsLoading] = useState(true);
 
@@ -482,6 +482,16 @@ const Stripe_test = () => {
 
   const validateForm = useCallback(() => {
     const newErrors = {};
+    const giftCardAmount = Number(formData.amount);
+
+    if (
+      !Number.isInteger(giftCardAmount) ||
+      giftCardAmount < MIN_GIFT_CARD_AMOUNT ||
+      giftCardAmount > MAX_GIFT_CARD_AMOUNT
+    ) {
+      newErrors.amount = `Enter a whole-dollar amount between AUD $${MIN_GIFT_CARD_AMOUNT} and AUD $${MAX_GIFT_CARD_AMOUNT}`;
+    }
+
     if (!formData.recipient.trim())
       newErrors.recipient = "Recipient name is required";
     else if (formData.recipient.trim().length < 2)
@@ -545,6 +555,7 @@ const Stripe_test = () => {
       senderName: "",
       senderEmail: "",
     });
+    setIsCustomAmount(false);
     setErrors({});
     setStep("form");
   };
@@ -693,9 +704,13 @@ const Stripe_test = () => {
                 {AMOUNT_OPTIONS.map((amount) => (
                   <button
                     key={amount}
-                    onClick={() => handleInputChange("amount", amount)}
+                    type="button"
+                    onClick={() => {
+                      setIsCustomAmount(false);
+                      handleInputChange("amount", amount);
+                    }}
                     className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
-                      formData.amount === amount
+                      !isCustomAmount && formData.amount === amount
                         ? "bg-linear-to-r from-amber-600 to-yellow-600 text-white shadow-md"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
@@ -703,7 +718,66 @@ const Stripe_test = () => {
                     AUD ${amount}
                   </button>
                 ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomAmount(true);
+                    if (
+                      !isCustomAmount &&
+                      AMOUNT_OPTIONS.includes(Number(formData.amount))
+                    ) {
+                      handleInputChange("amount", "");
+                    }
+                  }}
+                  className={`px-3 py-2 rounded-lg font-medium text-sm transition-all ${
+                    isCustomAmount
+                      ? "bg-linear-to-r from-amber-600 to-yellow-600 text-white shadow-md"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  Custom
+                </button>
               </div>
+              {isCustomAmount && (
+                <div className="mt-4">
+                  <label
+                    htmlFor="customGiftCardAmount"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Custom amount (AUD $5–$500)
+                  </label>
+                  <div className="relative max-w-xs">
+                    <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">
+                      AUD $
+                    </span>
+                    <input
+                      id="customGiftCardAmount"
+                      type="number"
+                      inputMode="numeric"
+                      min={MIN_GIFT_CARD_AMOUNT}
+                      max={MAX_GIFT_CARD_AMOUNT}
+                      step="1"
+                      value={formData.amount}
+                      onChange={(event) => {
+                        const value = event.target.value;
+                        handleInputChange(
+                          "amount",
+                          value === "" ? "" : Number(value),
+                        );
+                      }}
+                      className={`w-full rounded-lg border bg-white py-2.5 pl-16 pr-3 text-gray-700 focus:outline-none focus:ring-2 ${
+                        errors.amount
+                          ? "border-red-500 focus:ring-red-200"
+                          : "border-gray-300 focus:border-amber-500 focus:ring-amber-200"
+                      }`}
+                      placeholder="Enter amount"
+                    />
+                  </div>
+                </div>
+              )}
+              {errors.amount && (
+                <p className="mt-2 text-sm text-red-600">{errors.amount}</p>
+              )}
             </div>
 
             {/* Personalization */}
