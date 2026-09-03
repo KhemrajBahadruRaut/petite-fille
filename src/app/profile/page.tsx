@@ -169,12 +169,12 @@ const parseGiftCardDate = (value?: string | null) => {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 };
 
-const addOneCalendarMonth = (date: Date) => {
+const addThreeCalendarYears = (date: Date) => {
   const result = new Date(date);
   const originalDay = result.getDate();
 
   result.setDate(1);
-  result.setMonth(result.getMonth() + 1);
+  result.setFullYear(result.getFullYear() + 3);
   const lastDayOfTargetMonth = new Date(
     result.getFullYear(),
     result.getMonth() + 1,
@@ -190,7 +190,7 @@ const getGiftCardExpirationDate = (card: UserGiftCard) => {
   if (serverExpiration) return serverExpiration;
 
   const issuedDate = parseGiftCardDate(card.created_at);
-  return issuedDate ? addOneCalendarMonth(issuedDate) : null;
+  return issuedDate ? addThreeCalendarYears(issuedDate) : null;
 };
 
 const formatGiftCardDate = (

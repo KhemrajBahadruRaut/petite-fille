@@ -49,7 +49,7 @@ const getPreviewExpirationDate = () => {
   const originalDay = date.getDate();
 
   date.setDate(1);
-  date.setMonth(date.getMonth() + 1);
+  date.setFullYear(date.getFullYear() + 3);
   const lastDayOfTargetMonth = new Date(
     date.getFullYear(),
     date.getMonth() + 1,

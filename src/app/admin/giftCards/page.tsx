@@ -29,6 +29,7 @@ interface GiftCard {
   amount: number;
   status: "active" | "redeemed";
   created_at: string;
+  expires_at: string;
   recipient?: string;
   recipient_email?: string;
   sender_name?: string;
@@ -67,6 +68,19 @@ const STATUS_LABELS: Record<string, string> = {
 const CARD_STATUS_STYLES: Record<string, string> = {
   active:   "bg-blue-100 text-blue-700 border border-blue-200",
   redeemed: "bg-red-100 text-red-700 border border-red-200", 
+};
+
+const formatGiftCardDate = (value?: string) => {
+  if (!value) return "Unavailable";
+
+  const parsed = new Date(value.includes("T") ? value : value.replace(" ", "T"));
+  if (Number.isNaN(parsed.getTime())) return "Unavailable";
+
+  return parsed.toLocaleDateString("en-AU", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
 };
 
 // ─── Redeem Panel ─────────────────────────────────────────────────────────────
@@ -403,9 +417,15 @@ function RedeemPanel() {
                     <div>
                       <p className="text-slate-500 text-xs">Issued on</p>
                       <p className="font-medium text-slate-800">
-                        {new Date(verified.created_at).toLocaleDateString("en-US", {
-                          month: "short", day: "numeric", year: "numeric",
-                        })}
+                        {formatGiftCardDate(verified.created_at)}
+                      </p>
+                    </div>
+                  )}
+                  {verified.expires_at && (
+                    <div>
+                      <p className="text-slate-500 text-xs">Redeem by</p>
+                      <p className="font-medium text-slate-800">
+                        {formatGiftCardDate(verified.expires_at)}
                       </p>
                     </div>
                   )}
@@ -760,6 +780,9 @@ function OrdersTable() {
                             {card.status}
                           </span>
                           <span className="text-xs text-slate-400">${card.amount}</span>
+                          <span className="text-xs text-slate-400">
+                            Redeem by {formatGiftCardDate(card.expires_at)}
+                          </span>
                         </div>
                       ))}
                     </div>
