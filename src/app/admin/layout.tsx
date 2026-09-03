@@ -551,14 +551,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         const nextStats = data.stats;
         setRealtimeStats((previous) => {
           if (previous) {
-            if (nextStats.pendingReservations > previous.pendingReservations) {
-              const diff =
-                nextStats.pendingReservations - previous.pendingReservations;
+            if (
+              nextStats.latestReservationId > previous.latestReservationId
+            ) {
               appendAlert(
                 "reservation",
-                `${diff} new pending reservation${diff > 1 ? "s" : ""}.`,
+                `New reservation #${nextStats.latestReservationId} received.`,
                 "/admin/reservations",
-                `reservation-${nextStats.pendingReservations}`,
+                `reservation-${nextStats.latestReservationId}`,
               );
             }
 
