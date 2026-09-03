@@ -13,9 +13,12 @@ const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY,
 );
 
-// Preset values remain in $5 increments; customers can also enter $5–$500.
-const AMOUNT_OPTIONS = Array.from({ length: 20 }, (_, i) => (i + 1) * 5);
-const MIN_GIFT_CARD_AMOUNT = 5;
+// Keep the regular $5 presets and include $1 for low-value payment testing.
+const AMOUNT_OPTIONS = [
+  1,
+  ...Array.from({ length: 20 }, (_, i) => (i + 1) * 5),
+];
+const MIN_GIFT_CARD_AMOUNT = 1;
 const MAX_GIFT_CARD_AMOUNT = 500;
 
 const CARD_ELEMENT_OPTIONS = {
@@ -744,7 +747,7 @@ const Stripe_test = () => {
                     htmlFor="customGiftCardAmount"
                     className="block text-sm font-medium text-gray-700 mb-2"
                   >
-                    Custom amount (AUD $5–$500)
+                    Custom amount (AUD $1–$500)
                   </label>
                   <div className="relative max-w-xs">
                     <span className="absolute inset-y-0 left-3 flex items-center text-gray-500">
